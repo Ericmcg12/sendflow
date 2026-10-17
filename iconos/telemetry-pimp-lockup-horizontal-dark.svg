@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 560 160">
+  <!-- Transparent background, for headers/nav bars/loading screens on dark surfaces. -->
+  <g transform="translate(10,26) scale(0.7)">
+    <path d="M10,100 L40,60 L60,85 L85,28 L110,80 L130,55 L160,95 L190,100"
+          fill="none" stroke="#a48bff" stroke-width="12" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="85" cy="28" r="10" fill="#a48bff"/>
+  </g>
+  <line x1="172" y1="30" x2="172" y2="130" stroke="#4a4556" stroke-width="1"/>
+  <text x="200" y="68" font-family="'Space Grotesk', system-ui, sans-serif"
+        font-weight="600" font-size="15" letter-spacing="7" fill="#8f89a0">TELEMETRY</text>
+  <text x="200" y="126" font-family="'Space Grotesk', system-ui, sans-serif"
+        font-weight="700" font-size="52" fill="#f7f6f3">PIMP</text>
+</svg>

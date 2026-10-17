@@ -1,0 +1,10 @@
+PARCHE «SENDFLOW NUBE» PARA LA APP  (no modifica el original)
+
+La app sigue funcionando igual, sin cuenta y sin internet. El login es opcional y solo sirve
+para subir/traer cosas: bajadas, perfiles y ajustes. Vive únicamente en Configuración > SENDFLOW NUBE.
+La app no hace ningún pedido a internet por su cuenta.
+
+1) Hacé una COPIA de la carpeta www de la app (la original no se toca).
+2) Con Python:   python aplicar_parche_app.py <la_copia_de_www> vendor
+3) Probá la copia. En Configuración aparece «SENDFLOW NUBE».
+4) Antes de usarlo, una sola vez, ejecutá nube_v1.sql en Supabase > SQL Editor.

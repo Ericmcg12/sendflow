@@ -1,0 +1,285 @@
+/* ==========================================================================
+   SendFlow Bike (app) — estilo v2 (16/10/2026): igual a la web sendflow.bike
+   (bloques v34/v35 de bike/css/sitio.css, bike/estilo/sendflow.css y Coach v44/v45).
+   - Títulos, botones, etiquetas, pestañas, menús y encabezados de ventanas con
+     mayúscula inicial (text-transform:none, sin espaciado de letras) en IBM Plex
+     Sans (si no está instalada, la del sistema: la app es offline, no se baja nada).
+   - Redondeo --r-sm 6 / --r-md 8 / --r-lg 12 en botones, campos y tarjetas.
+   - Oro para lo activo/seleccionado, cian de marca, tarjetas con borde + leve luz.
+   - NO toca: canvas, gráficos, semáforos, colores de canales, HUD del video ni
+     las etiquetas chicas de datos (siguen en mono). Va enlazada DESPUÉS de estilos.css.
+   ========================================================================== */
+:root{
+  --r-sm:6px; --r-md:8px; --r-lg:12px;
+  --sans:'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --display:-apple-system, 'Segoe UI', system-ui, Roboto, Arial, sans-serif;
+  /* paleta de la web (los gráficos se pintan por JS: no leen estas variables) */
+  --bg-abs:#070b0c; --panel:#11171a; --panel-2:#151b1c; --panel-3:#1b2426;
+  --borde:#232b2c; --borde-2:#2e393a;
+  --texto:#f2f5f4; --texto-dim:#8b9a98; --texto-mute:#5e6b6a;
+  --cian-2:#2bb89a; --cian-glow:rgba(79,227,194,.35); --on-cian:#04211c;
+  --sombra:0 10px 40px rgba(0,0,0,.45);
+  --ease:cubic-bezier(.2,.8,.2,1);
+  --fondo-tarjeta:linear-gradient(180deg, rgba(21,27,28,.92), rgba(17,23,26,.92));
+  --luz-tarjeta:radial-gradient(400px circle at var(--mx,50%) var(--my,30%), rgba(79,227,194,.09), transparent 45%);
+}
+[hidden]{ display:none !important; }
+html, body{ background:var(--bg-abs); -webkit-font-smoothing:antialiased; }
+::selection{ background:var(--cian); color:var(--on-cian); }
+*{ scrollbar-color:rgba(255,255,255,.14) transparent; }
+::-webkit-scrollbar-thumb{ background:rgba(255,255,255,.14); border-radius:8px; }
+::-webkit-scrollbar-thumb:hover{ background:rgba(255,189,0,.45); }
+button:focus-visible, a:focus-visible, label.btn:focus-within{ outline:2px solid var(--oro); outline-offset:2px; }
+
+/* ---------- Bienvenida ---------- */
+.hero-sub{ font:500 14px/1.3 var(--sans); letter-spacing:0; text-transform:none; color:var(--cian); }
+.perfil-activo-home{ font:500 13px/1.3 var(--sans); letter-spacing:0; }
+.hero-iconos{ gap:12px; }
+.tile-hero{
+  position:relative; overflow:hidden; background:var(--fondo-tarjeta); border:1px solid var(--borde);
+  border-radius:var(--r-lg); font:600 13px/1.25 var(--sans); letter-spacing:0; text-transform:none; color:var(--texto);
+  transition:border-color .25s, color .2s, transform .25s var(--ease), box-shadow .25s;
+}
+.tile-hero .tile-hero-icono{ color:var(--cian); transition:color .2s; }
+.tile-hero:hover{ background:var(--fondo-tarjeta); border-color:var(--oro-dim); color:var(--oro); }
+.tile-hero:hover .tile-hero-icono{ color:var(--oro); }
+.tile-hero.acento-oro{ border-color:var(--oro-dim); color:var(--oro); }
+.tile-hero.acento-oro .tile-hero-icono{ color:var(--oro); }
+.tile-hero:active{ transform:scale(.97); }
+.enlace-demo{ font:13px/1.4 var(--sans); letter-spacing:0; }
+
+/* ---------- Cajas / tarjetas (borde + leve luz al pasar o tocar) ---------- */
+.caja{ position:relative; background:var(--fondo-tarjeta); border-color:var(--borde); border-radius:var(--r-lg); padding:16px 18px; }
+.caja h2, .modal-tarjeta h2{
+  font:600 17px/1.3 var(--sans); letter-spacing:0; text-transform:none; color:var(--texto);
+}
+.caja h2{ border-bottom-color:var(--borde); }
+.caja h2 .sub{ font:400 13px var(--sans); }
+.cab-suite .nombre-bajada{ font:600 17px/1.3 var(--sans); letter-spacing:0; color:var(--texto); }
+
+.tarjeta-guardado, .fila-config-menu, .tarjeta-dash, .tarjeta-lectura-corte, .stat-card,
+.resumen-calibracion .item, .cockpit-mapa-cont, .cockpit-grafico-grande, .cockpit-scrubber{
+  border-color:var(--borde);
+}
+.tarjeta-guardado, .fila-config-menu{
+  position:relative; overflow:hidden; background:var(--fondo-tarjeta); border-radius:var(--r-md);
+  transition:border-color .25s, transform .25s var(--ease), box-shadow .25s;
+}
+.tarjeta-guardado{ border-radius:0 var(--r-md) var(--r-md) 0; }
+.tarjeta-dash, .tarjeta-lectura-corte, .resumen-calibracion .item, .stat-card{ border-radius:var(--r-md); }
+.tarjeta-dash{ position:relative; background:var(--fondo-tarjeta); }
+.stat-card{ position:relative; background:var(--fondo-tarjeta); transition:border-color .25s, box-shadow .25s; }
+.cockpit-mapa-cont, .cockpit-grafico-grande, .cockpit-scrubber{ border-radius:var(--r-md); }
+.tile-hero::after, .fila-config-menu::after, .tarjeta-guardado::after, .tarjeta-dash::after, .stat-card::after{
+  content:""; position:absolute; inset:0; border-radius:inherit; pointer-events:none; opacity:0;
+  background:var(--luz-tarjeta); transition:opacity .3s;
+}
+.fila-config-menu:active, .tarjeta-guardado.seleccionable:active, .tile-hero:active{ border-color:var(--oro-dim); }
+.fila-config-menu:active::after, .tile-hero:active::after{ opacity:1; }
+@media (hover:hover){
+  .tile-hero:hover{ transform:translateY(-3px); box-shadow:var(--sombra); }
+  .tile-hero:hover::after, .fila-config-menu:hover::after, .tarjeta-guardado:hover::after,
+  .tarjeta-dash:hover::after, .stat-card:hover::after{ opacity:1; }
+  .tarjeta-dash:hover, .stat-card:hover, .tarjeta-guardado:hover{ border-color:var(--borde-2); }
+  .fila-config-menu:hover{ border-color:var(--oro-dim); transform:translateY(-2px); box-shadow:var(--sombra); }
+}
+/* la línea de color de la izquierda de las bajadas guardadas se mantiene (cian / oro si está elegida) */
+.tarjeta-guardado{ border-left:3px solid var(--cian); }
+.tarjeta-guardado.seleccionable:hover{ border-color:var(--oro-dim); border-left-color:var(--cian); }
+.tarjeta-guardado.seleccionada{ border-color:var(--oro-dim); border-left-color:var(--oro); background:linear-gradient(180deg, rgba(255,189,0,.07), rgba(255,189,0,.03)); }
+.tarjeta-guardado .nombre{ font:600 14px/1.35 var(--sans); letter-spacing:0; color:var(--texto); }
+.tarjeta-guardado .meta{ letter-spacing:0; }
+
+/* Menú de Importar / Configuración */
+.lista-config-menu{ gap:10px; }
+.fila-config-menu{ padding:14px 16px; }
+.fila-config-titulo{ font:600 14.5px/1.3 var(--sans); letter-spacing:0; text-transform:none; color:var(--texto); transition:color .2s; }
+.fila-config-sub{ font:13px/1.45 var(--sans); color:var(--texto-dim); }
+.fila-config-menu:hover .fila-config-titulo{ color:var(--oro); }
+
+/* Textos de ayuda: sans como en la web (los números siguen en mono) */
+.aviso, .vacio-guardados, .disc{ font-family:var(--sans); font-size:13px; line-height:1.55; }
+.aviso b{ font-weight:600; }
+.campo .aviso, .fila-botones .aviso{ font-size:12px; }
+.barra-comparacion{ border-radius:var(--r-md); font:600 13px var(--sans); letter-spacing:0; }
+
+/* ---------- Botones ---------- */
+.btn{
+  position:relative; overflow:hidden; display:inline-flex; align-items:center; justify-content:center; gap:7px;
+  min-height:40px; padding:0 16px; border:1px solid var(--borde-2); border-radius:var(--r-md);
+  background:var(--panel-2); color:var(--texto);
+  font:600 13.5px/1 var(--sans); letter-spacing:.01em; text-transform:none; white-space:nowrap;
+  transition:border-color .2s, color .2s, background .2s, transform .15s, box-shadow .2s, filter .2s;
+}
+.btn svg{ flex:none; }
+.btn:hover{ background:var(--panel-2); border-color:var(--oro-dim); color:var(--oro); }
+.btn:active{ background:var(--panel-2); transform:scale(.97); }
+.btn.chico{ min-height:34px; padding:0 12px; font-size:12.5px; }
+.btn.secundario{ border-color:var(--borde-2); color:var(--texto); }
+.btn.secundario:hover{ color:var(--oro); border-color:var(--oro-dim); background:var(--panel-2); }
+.btn.primario{ background:linear-gradient(135deg, var(--cian), var(--cian-2)); color:var(--on-cian); border-color:transparent; box-shadow:0 6px 24px var(--cian-glow); }
+.btn.primario:hover{ background:linear-gradient(135deg, var(--cian), var(--cian-2)); color:var(--on-cian); filter:brightness(1.08); box-shadow:0 8px 30px rgba(79,227,194,.5); }
+.btn:disabled, .btn[disabled]{ opacity:.45; transform:none; filter:none; box-shadow:none; }
+.btn.activo, .selector-historial .btn.activo, .video-controles .btn.activo, #btnMarcarCortes.activo{
+  border-color:var(--oro); color:var(--oro); background:rgba(255,189,0,.08);
+}
+label.btn{ cursor:pointer; }
+.fila-botones{ gap:8px; }
+/* Botones de ícono (sin texto) */
+.btn-icono{ border-radius:var(--r-sm); background:var(--panel-2); border-color:var(--borde); transition:color .2s, border-color .2s, background .2s; }
+.btn-icono-grande{ border-radius:var(--r-md); }
+.btn-icono-grande.acento-oro:hover{ background:var(--oro); color:#0d0d0d; }
+.btn-capa-toggle, .btn-fullscreen-mapa, .btn-toggle-mapa, .btn-zoom-mapa, .btn-marcador-scrub, .btn-topes-mapa{ border-radius:var(--r-sm); }
+.btn-topes-mapa{ font:600 12px var(--sans); letter-spacing:0; }
+.menu-flotante-capas{ border-radius:var(--r-md); }
+.btn-link-chico{ font-family:var(--sans); font-size:12px; }
+.enlace-demo, .btn-link-chico{ text-transform:none; }
+/* Botones de opción (Con/Sin balanza, Rueda/Susp., %/mm, sensores): oro cuando están activos */
+.btn-toggle{ border-radius:var(--r-sm); font:600 12.5px/1.2 var(--sans); letter-spacing:0; text-transform:none; }
+.panel-modo-datos .btn-toggle{ font:600 11.5px/1 var(--sans); }
+.reparto-calib .btn-toggle.activo, .modal-tarjeta .btn-toggle.activo{ color:var(--oro); border-color:var(--oro-dim); background:rgba(255,189,0,.08); opacity:1; }
+.reparto-calib .btn-toggle, .modal-tarjeta .btn-toggle{ opacity:1; }
+.video-cerrar{ font:600 13px var(--sans); letter-spacing:0; }
+.video-saltos button{ font-family:var(--sans); }
+.pt-btn{ font:600 12px var(--sans); letter-spacing:0; border-radius:999px; }
+
+/* ---------- Campos ---------- */
+.campo label, .fila-tramo-dinamica, .fila-leverage-cab{
+  font:500 12.5px/1.3 var(--sans); letter-spacing:0; text-transform:none; color:var(--texto-dim);
+}
+.campo label span{ font-family:var(--sans); }
+.campo input, .campo select, .campo textarea, .modal-tarjeta textarea, select, .fila-tramo-dinamica select, .video-controles select{
+  border-radius:var(--r-md);
+}
+.campo input, .campo select, .campo textarea, .modal-tarjeta textarea{
+  background:var(--bg-abs); border:1px solid var(--borde-2); color:var(--texto);
+  transition:border-color .2s, box-shadow .2s;
+}
+.campo input:hover, .campo select:hover, .campo textarea:hover{ border-color:#3a4748; }
+.campo input:focus, .campo select:focus, .campo textarea:focus, .modal-tarjeta textarea:focus{
+  outline:none; border-color:var(--cian); box-shadow:0 0 0 3px rgba(79,227,194,.15);
+}
+input[type="date"], select{ color-scheme:dark; }
+.fila-2col .col-titulo{ font:600 14px/1.3 var(--sans); letter-spacing:0; color:var(--texto); }
+.fila-2col .col-titulo span{ font:400 12px var(--sans); }
+.avatar-perfil{ border-color:var(--borde-2); }
+
+/* ---------- Ventanas (modales) ---------- */
+.modal-overlay{ background:rgba(4,7,8,.78); -webkit-backdrop-filter:blur(6px); backdrop-filter:blur(6px); }
+.modal-tarjeta{
+  background:linear-gradient(180deg, rgba(21,27,28,.98), rgba(13,18,20,.98)); border:1px solid var(--borde);
+  border-radius:var(--r-lg); box-shadow:0 24px 80px rgba(0,0,0,.6); padding:22px;
+  animation:sfV2Entra .28s var(--ease) both;
+}
+@keyframes sfV2Entra{ from{ opacity:0; transform:translateY(10px) scale(.985); } to{ opacity:1; transform:none; } }
+.modal-tarjeta h2{ margin-bottom:8px; }
+.paso-bt{
+  font:600 14px/1.3 var(--sans); letter-spacing:0; text-transform:none; color:var(--cian);
+  border-top-color:var(--borde);
+}
+.estado-conexion-bt{ border-radius:var(--r-md); font:600 13px/1.3 var(--sans); letter-spacing:0; }
+.sag-medidor, .reparto-vivo{ border-radius:var(--r-lg); border-color:var(--borde); background:var(--fondo-tarjeta); }
+.overlay-cargando{ background:rgba(7,11,12,.9); }
+#overlayCargandoTexto{ font:13px var(--sans); letter-spacing:0; }
+
+/* ---------- Análisis: menú lateral (pestañas) ---------- */
+.suite-sidebar{ background:rgba(11,15,16,.92); border-right-color:var(--borde); }
+.suite-sidebar .tab-btn{
+  position:relative; border-radius:var(--r-sm); border:0; border-left:3px solid transparent; background:transparent;
+  font:500 14px/1.2 var(--sans); letter-spacing:0; text-transform:none; color:var(--texto-dim);
+  transition:color .2s, background .2s;
+}
+.suite-sidebar .tab-btn:hover{ color:var(--oro); background:rgba(255,189,0,.05); }
+.suite-sidebar .tab-btn.sel{ color:var(--oro); background:rgba(255,189,0,.09); border-left-color:var(--oro); }
+.sidebar-submenu .btn-selector-grafico{ font:500 12.5px var(--sans); letter-spacing:0; border-radius:var(--r-sm); }
+.nombre-bajada-sidebar{ font:12px var(--sans); letter-spacing:0; }
+.sidebar-abajo{ border-top-color:var(--borde); }
+.titulo-pestana-movil{ font:600 13px var(--sans); letter-spacing:0; color:var(--oro); }
+.suite-fija-arriba{ background:transparent; }
+.tabs .tab-btn{ border-radius:var(--r-sm); font:600 13px var(--sans); letter-spacing:0; text-transform:none; }
+@media(max-width:880px){
+  .suite-sidebar .tab-btn{ border-left:0; border-bottom:3px solid transparent; }
+  .suite-sidebar .tab-btn.sel{ border-bottom-color:var(--oro); }
+}
+
+/* ---------- Títulos de sección dentro del análisis ---------- */
+.titulo-canal, .titulo-saltos{ font:600 14px/1.35 var(--sans); letter-spacing:0; text-transform:none; color:var(--texto); }
+.titulo-canal .sub, .sub-saltos{ font:400 12.5px var(--sans); letter-spacing:0; color:var(--texto-dim); }
+.titulo-lectura{ font:600 13px/1.3 var(--sans); letter-spacing:0; text-transform:none; color:var(--oro); }
+.dash-titulo h3{ font:600 14.5px/1.3 var(--sans); letter-spacing:0; text-transform:none; }
+.dash-titulo span{ font:12px var(--sans); }
+.cockpit-toggle-canal-txt{ font:500 12px var(--sans); letter-spacing:0; }
+.popover-info-grafico{ font:12.5px/1.55 var(--sans); letter-spacing:0; border-radius:var(--r-md); border-color:var(--borde-2); }
+.popover-info-grafico b{ font-weight:600; }
+.avisos-bajada{ border-radius:var(--r-md); font-family:var(--sans); font-size:13px; }
+.avisos-bajada-titulo{ font:600 13px var(--sans); letter-spacing:0; }
+.panel-resumen-ia li{ font-family:var(--sans); font-size:13.5px; border-radius:var(--r-md); }
+
+/* ---------- Panel SendFlow nube (js/nube-ui.js inyecta su CSS después: se gana por especificidad) ---------- */
+html body .sfn-tit{ font:600 14px/1.3 var(--sans); letter-spacing:0; text-transform:none; }
+html body .sfn label{ font:500 12.5px/1.3 var(--sans); letter-spacing:0; text-transform:none; }
+html body .sfn input{ border-radius:var(--r-md); }
+html body .sfn-b{ font:600 13px/1 var(--sans); letter-spacing:.01em; text-transform:none; border-radius:var(--r-md); }
+html body .sfn-b.c{ font-size:12px; }
+html body .sfn-sec{ border-radius:var(--r-lg); }
+html body .sfn-item{ border-radius:0 var(--r-md) var(--r-md) 0; }
+html body .sfn-aviso{ border-radius:var(--r-md); }
+html body .sfn-ok{ font:600 12.5px var(--sans); letter-spacing:0; }
+
+/* ==========================================================================
+   Textos que pone el JS en MAYÚSCULAS y que no tienen siglas: se muestran con
+   mayúscula inicial («SIN CONECTAR» → «Sin conectar») pasándolos a minúscula y
+   subiendo la primera letra. Sólo en estos elementos (revisados uno por uno);
+   si el parche de lógica les cambia el texto a mayúscula inicial esto sigue
+   dando lo mismo. OJO: si alguno pasa a llevar una sigla (GPS, SAG, TMD…),
+   sacarlo de esta lista.
+   ========================================================================== */
+#tituloModalPerfil, #tituloModalConfirmar, #btnAceptarModalConfirmar, #btnCancelarModalConfirmar,
+#estadoConexionWifi, #estadoConexionWifiImportar, #estadoSagVivo,
+#btnDispHrToggle, #btnDispPowerToggle, #btnRepartoMetodoBalanza, #btnRepartoMetodoPosiciones,
+#btnSagMedir, #btnSagSinPeso, #btnRepartoMedirBalanza, #btnRepartoMedirAdelante, #btnRepartoMedirAtras,
+#btnMarcarCortes, #btnBorrarCortes, #btnBajadaIdeal, #btnExportarMantenimiento,
+[data-srv-hecho], .selector-historial .btn, [data-usar-sensor-ble], .pt-btn,
+#cajaTopes > .titulo-canal:first-child, #cajaSaltos > .titulo-canal:first-child, #cajaFrenadas > .titulo-canal:first-child,
+#cajaCurvas > .titulo-canal:first-child, #cajaPedaleo > .titulo-canal:first-child, #cajaTempSusp > .titulo-canal:first-child,
+#cajaPresion > .titulo-canal:first-child, #cajaCurvaResorte > .titulo-canal:first-child, #cajaTerreno > .titulo-canal:first-child,
+#cajaRecuperacion > .titulo-canal:first-child, #cajaReparto > .titulo-canal:first-child, #cajaGeometria > .titulo-canal:first-child,
+#cajaHistorialSetup > .titulo-canal:first-child, #cajaMantenimiento > .titulo-canal:first-child,
+#contBajadaIdeal > .titulo-canal:first-child{
+  text-transform:lowercase;
+}
+#tituloModalPerfil::first-letter, #tituloModalConfirmar::first-letter, #btnAceptarModalConfirmar::first-letter, #btnCancelarModalConfirmar::first-letter,
+#estadoConexionWifi::first-letter, #estadoConexionWifiImportar::first-letter, #estadoSagVivo::first-letter,
+#btnDispHrToggle::first-letter, #btnDispPowerToggle::first-letter, #btnRepartoMetodoBalanza::first-letter, #btnRepartoMetodoPosiciones::first-letter,
+#btnSagMedir::first-letter, #btnSagSinPeso::first-letter, #btnRepartoMedirBalanza::first-letter, #btnRepartoMedirAdelante::first-letter, #btnRepartoMedirAtras::first-letter,
+#btnMarcarCortes::first-letter, #btnBorrarCortes::first-letter, #btnBajadaIdeal::first-letter, #btnExportarMantenimiento::first-letter,
+[data-srv-hecho]::first-letter, .selector-historial .btn::first-letter, [data-usar-sensor-ble]::first-letter, .pt-btn::first-letter,
+#cajaTopes > .titulo-canal:first-child::first-letter, #cajaSaltos > .titulo-canal:first-child::first-letter, #cajaFrenadas > .titulo-canal:first-child::first-letter,
+#cajaCurvas > .titulo-canal:first-child::first-letter, #cajaPedaleo > .titulo-canal:first-child::first-letter, #cajaTempSusp > .titulo-canal:first-child::first-letter,
+#cajaPresion > .titulo-canal:first-child::first-letter, #cajaCurvaResorte > .titulo-canal:first-child::first-letter, #cajaTerreno > .titulo-canal:first-child::first-letter,
+#cajaRecuperacion > .titulo-canal:first-child::first-letter, #cajaReparto > .titulo-canal:first-child::first-letter, #cajaGeometria > .titulo-canal:first-child::first-letter,
+#cajaHistorialSetup > .titulo-canal:first-child::first-letter, #cajaMantenimiento > .titulo-canal:first-child::first-letter,
+#contBajadaIdeal > .titulo-canal:first-child::first-letter{
+  text-transform:uppercase;
+}
+/* dentro de esos títulos, lo demás (subtítulo, ayuda «i») queda como está */
+.titulo-canal:first-child > *{ text-transform:none; }
+/* ::first-letter no funciona en cajas flex: estos botones pasan a bloque en línea (sin íconos) */
+#btnDispHrToggle, #btnDispPowerToggle, #btnRepartoMetodoBalanza, #btnRepartoMetodoPosiciones,
+#btnSagMedir, #btnSagSinPeso, #btnRepartoMedirBalanza, #btnRepartoMedirAdelante, #btnRepartoMedirAtras,
+#btnMarcarCortes, #btnBorrarCortes, #btnBajadaIdeal, #btnExportarMantenimiento, #btnAceptarModalConfirmar, #btnCancelarModalConfirmar,
+[data-srv-hecho], .selector-historial .btn, [data-usar-sensor-ble]{
+  display:inline-block; text-align:center; line-height:38px; padding-top:0; padding-bottom:0;
+}
+.btn.chico#btnMarcarCortes, .btn.chico#btnBorrarCortes, .btn.chico#btnBajadaIdeal, .btn.chico#btnExportarMantenimiento,
+.btn.chico[data-srv-hecho], .selector-historial .btn.chico, .btn.chico[data-usar-sensor-ble]{ line-height:32px; }
+#btnDispHrToggle, #btnDispPowerToggle, #btnRepartoMetodoBalanza, #btnRepartoMetodoPosiciones{ line-height:1.3; padding:8px 12px; }
+
+@media (prefers-reduced-motion: reduce){
+  .modal-tarjeta{ animation:none; }
+  .tile-hero, .fila-config-menu, .tarjeta-guardado, .stat-card, .tarjeta-dash{ transition:none; }
+  .tile-hero:hover, .fila-config-menu:hover{ transform:none; }
+}
+
+/* Celular: el relleno de las cajas como antes, para que las filas de campos (peso · nivel · estilo) sigan entrando */
+@media (max-width:520px){ .caja{ padding:12px 14px; } }

@@ -1,0 +1,14 @@
+create role anon nologin; create role authenticated nologin; create role service_role nologin bypassrls;
+create schema auth;
+create table auth.users (id uuid primary key, email text);
+create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('sf.uid', true), '')::uuid $$;
+grant usage on schema auth to authenticated, service_role;
+create table public.perfiles_usuario (id uuid primary key references auth.users(id), nombre text, aprobado boolean default true);
+create table public.roles_usuario (usuario_id uuid, rol text);
+create table public.accesos (usuario_id uuid, producto text);
+create table public.vinculos (piloto_id uuid, profesional_id uuid, tipo text, estado text, cortado_en timestamptz);
+insert into auth.users values ('00000000-0000-0000-0000-00000000000c','coach@x.com'),('00000000-0000-0000-0000-00000000000a','piloto@x.com'),('00000000-0000-0000-0000-0000000000ee','otro@x.com');
+insert into perfiles_usuario values ('00000000-0000-0000-0000-00000000000c','Martín',true),('00000000-0000-0000-0000-00000000000a','Eric',true),('00000000-0000-0000-0000-0000000000ee','Intruso',true);
+insert into roles_usuario values ('00000000-0000-0000-0000-00000000000c','entrenador');
+insert into accesos values ('00000000-0000-0000-0000-00000000000c','coach'),('00000000-0000-0000-0000-00000000000a','sender');
+insert into vinculos values ('00000000-0000-0000-0000-00000000000a','00000000-0000-0000-0000-00000000000c','piloto_entrenador','activo',null);

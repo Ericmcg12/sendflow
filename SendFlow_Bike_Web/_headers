@@ -1,0 +1,32 @@
+# Cabeceras comunes
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: camera=(), microphone=()
+
+# Sitio base (portada y login): sin scripts ni estilos en línea
+/
+  X-Frame-Options: DENY
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; frame-src 'self' https://challenges.cloudflare.com; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com https://oksqbxptdzdcqrvyxrpa.supabase.co https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+/index.html
+  X-Frame-Options: DENY
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; frame-src 'self' https://challenges.cloudflare.com; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com https://oksqbxptdzdcqrvyxrpa.supabase.co https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+
+/perfil
+  X-Frame-Options: DENY
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; frame-src 'self' https://challenges.cloudflare.com; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com https://oksqbxptdzdcqrvyxrpa.supabase.co https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+/mensajes
+  X-Frame-Options: DENY
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; frame-src 'self' https://challenges.cloudflare.com; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com https://oksqbxptdzdcqrvyxrpa.supabase.co https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+/bajadas
+  X-Frame-Options: DENY
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://challenges.cloudflare.com https://static.cloudflareinsights.com; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; frame-src 'self' https://challenges.cloudflare.com; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com https://oksqbxptdzdcqrvyxrpa.supabase.co https://challenges.cloudflare.com; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+
+/admin.html
+  X-Frame-Options: DENY
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self' https://cloudflareinsights.com https://oksqbxptdzdcqrvyxrpa.supabase.co; frame-ancestors 'none'; base-uri 'self'; form-action 'self'
+
+# SendFlow Bike web: la app usa estilos en línea, un worker (mapa) y descarga mapas de MapTiler
+/analisis/*
+  X-Frame-Options: SAMEORIGIN
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://api.maptiler.com; media-src 'self' blob:; connect-src 'self' https://cloudflareinsights.com data: blob: https://api.maptiler.com https://oksqbxptdzdcqrvyxrpa.supabase.co https://*.r2.cloudflarestorage.com; worker-src 'self' blob:; frame-ancestors 'self'; base-uri 'self'

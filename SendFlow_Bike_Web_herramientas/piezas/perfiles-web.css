@@ -1,0 +1,10 @@
+
+/* ---- perfiles desde la cuenta (perfiles_v1, 15/10/2026): en /analisis los perfiles solo se eligen ---- */
+.modo-web #btnNuevoPerfil, .modo-web #btnExportarPerfiles, .modo-web label:has(#inputImportarPerfiles),
+.modo-web [data-accion-perfil="editar"], .modo-web [data-accion-perfil="eliminar"],
+.modo-web #pantallaPerfiles .fila-botones > button.primario { display: none !important; }
+.modo-web #sfMisBicis { text-decoration: none; }
+/* v34: /analisis es solo para ver y analizar bajadas: sin la intro del logo (queda en sendflow.bike) */
+.modo-web #pantallaBienvenida .hero-logo, .modo-web #pantallaBienvenida .hero-sub { display: none !important; }
+/* v35: dentro de sendflow.bike (pestaña Análisis) el menú del sitio reemplaza al botón «← SENDFLOW» */
+.sf-embebido #volverSendFlow { display: none !important; }

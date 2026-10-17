@@ -1,0 +1,4 @@
+
+/* ===================== v12 (11/10/2026): botón Guardar análisis ===================== */
+.guardar-analisis.ok{color:var(--cian);border-color:color-mix(in srgb, var(--cian) 45%, transparent);}
+.guardar-analisis svg{width:15px;height:15px;}

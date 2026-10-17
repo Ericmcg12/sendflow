@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 170">
+  <!-- Transparent background, dark ink — for documents, footers, invoices, light contexts. -->
+  <text x="210" y="55" text-anchor="middle" font-family="'Space Grotesk', system-ui, sans-serif"
+        font-weight="600" font-size="20" letter-spacing="10" fill="#6b6577">TELEMETRY</text>
+  <text x="210" y="145" text-anchor="middle" font-family="'Space Grotesk', system-ui, sans-serif"
+        font-weight="700" font-size="86" fill="#211f28">PIMP</text>
+</svg>

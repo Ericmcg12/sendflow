@@ -1,0 +1,269 @@
+# SendFlow — 01 · Documento de Requisitos de Producto (PRD)
+
+> **Versión 1.0 · 10/10/2026.** Reemplaza a todos los PRD anteriores (Telemetry PIMP v6, "Shredder × GnarFlow", OptiRide, funciones.docx, el PRD .docx). Lo que está acá es la lista cerrada de funciones.
+> **Regla de alcance: si una función no está en esta lista, no se construye.** Para sumar algo, Eric lo aprueba y se agrega acá primero (con quién lo usa, qué quiere lograr y cuándo está terminado). Recién después se programa.
+> Documentos hermanos: 02 Técnico · 03 Recorridos · 04 Diseño · 05 Base de datos · 06 Plan de implementación.
+
+## 0. Cómo leer este documento
+
+Cada función tiene: **quién la usa**, **qué quiere lograr** y **cuándo está terminada**. El estado va al lado:
+
+| Estado | Significa |
+|---|---|
+| **HECHO** | Funciona y Eric lo probó. |
+| **A VALIDAR** | Programado y probado con datos simulados; falta probar con datos reales (Sender real, celular, producción). |
+| **FASE n** | Aprobado, sin hacer. El número es la etapa del plan de implementación (doc 06). |
+| **ABIERTO** | Falta una decisión de Eric antes de poder hacerlo. |
+
+## 1. Qué es el producto
+
+Un **sistema completo de telemetría y coaching para MTB de descenso (DH) y enduro**, para vender en todo el mundo (más afuera que en Argentina). Familia de productos con una sola marca, **SendFlow**:
+
+| Producto | Qué es | Para quién | Cómo se accede |
+|---|---|---|---|
+| **Sender** | Datalogger que va en la bici (Teensy 4.1) y graba la bajada a 1000 Hz. | Piloto | Se compra. Trae SendFlow Bike (app + web). |
+| **SendFlow Bike** — app | App Android/iOS que se conecta al Sender, baja y analiza las bajadas. **100 % sin señal.** | Piloto | Viene con Sender. |
+| **SendFlow Bike** — web (`sendflow.bike`) | Sitio madre: cuenta, inicio con los productos de cada uno, perfil, "Mi nube" y análisis en pantalla grande (`/analisis`). | Piloto, entrenador, taller, administrador | Cuenta aprobada. |
+| **SendFlow Coach** (`sendflow.coach`) | Coaching con video + datos del Sender: el piloto manda, el entrenador analiza y devuelve. | Entrenador (paga suscripción) y su alumno (con Sender) | Producto "coach" para el entrenador; el alumno entra si tiene Sender y aceptó a un entrenador. |
+| **FlowBench** | Banco de ensayo de amortiguadores y horquillas para taller. | Taller | Se compra. |
+| **SendFlow Lab** | Software del FlowBench (Linux, en el banco, sin señal) + portal web del taller (`sendflowlab.com`) con la misma cuenta. | Taller | Solo quien compró FlowBench (producto "taller"). |
+
+Nombres históricos que equivalen a esto y **no se usan nunca más**: Telemetry PIMP, GnarFlow, Shredder, OptiRide, FlowTune.
+
+## 2. Usuarios
+
+| Usuario | Quién es | Qué quiere |
+|---|---|---|
+| **Piloto** | Corredor de DH/enduro con Sender. Hoy el único piloto real es Eric (Mendoza) y su hijo Derek. | Saber con datos qué hace la suspensión, ajustarla, ver su evolución y recibir devoluciones de su entrenador. |
+| **Entrenador** | Profesional que trabaja la técnica de varios pilotos. Puede no tener Sender. | Recibir videos y bajadas de sus alumnos, analizarlos con dibujos/voz/datos y devolver. |
+| **Taller** | Taller de suspensión con FlowBench. | Ensayar suspensiones, ajustarlas según el uso real del piloto, llevar clientes e historial. |
+| **Administrador** | Eric. | Aprobar cuentas, asignar rol y productos, resetear contraseñas, borrar cuentas. |
+
+**Reglas de cuenta (cerradas):**
+- Sin iniciar sesión no se accede a nada de la web (ni análisis, ni Coach, ni Lab). La app **no** necesita cuenta.
+- Las cuentas nuevas quedan **pendientes de aprobación manual**.
+- El **rol** (piloto / entrenador / taller) es **fijo**: lo pone el administrador, no el usuario.
+- Los **productos** (`sender`, `coach`, `taller`) los asigna el administrador a mano. No hay pasarela de pago por ahora.
+
+---
+
+## 3. Sender (datalogger)
+
+### 3.1 Uso en pista
+
+| # | Función | Quién / para qué | Terminado cuando | Estado |
+|---|---|---|---|---|
+| S1 | **Grabar la bajada** con un toque del botón RUN; otro toque para. | Piloto: grabar sin mirar ni tocar el celular. | Toque corto inicia y para; la bajada queda en la microSD como `.sfb` con fecha real; nunca espera a un sensor BLE. | A VALIDAR (firmware compila; falta hardware armado) |
+| S2 | **Sensores a su frecuencia real**: reglas KTC-200 (horquilla) y KTC-100 (shock) 1000 Hz; impacto ADXL375 1000 Hz; IMU (ICM-42688-P) 1000 Hz; orientación BNO055 100 Hz; GPS NEO-F10N 10 Hz; barómetro (BMP580) 10 Hz; rueda delantera por evento. | Piloto: datos confiables para el análisis. | Una bajada real abre en la app con todas las columnas y sin avisos de pérdida. | A VALIDAR |
+| S3 | **Tira de 8 LEDs** como único indicador (grabando, WiFi, GPS, BLE, errores de sensor, batería baja, aviso antes del auto-apagado). | Piloto: ver el estado desde el manubrio. | Cada estado tiene color/patrón documentado y se ve con guantes y al sol. | FASE 2 |
+| S4 | **Ventana de boxes**: RUN 4 s prende WiFi + BLE para conectar la app; tocar RUN para grabar la cierra. RUN 10 s reinicio limpio; 15 s reset de fábrica. Red de fábrica `Sender_Boxes`. | Piloto en boxes. | Los tiempos funcionan y no se pierde la bajada en curso. | A VALIDAR |
+| S5 | **Botón Power momentáneo**: toque prende; 2 s cierra la bajada y apaga; 4 s apagado forzado. | Piloto. | Apagar nunca corrompe la bajada. | FASE 2 |
+| S6 | **Auto-apagado** a los 10 min quieto (configurable desde la app: off/5/10/20). | Piloto: no quedarse sin batería. | Cierra la bajada, anota el EVENTO y apaga. Aviso en la tira 30 s antes. | A VALIDAR (sin aviso ni configuración aún) |
+| S7 | **Auto-pausa**: quieto 10 s deja de escribir y guarda en RAM los últimos 2 s; al moverse sigue en el mismo archivo con eventos pausa/reanuda. | Piloto: no grabar esperas. | Implementado en firmware y la app muestra el hueco. | FASE 2 |
+| S8 | **Montaje inclinado corregido**: autocalibración al prender + "recalibrar cero" desde la app. | Piloto: el Sender va inclinado ~27° en la placa. | Los datos llegan enderezados; el botón de la app funciona. | A VALIDAR |
+| S9 | **Robustez**: watchdog 2 s, vigilante del I2C, control de atraso, un corte de energía pierde como mucho un bloque. | Piloto: no perder bajadas. | Probado en banco según `ARMADO_HARDWARE_SENDER.md` §6. | A VALIDAR |
+| S10 | **Hora siempre correcta** (pila CR1220 + la app pone en hora al configurar). | Piloto: cada bajada con su fecha. | Bajadas con fecha correcta tras días apagado. | FASE 2 |
+
+### 3.2 Sensores por cable y conectores
+
+| # | Función | Terminado cuando | Estado |
+|---|---|---|---|
+| S11 | **5 conectores**: 1 y 2 = M8 de 8 polos (regla + temperatura + presión); 3 = rueda delantera (12 V, tipo/codificación distinta para que no se enchufe un universal); 4 y 5 = universales de 4 polos (analógica + digital). | PCB y carcasa hechas con esos conectores y protecciones (PTC, TVS, 100 Ω). | FASE 2 |
+| S12 | **Temperatura de horquilla y shock** con DS18B20 bajo la abrazadera de la regla (portasensor de aluminio propio). | Bloque `0x09` grabado a 1 Hz. | FASE 2 |
+| S13 | **Presión de aire** en la válvula de horquilla y shock (TE 89-01KA-0U + 2 × ADS1220, cabezal banjo mecanizado). | Bloque `0x0A` a 1000 Hz con calibración de banco por cabezal. | FASE 2 |
+| S14 | **Identificación automática del sensor** por el número de serie del DS18B20 ("DNI" del cable). | El Sender asigna solo cada conector; el número va en la cabecera del `.sfb`. | FASE 2 |
+| S15 | **Batería real** con MAX17048 y mostrada en la app. | La app muestra % en el modal de conexión. | FASE 2 |
+| S16 | **PPS del GPS** al pin 23 para alinear el tiempo con la hora GPS. | La app alinea las muestras con PPS. | FASE 2 |
+| S17 | **Sensor de freno tipo switch** (reed + imán en la maneta), en la línea digital de los conectores 4 y 5. | Bloque `0x0C FRENO` con cada apretada/soltada. Análisis solo con el sensor real puesto. | FASE 5 |
+| S18 | **Acelerómetros en los ejes** (ADXL1002) para transmisibilidad, cable en Y con el freno; uso ocasional, se sacan sin tocar el freno. | Montaje probado y calibración +1 g/−1 g desde la app. | FASE 5 |
+| S19 | **Cadencia por Bluetooth** con el sensor CSC que ya tiene Eric (servicio `0x1816`). | Bloque `0x0B CADENCIA`; emparejado igual que el pulsómetro. | FASE 5 |
+| S20 | **Pulsómetro y potencia BLE** opcionales, emparejados en boxes; BLE nunca escanea solo. | Columna `hr` en las bajadas con banda emparejada. | A VALIDAR (pasa al ESP32-C3) |
+
+### 3.3 Comunicación con la app (WiFi, solo en boxes)
+
+| # | Función | Terminado cuando | Estado |
+|---|---|---|---|
+| S21 | Listar bajadas (`/archivos`), enviar calibración del perfil (`/configurar`), configuración del equipo (`/dispositivo`), BLE, recalibrar cero, formatear, reset de fábrica. | Todos los endpoints responden según el contrato (doc 02). | A VALIDAR |
+| S22 | **Descargar bajadas** (`/descargar`) por el ESP32-C3. | Una bajada de 3 min baja con barra de progreso en menos de 1 min. | FASE 2 |
+| S23 | **SAG en vivo** (`/en_vivo`, posición cada 200 ms). | La pantalla SAG EN VIVO funciona con el Sender real. | FASE 2 (el simulado ya lo tiene) |
+| S24 | **Mapeo de canales**: el firmware valida el mapeo (conectores 1, 2, 4, 5; el 3 es la rueda; sin repetidos), lo guarda en la cabecera de cada bajada y convierte cada conector con la calibración del sensor asignado. La app interpreta qué columna es cada sensor. | Cambiar el mapeo en la app cambia lo que se graba, probado con el Sender real. | A VALIDAR (resuelto en firmware el 25/09) |
+
+---
+
+## 4. SendFlow Bike — app (Android / iOS)
+
+**Regla madre:** la app funciona **100 % sin señal**. La red solo se usa antes (bajar mapas) o cuando el piloto lo pide (nube). **La app está cerrada en funciones desde el 07/10/2026**: lo de abajo es todo; solo se agregan arreglos y validaciones con datos reales, más lo marcado FASE 5 (aprobado antes del cierre, depende de hardware nuevo).
+
+### 4.1 Entrada de datos y perfiles
+
+| # | Función | Quién / para qué | Terminado cuando | Estado |
+|---|---|---|---|---|
+| A1 | **Bienvenida**: Importar bajada · Sender · Perfil · Configuración · "generar pista de demostración". | Piloto. | Cada botón lleva a su pantalla; el demo genera una bajada completa. | HECHO |
+| A2 | **Abrir bajadas** `.sfb` (Sender) y `.csv` (intercambio), desde archivo, desde el Sender o desde las guardadas. | Piloto. | Ambos formatos dan las mismas muestras; avisos de lectura (bloques perdidos, fallas I2C, corte) en Recorte. | HECHO (`.sfb` real A VALIDAR) |
+| A3 | **Perfiles de piloto + bici** (peso, nivel, estilo, recorridos, presiones, clicks, leverage, geometría, TMD, foto); exportar/importar `.json`. | Piloto: no recargar todo en cada bajada. | Crear, editar, borrar, elegir; al importar nunca pisa (entra como "(importado)"). | HECHO |
+| A4 | **Recorte**: elegir perfil, condiciones (clima, estado de pista, nombre de pista libre), SAG medido y recortar el inicio/fin. | Piloto. | Lo cargado acá manda sobre el perfil para esa bajada. | HECHO |
+| A5 | **Conectar a Sender** (modal en pasos): WiFi, enviar config del perfil, lista de bajadas, SAG en vivo. Dispositivo: red, contraseña, BLE, muestreo, mapeo de conectores, auto-pausa. | Piloto en boxes. | Funciona con el Sender real desde el celular (Android e iPhone). | A VALIDAR (probado con el simulado) |
+| A6 | **Mis sensores**: lista por número de serie (DS18B20) con tipo, largo y calibración; calibración del cabezal de presión. | Piloto: enchufar y listo. | Asignación automática de conectores con el Sender real. | FASE 5 |
+
+### 4.2 Análisis (pestañas)
+
+Todas las recomendaciones son **heurísticas a recalibrar con bajadas reales**; nunca se presentan como física validada.
+
+| # | Función | Terminado cuando | Estado |
+|---|---|---|---|
+| A7 | **PANEL**: posición, travel budget, compresión, rebote, zonas de velocidad (HSR/LSR/LSC/HSC + simetría), tarjetas opcionales (pulso, impacto, orientación, vibración). Etiquetas PROM / MÁX / ALTA / PROFUNDA. | Con una bajada real los números tienen sentido para Eric. | A VALIDAR |
+| A8 | **LÍNEAS**: gráfico grande con scrubber y marcadores, saltos (tiempo en el aire, distancia, altura, G, recorrido usado, TOPE), frenadas, curvas, topes, pedaleo sin sensor, sectores y **bajada ideal**. Tocar una fila lleva el cursor ahí. | Validado con bajadas reales. | A VALIDAR |
+| A9 | **DINÁMICA**: distribuciones, velocidad baja de suspensión, aterrizajes, diagrama g-g, selector de tramo. | Validado con bajadas reales. | A VALIDAR |
+| A10 | **EVENTOS**: tabla de movimientos; topes, saltos, frenadas, curvas, pedaleo; grupo suspensión (temperatura, presión, curva de resorte con sugerencia de tokens); grupo terreno (terreno, recuperación, posición del piloto, geometría dinámica). | Las tarjetas se ocultan solas si no hay datos. | A VALIDAR |
+| A11 | **TMD** (solo si el perfil tiene TMD): frecuencia de vibración del frente por terreno y resorte recomendado. | Validado con una bajada con TMD bloqueado y una por cada juego de resortes. | A VALIDAR |
+| A12 | **TRACK GPS**: mapa 3D (MapLibre) con capas de color sin cian, cortes de sectores, topes, marcadores, terreno. Mapa offline por zona. | Funciona sin señal con la zona descargada; sin mapa igual muestra la traza. | HECHO |
+| A13 | **AJUSTES** (antes TUNE): semáforos (todo bien / atención / alerta) y lectura del ingeniero en orden resorte → balance de rebote → horquilla → shock; personalizado por peso, estilo, nivel, clima, estado de pista y temperatura. | **Umbrales recalibrados con las primeras bajadas reales.** | A VALIDAR |
+| A14 | **TALLER**: historial de set-up (lo que cambió en dorado), mantenimiento por uso real (horas, km, golpes, topes, saltos; intervalos editables; HECHO HOY; aviso de degradación y pérdida de aire); exportar `.sftl` para Lab. | Mantenimiento cuenta bien con bajadas reales. | A VALIDAR |
+| A15 | **SAG en vivo** y **reparto de peso** (calibración con o sin balanza). | Validado contra dos balanzas. | A VALIDAR |
+| A16 | **Comparación A/B** de dos bajadas (paleta azul/naranja, cortes de A o de B). | — | HECHO |
+| A17 | **Video**: página a pantalla completa (tablet), sincronización a mano y **automática con GoPro** (GPMF), datos sobre la imagen, clips de saltos/topes/frenadas/marcadores, EXPORTAR CLIP. | Probado en el celular/tablet con un video GoPro real y su bajada. | A VALIDAR |
+| A18 | **Transmisibilidad** (curva dB/Hz por rueda, índice por banda, capa en el mapa, golpe de llanta, reglas para AJUSTES). | Necesita S18. | FASE 5 |
+| A19 | **Cadencia** (tiempo pedaleando, bob por pedalada). | Necesita S19. | FASE 5 |
+
+### 4.3 Guardar, exportar y nube
+
+| # | Función | Terminado cuando | Estado |
+|---|---|---|---|
+| A20 | **Notas obligatorias al guardar**; una bajada guardada con notas es de solo lectura. | — | HECHO |
+| A21 | **Exportar PDF** del reporte (tema claro). | Funciona dentro de la app empaquetada. | A VALIDAR |
+| A22 | **Respaldo completo `.sfdb`** (exportar/importar, nunca pisa). | Probado en el celular con una base grande. | A VALIDAR |
+| A23 | **SendFlow nube** (Configuración, login **opcional**): subir las bajadas elegidas, enviar y traer perfiles. Solo cuando el piloto lo pide y hay señal. | Las bajadas subidas aparecen en la web, en Coach y (con permiso) en Lab. | A VALIDAR (parche probado en el dispositivo; falta unificar con Coach, FASE 3) |
+| A24 | **Enviar a mi entrenador** desde una bajada guardada (y su video sincronizado si lo tiene). Reemplaza la pantalla vieja "SendFlow Coach" que apuntaba al servidor PHP. | La bajada (y el video) llegan a "Recibidos" del entrenador. | FASE 3 |
+| A25 | **Clave de mapas** obtenida sola desde la nube (sin cuenta) al bajar mapas. | Un usuario nuevo baja mapas sin cargar ninguna clave. | HECHO |
+| A26 | **Nombre en pantalla "SendFlow Bike"** y renombrar identificadores viejos (`telemetry_pimp`) sin perder datos (`appId` y base no cambian). | La app instalada se llama SendFlow Bike y conserva sus datos. | FASE 1 |
+
+---
+
+## 5. SendFlow Bike — web (`sendflow.bike`)
+
+| # | Función | Quién / para qué | Terminado cuando | Estado |
+|---|---|---|---|---|
+| W1 | **Ingreso / registro / recuperar contraseña** con captcha (Turnstile) y confirmación de email. | Todos. | Registro con captcha; mail de confirmación; recuperar contraseña funciona. | HECHO |
+| W2 | **Cuenta pendiente**: pantalla que avisa hasta que el admin aprueba; aviso por mail al admin cuando la persona confirma su email. | Usuario nuevo / Eric. | — | HECHO |
+| W3 | **Inicio (hub)** con tarjetas según rol y productos: Mis bajadas · Mi nube · Panel de entrenador / Mi entrenamiento (Coach: botones **Mandar video o bajada** y **Ver devoluciones** con contador; se pasa a Coach **sin volver a ingresar** y "Salir" cierra los dos sitios) · **Mensajes** en el menú (v23): leer y contestar la conversación con el entrenador sin pasar a Coach (mismas conversaciones) · SendFlow Lab · Taller. Sin productos: mensaje "escribinos". | Todos. | La tarjeta de Coach activa (`disponible: true`). | A VALIDAR |
+| W4 | **Invitaciones de entrenador** en el inicio del alumno: Aceptar / Rechazar; errores visibles en rojo. | Piloto. | Aceptar habilita Coach; rechazar la borra. | A VALIDAR (envío verificado; falta aceptar en producción) |
+| W5 | **Perfil**: nombre, disciplina, nivel, categoría, peso y bici (autocompletado con los perfiles de la app), cambiar contraseña. | Todos. | — | HECHO |
+| W6 | **Mi nube** (una sola tarjeta, sin otro botón de nube en `/analisis`): traer bajadas y perfiles subidos por la app, y crear/elegir perfiles para mandar a la app. | Piloto. | Bajar una bajada subida y abrirla en `/analisis`; un perfil creado en la web llega a la app. | A VALIDAR |
+| W7 | **Análisis (`/analisis`)**: la misma app en modo web, sin conexión al Sender, sin Configuración (salvo perfiles dentro de Perfil), sin carpeta, leverage, mapa offline ni respaldo. El mapa se baja solo con las coordenadas del track. Se queda el botón de demo. Detrás del login. | Piloto en la compu. | Igual a la app en análisis; rediseñada con el estilo de Coach. | A VALIDAR (rediseño FASE 4) |
+| W8 | **Panel de administrador** (`admin.html`): listar cuentas, aprobar, asignar rol fijo y productos, resetear contraseña, eliminar. | Eric. | — | HECHO |
+| W9 | **Enviar al profe desde `/analisis`** (11/10, Bike v27): botón en la barra del análisis y en cada bajada guardada; manda la bajada **sin video** al entrenador (tipo, título, qué mirar) con la sesión de Bike; se ve solo con entrenador vinculado; la misma bajada guardada no se sube dos veces; [Ver en Coach] entra directo. Reemplaza al viejo "Enviar a SendFlow Coach" (Configuración → SendFlow Coach), que en la web se oculta. | Piloto. | HECHO (probado con datos simulados) |
+| W9 | **Textos legales** (términos y privacidad) y consentimiento antes de abrir el registro público. | Todos. | Publicados y aceptados al registrarse. | FASE 6 |
+
+---
+
+## 6. SendFlow Coach (`sendflow.coach`)
+
+Sitio aparte, **misma cuenta y misma base** que `sendflow.bike`. No es offline-first.
+
+### 6.1 Entrenador (rol entrenador + producto coach)
+
+| # | Función | Terminado cuando | Estado |
+|---|---|---|---|
+| C0 | **Ingreso y registro propios, iguales a los de sendflow.bike** (Entrar / Crear cuenta, ojo en la contraseña, Olvidé mi contraseña → Nueva contraseña). Se puede crear la cuenta en Coach para que entren **entrenadores externos** sin Sender; misma cuenta, captcha, confirmación y aprobación manual. | Un entrenador se registra en sendflow.coach, el admin lo aprueba y le da rol entrenador + producto coach, y entra. | A VALIDAR (v9) |
+| C1 | **Menú**: Inicio · Recibidos (contador de nuevos) · Pilotos · Análisis · Bajadas · Perfil · Salir (en celular, "Salir" va arriba junto al logo). Direcciones limpias: `sendflow.coach/bajadas`, sin `/#/` (v10). | — | HECHO (con datos simulados) |
+| C2 | **Mis alumnos** (Perfil): nombre + email → ficha + invitación por mail; ficha "Con cuenta" / "Sin cuenta aún"; Reenviar invitación con resultado en pantalla. | El alumno recibe el mail y al aceptar la ficha pasa a "Con cuenta". | A VALIDAR (mail verificado) |
+| C3 | **Pilotos**: alta, edición, borrado y ficha (disciplina, nivel, categoría, bici, peso, color, notas). Borrar un piloto borra sus análisis. | — | HECHO |
+| C4 | **Recibidos**: lo que mandan sus alumnos; pasarlo a un análisis con un clic. | Un video real enviado por un alumno se abre como análisis. | A VALIDAR |
+| C5 | **Estudio de video**: recorte, cuadro a cuadro, 0,25×–2×, atajos, deshacer; dibujos (mano, trazo, flecha, círculo, texto, 5 colores, aparece/desaparece); 8 categorías de etiquetas (bien / a mejorar / dato); notas; guardado automático. | — | HECHO |
+| C6 | **Comentario de voz** grabado sobre la imagen compuesta (máx. 60 s, cámara del entrenador opcional). | Probado en celular (Android/iPhone). | A VALIDAR |
+| C7 | **Datos del Sender en el análisis**: desde una bajada subida o archivo `.sfb`/`.sfpb`; 50 Hz; eventos sugeridos; sincronización automática con GoPro (lectura por rangos), manual o "Es ahora". | — | HECHO (umbrales A VALIDAR) |
+| C8 | **Bajadas**: propias + de sus alumnos con cuenta (una sola fuente, ver doc 05). | Ve las bajadas que el alumno subió desde la app. | FASE 3 |
+| C9 | **Perfiles de SendFlow** propios y de sus alumnos. | — | HECHO |
+
+### 6.2 Piloto / alumno (producto sender + entrenador aceptado)
+
+| # | Función | Terminado cuando | Estado |
+|---|---|---|---|
+| C10 | **Menú**: Inicio · Enviar · Devoluciones · Mis bajadas · Perfil · Salir. | — | HECHO |
+| C11 | **Enviar** un video de **cualquier largo** y/o una bajada a su entrenador. Antes de subir se puede **recortar** (marcar inicio y fin) y el video se **comprime solo en el navegador a 720p** (≈25 MB por minuto; una bajada de 5 min queda en ≈125 MB en vez de 750 MB). Después sube por partes con reintento (tope del servidor 1 GB). Lo mismo al subir un video para un análisis nuevo (entrenador). | Subida real de punta a punta a R2 de una bajada de 5 min grabada con el celular/GoPro. | A VALIDAR (compresión probada con video de prueba, v10) |
+| C12 | **Devoluciones** en solo lectura (video, dibujos, etiquetas agrupadas, notas, voz, datos). | — | HECHO |
+| C13 | **Mis entrenadores**: ver y quitar (corta el vínculo). | — | HECHO |
+| C22 | **Marcas del piloto al enviar**: pausar y "Marcar este momento" con una nota; el entrenador las ve en Recibido, en el Estudio (lista y línea de tiempo) y en las tarjetas. Si se recorta, las marcas quedan relativas al tramo subido. | El entrenador abre un envío real y salta a cada marca. | A VALIDAR (Coach v15, `coach_v5.sql`) |
+| C23 | **Mensajes por análisis** (pestaña Mensajes del Estudio, los dos lados): conversación, opcionalmente atada a un segundo del video; "Leído ✓". **"Visto por el piloto"** y botón **"Avisar al piloto"**. Avisos por mail (función `avisos-coach`, con freno) y contadores en el menú de Coach y en la tarjeta de Bike ("N NUEVAS · N MENSAJES"). **Bandeja "Mensajes" en el menú** (los dos roles, v17): todas las conversaciones, la más reciente arriba, con "sin leer"; responder desde ahí (Enter envía, Shift+Enter otra línea; en el celular, el botón); un mensaje con momento abre el análisis en ese segundo. | Piloto y entrenador reales se escriben y llegan los mails. | A VALIDAR (Coach v17 + `coach_v6.sql`, Bike v22) |
+| C25 | **Tipo de video** al enviar (obligatorio): **Entrenamiento** (ejercicios del plan) · **Carrera** (ya corrida) · **Antes de una carrera** (práctica / reconocimiento: líneas) · **Otro**. Pasa al análisis; se ve en Recibidos, tarjetas y Estudio; el entrenador lo puede cambiar. Una corrección viene como Entrenamiento. **Filtro por tipo** en Recibidos y Análisis/Devoluciones (v20). | — | A VALIDAR (Coach v20 + `coach_v8.sql`) |
+| C26 | **Bajada del Sender junto con el video**: al enviar, el piloto elige una de sus bajadas o sube el .sfb; el Estudio del entrenador la carga y la sincroniza (GoPro) sola la primera vez. Recibidos muestra "CON DATOS DEL SENDER". | Envío real con bajada real del Sender. | A VALIDAR (Coach v21 + `coach_v9.sql`; probado con bajada del Sender simulado) |
+| C27 | **Bajada sin video** (11/10, Coach v22 + `coach_v10.sql`): en Enviar alcanza con elegir una bajada (o subir el .sfb), sin video. Al entrenador le llega a Recibidos como "SOLO DATOS" con el resumen; la analiza en el **Estudio sin video**: un reloj reemplaza al video, el escenario muestra los datos de cerca (8 s alrededor del cursor) y abajo la bajada entera; etiquetas, dibujos, notas, voz, mensajes, veredicto y avisos funcionan igual. Comparar no aplica. | Piloto y entrenador. | HECHO (probado con datos simulados) |
+| C28 | **Estudio sin video v2: qué hizo y dónde** (11/10, Coach v23, pedido de Eric). El escenario es el **mapa de la pista** (satélite MapTiler, clave de `claves_servicio`) con la traza pintada por **velocidad, frenada, inclinación o pulso**, el punto que se mueve con el play, marcas de frenadas (F), curvas (I/D), saltos (S), y golpes/topes chicos; tocar la traza o una marca va a ese momento; [Mapa / De cerca] y [Seguir]. Indicadores con frenada (g), inclinación (° y lado) y pulso; el gráfico suma esos canales. **Curvas** detectadas (lado, inclinación máx., velocidad entrada/mínima/salida, frenó antes o no) y **frenadas** con el criterio de la app (> 4 km/h/s ≥ 0,3 s). Resumen en la pestaña Sender. Frenada calculada con la velocidad hasta que esté el sensor (S17); inclinación medida (BNO055) o estimada; pulso solo con banda. Sin GPS queda el gráfico de cerca. | Entrenador y piloto. | HECHO (probado con datos simulados) |
+| C29 | **Piloto con color y filtro por piloto** (Coach v25 + `coach_v11.sql`): sello del piloto (iniciales y nombre en su color, borde de la tarjeta) en Recibidos y Análisis; botones por piloto con contador, combinables con el filtro por tipo. | Entrenador. | HECHO (probado con datos simulados) |
+| C30 | **Mapa 3D con relieve** en el Estudio sin video (MapLibre + MapTiler), inclinable; botón 3D ↔ plano. | Entrenador y piloto. | HECHO (probado con baldosas simuladas) |
+| C31 | **Exportar el análisis como video** (recorte con dibujos, etiquetas, datos y título; .mp4/.webm). | Entrenador y piloto. | HECHO |
+| C32 | **Avisos push** (Coach v25 + Bike v28 + `coach_v12.sql` + `avisos-coach` v3 + claves VAPID): devolución lista / aprobado / a corregir, respuestas, "visto" y envío nuevo al entrenador; en Bike la notificación entra a Coach por el puente. iPhone: solo con el sitio en la pantalla de inicio. | Entrenador y piloto. | HECHO (cifrado y notificación probados; falta la prueba real en dispositivos) |
+| C33 | **Análisis de bajada sin video ≠ entrenamiento por rondas** (Coach v26): sin "Video original / Aprobado / Corregir", sin Dibujar; **etiquetas de datos** (Suspensión: muy dura/blanda, hace tope, mal configurada, posible falla, mandar a service · Frenada: mucho freno, frena tarde… · Curvas: poca inclinación… · Ritmo · Saltos y golpes · Físico) que quedan en el momento del cursor. | Entrenador. | HECHO |
+| C34 | **Pilotos sin duplicar** (14/10, Coach v30 + `coach_v15.sql`, pedido de Eric): el botón de guardar se bloquea mientras trabaja (en todos los formularios) y la base no deja cargar dos veces a la misma persona (mismo entrenador + mismo email: devuelve la ficha que ya existe y avisa). El script también fusiona los duplicados que ya había (queda la ficha más vieja y sus análisis pasan a ella). | Entrenador. | HECHO (SQL probado en Postgres local; pantalla probada con datos simulados) |
+| C35 | **Menú del entrenador sin "Bajadas"**: las bajadas las carga el piloto y le llegan al entrenador por Recibidos. ~~El piloto conserva "Bajadas".~~ **Desde Coach v34 el piloto tampoco tiene "Bajadas" en el menú** (elige la bajada al enviar un video; la pantalla sigue accesible por enlace). | Entrenador y piloto. | HECHO |
+| C36 | **Estudio con las herramientas sobre el video** (Coach v31, pedido de Eric inspirado en SportSense; reemplaza el panel superpuesto de la v30). **Barra de botones redondos abajo del video, deslizable hacia un costado** (mano, lápiz, línea, flecha, círculo, **ángulo**, texto, etiqueta rápida, color, deshacer, borrar, y › para ver más); en escritorio y celular. **Arriba a la derecha: el botón de grabar** (la cámara y el sonido ya no tienen botón: siempre graba con audio y video si el dispositivo los tiene); **arriba a la izquierda**: tu cámara mientras grabás y, con una herramienta activa, **deshacer y papelera** (si no hay herramienta activa no aparecen). **El color se elige manteniendo apretada una herramienta**; al tocar cualquier herramienta el video se pausa y otro toque la apaga. Debajo del video: controles **centrados**, línea de tiempo y una **tarjeta** con Notas (abierta por defecto), Dibujos, Etiquetas, Sender, Voz, Postura y Mensajes. La hoja de **etiqueta rápida** es transparente (en el celular va debajo del video, sin taparlo). El video ya no bloquea el scroll del celular (solo mientras se dibuja). Botones de **Recorte** más chicos; arreglo del desborde del encabezado en el celular. El piloto ve solo el botón de sonido. | Entrenador y piloto. | HECHO (probado en pantalla simulada, escritorio y celular; falta probar con video, cámara y dedos reales) |
+| C42 | **Postura desde la barra, análisis solo de datos y caché** (Coach v32): botón **Postura** en la barra del video: mide un tramo corto (2 s alrededor del momento, cada 0,05 s) y lo muestra una vez en **cámara lenta** con el esqueleto; el detalle queda en la pestaña Postura. El modelo (~12 MB) se guarda en la caché del navegador (`/vendor/*` con `Cache-Control: immutable`): se baja una sola vez por dispositivo. **Bajada sin video:** la barra tiene **mano** y **etiqueta**; la etiqueta se elige y se coloca tocando la **línea de tiempo, el gráfico, el mapa o la pantalla de datos** (ya no se pegan todas al principio); con la mano se **elige** una etiqueta tocándola, se **mueve en el tiempo arrastrándola** y se borra con la papelera. | Entrenador. | HECHO (probado con datos simulados; la detección de postura no se pudo probar sin un video real) |
+| C43 | **Actividad de pilotos, sesiones/planes propios y ajustes del editor** (Coach v33 y v34, `coach_v16.sql`, pedido de Eric). (1) **Inicio del entrenador:** tarjeta arriba del saludo "Lo que marcaron tus pilotos" con las sesiones que los pilotos marcaron (últimos 14 días): quién, qué sesión, hecha con esfuerzo /10 o "no la hizo", la nota del piloto y hace cuánto; un toque abre esa semana del plan. (2) **Se guarda lo que escribe el entrenador:** los ejercicios escritos a mano quedan solos en *Mis ejercicios* (se vuelven a elegir en la biblioteca); En la ventana *Cargar una sesión tipo* hay **Crear una sesión tipo** y ✎ para modificar las armadas (la copia propia reemplaza a la original; × vuelve a la original); **Guardar como plan tipo** (en el plan) lo deja en la base y aparece primero en *Empezar desde un plan armado* (borrable con ×). (3) **Editor de video:** el ícono de cada herramienta toma el color que se le eligió con pulsación larga (cada herramienta recuerda el suyo); al elegir una herramienta de dibujo aparece **a la derecha un botón de duración** (1 s por defecto, cada toque suma 1 s; después de 10 s vuelve a 1 s); la mano ya no usa pulsación larga, se quitó el punto rojo y la paleta es transparente; en bajadas solo de datos la etiqueta elegida es de un solo uso (ya no se agregan etiquetas al mover la línea de tiempo). (4) Menú del piloto sin **Bajadas**. | Entrenador y piloto. | HECHO (SQL escrito, falta correrlo; pantallas probadas con datos simulados, escritorio y celular) |
+| C50 | **Perfil profesional y entrenadores disponibles** (pedido de Eric 15/10). (1) La ficha de perfil es la **misma en Bike y en Coach** (Mis datos + Mis bicis); un entrenador que también corre la tiene igual. (2) El entrenador suma un **perfil profesional** para presentarse a su público: especialidad, títulos y certificaciones, experiencia, zona, modalidad (presencial / a distancia), foto y texto de presentación. (3) Botón **"Mostrarme como entrenador disponible"** (apagado por defecto). (4) Los **pilotos registrados sin entrenador** ven en Coach una lista de profesionales disponibles y le piden a uno que los entrene; el entrenador acepta y queda el vínculo como hoy. Detalle en `claude/PERFILES_Y_MODOS_APP.md` §10. | Entrenador, piloto. | PENDIENTE (para hacer luego) |
+| C49 | **Perfiles en la web, bicis y set-ups** (Bike v33 / Coach v43, `perfiles_v1.sql`, pedido de Eric 15/10). Perfil = mis datos + una bici; Base y set-ups por pista solo en la web; set-up propuesto desde una "bajada definitiva para esta pista"; `/analisis` solo elige perfil; fichas de pilotos sin cuenta del profesional y traspaso al registrarse (preguntando). Detalle en `claude/PERFILES_Y_MODOS_APP.md`. | Piloto, entrenador, mecánico. | HECHO en la web (SQL probado en Postgres local; pantallas con datos simulados). App: pendiente (modos Rider / Profesional) |
+| C48 | **Biblioteca propia del entrenador y un solo archivo sin copias** (Coach v39, `coach_v19.sql`, pedido de Eric). **Entrenador:** en "Subir archivos" elige qué hacer: *Guardarlo en mi biblioteca* (por defecto; queda a su nombre y no se manda a nadie: ejercicios de ejemplo, material de referencia), *Analizarlo ahora* (solo videos: abre el formulario de nuevo análisis), pasárselo a un piloto o mandarlo por mensaje (fotos y documentos). Los videos que sube quedan siempre en su biblioteca. Desde el detalle de cualquier archivo propio: **Compartir con un piloto** (el piloto lo ve en su Archivos) o **Quitar** de la biblioteca (el archivo se borra del servidor solo si nada más lo usa). **Piloto:** solo sube archivos para mandárselos a su entrenador (videos por el formulario de envío; fotos y documentos pasados o por mensaje); no tiene biblioteca propia. **Sin copias:** al analizar un video enviado por un piloto, el análisis usa el mismo archivo (`video_id` = archivo del envío) y los dibujos, etiquetas, notas y mediciones se guardan aparte como datos (JSON), no dentro del video; compartir, mandar por mensaje o guardar en la biblioteca solo referencia el mismo archivo. Verificado en el SQL (`coach_envio_a_analisis`) y con pruebas. **Pendiente de diseño (idea de Eric): Grupos** de pilotos para compartir archivos con varios a la vez. | Entrenador y piloto. | HECHO (SQL probado en Postgres local; pantallas con datos simulados; falta probar la subida real de un video grande a R2) |
+| C47 | **Subir archivos, bajada sin video y fotos al instante** (Coach v38, sin SQL nuevo, pedido de Eric). (1) El botón de Archivos se llama **Subir archivos** y acepta **fotos, documentos y videos**: fotos y documentos se suben ahí (a una persona o por mensaje); un video abre el formulario de análisis (entrenador) o de envío (piloto) con el archivo ya elegido; el piloto también puede mandar solo una bajada del Sender desde ese cuadro. Se quitaron "Nuevo análisis" y "Enviar video o bajada" de esa pantalla. (2) **Análisis de bajada sin video:** los dos botones Mapa / De cerca se reemplazaron por **un solo botón** (arriba al centro: "Ver datos" / "Ver mapa", lo ven entrenador y piloto); en pantalla grande el gráfico deja lugar fijo para que la barra y los valores (km/h, horquilla, shock, aceleración…) no tapen los datos. (3) **Fotos de Archivos:** los enlaces se guardan en la sesión del navegador y se piden apenas se sabe qué fotos hay, y mientras cargan se ve un fondo de carga en vez de un cuadro negro con texto: al recargar o abrir Archivos aparecen enseguida. | Entrenador y piloto. | HECHO (probado con datos simulados; el botón Mapa/Datos no se pudo probar con una bajada con GPS real) |
+| C46 | **Biblioteca unificada para el piloto, documentos, fotos reenviables y videos de ejemplo** (Coach v37, `coach_v18.sql` + Edge Function `archivos-coach` v5, pedido de Eric). (1) **Piloto:** Enviar, Devoluciones y Archivos son una sola página "Archivos" (menú: Inicio, Archivos, Mi plan, Mensajes, Perfil); el botón "Enviar video o bajada" está ahí. (2) **Orden por última actividad** (entrenador y piloto): arriba lo último que pasó (envío nuevo, devolución, mensaje, foto o documento), aunque el video sea de hace meses; lo viejo queda abajo. (3) **Documentos:** "Subir foto o documento" (PDF, Word, Excel, texto, hasta 25 MB; fotos JPG/PNG/WebP hasta 15 MB); el piloto se los pasa a su entrenador (plan de otro profe, análisis clínico…) y el entrenador al piloto, o se mandan por mensaje en una conversación; se ven en Archivos de los dos y en el mensaje como adjunto. (4) **Fotos:** desde Archivos se pueden **enviar por mensaje a otra conversación** (una misma foto en varios mensajes; borrar un mensaje ya no borra la foto si está en otro lado). (5) **Videos de ejemplo:** el entrenador toca **Compartir** en un video (de un piloto o suyo) y se lo manda a otro piloto con título y nota; el piloto lo ve en Archivos y lo reproduce; el original no se toca. Filtros por Videos / Solo datos / Fotos / Documentos. | Entrenador y piloto. | HECHO (SQL probado en Postgres local; pantallas probadas con datos simulados; falta probar la subida real de documentos y desplegar la función) |
+| C45 | **Archivos: una sola biblioteca para el entrenador** (Coach v36, sin SQL nuevo, pedido de Eric). El menú del entrenador queda Inicio · Archivos · Pilotos · Planes · Mensajes · Perfil: **Recibidos, Análisis y la lista de capturas se unieron en Archivos** (las direcciones `/recibidos` y `/analisis` llevan a `/archivos`). Una grilla con los videos y bajadas sin video que mandan los pilotos (sin analizar, con insignia de nuevos), los análisis ya hechos y las fotos (snapshots), con filtros por clase (Videos / Solo datos / Fotos), tipo de video, piloto y texto. Al tocar un video o bajada recibida se abre su detalle con **Analizar**; un análisis se abre en el Estudio (ahí se manda por mensaje o se vuelve a analizar); una foto se ve grande con "Ver la conversación" y se abre en el momento del video. "Nuevo análisis" quedó arriba. **Arreglo:** tocar dos botones del menú muy rápido ya no muestra dos pantallas juntas (una navegación a la vez; gana el último toque). **Se quitó** el botón "Guardar como plan tipo" dentro de un plan (no estaba pedido). El piloto conserva su menú (Enviar, Devoluciones, Mi plan, Mensajes, Archivos). **Propuesta pendiente de decisión:** reenviar una foto ya guardada a otra conversación requiere SQL nuevo (hoy cada foto pertenece a un solo mensaje: si se borra el mensaje se borra la foto). | Entrenador. | HECHO (probado con datos simulados; falta probar con datos reales) |
+| C44 | **Snapshot: foto del análisis para mandar por mensaje** (Coach v35, `coach_v17.sql`, pedido de Eric, inspirado en CoachNow). Botón **cámara** arriba a la derecha del video (junto a Grabar), solo entrenador. Toma el cuadro que se ve en ese momento (video o, en una bajada sin video, la pantalla de datos), **con** los dibujos, etiquetas y datos del Sender o **sin** ellos (casilla en la vista previa), y permite escribir un mensaje opcional, **Descargar** o **Enviar**. Enviar sube un JPEG (clase de archivo nueva `imagen`, hasta 15 MB) y lo manda como **mensaje en la conversación del análisis**, marcado en el segundo del video (botón para ir a ese momento), con el mismo mail de aviso de los comentarios. La imagen se ve en la burbuja (en el Estudio y en la bandeja de Mensajes; al tocarla se ve grande). Nueva pantalla **Archivos** (menú de ambos roles): las capturas de las conversaciones que cada uno puede ver, la más nueva primero, con filtro por piloto para el entrenador. Borrar el mensaje, el análisis o el piloto borra también la imagen. El piloto ve y recibe las capturas pero no saca snapshots (no dibuja). Necesita `coach_v17.sql` y volver a desplegar la Edge Function `archivos-coach` (v4). | Hecho (SQL probado con PGlite, falta correrlo y volver a desplegar `archivos-coach`; pantallas probadas con datos simulados, escritorio y celular; la subida real a R2 y la lectura del cuadro del video con el CORS del bucket no se pudieron probar acá) |
+| C41 | **Ángulo y línea** (Coach v31): **Línea** recta y **Ángulo** de tres toques (punto, vértice, punto) que muestra los grados en vivo (p. ej. 101°) con arco y rótulo; quedan en el análisis, en la línea de tiempo y en el video exportado y grabado. **Grabar como WhatsApp**: un toque en el botón rojo empieza a grabar al instante (sin cuenta regresiva) con cámara si el dispositivo la tiene (si no, solo voz); otro toque corta; mientras graba se ve el tiempo y la barra de herramientas sigue disponible. | Entrenador. | HECHO (ángulo y grabación probados con datos y cámara simulados) |
+| C37 | **Biblioteca y planes precargados** (Coach v30, `biblioteca.js`): ~50 ejercicios de descenso con series/repeticiones/carga y consejo, 17 sesiones tipo (gimnasio, técnica, bici, recuperación), 5 planes armados (Pretemporada 12 sem., Mantenimiento, Semana de carrera, Técnica, Core y movilidad) que se reparten solos desde la fecha de inicio con sus fases. Al armar una sesión: **Cargar una sesión tipo**, **Elegir de la biblioteca**, autocompletar al escribir el nombre y **Mis ejercicios** (estrella: guardar el propio). Al crear un plan: **Empezar desde un plan armado**. `coach_v15.sql`: `coach_plan_cargar`, `coach_ejercicios_propios_*`. | Entrenador. | HECHO (SQL probado en Postgres local; pantallas probadas con datos simulados). Falta que un entrenador real lo use y ajuste los contenidos. |
+| C38 | **Seguimiento del entrenamiento** (Coach v30, `coach_seguimiento`): en el Inicio del piloto, arriba de todo, **Seguimiento** ("¿Hiciste Fuerza de piernas A?": Sí → ¿cómo estuvo? Fácil / Normal / Dura · No pude) con las sesiones sin marcar de los últimos 3 días, y al terminar "¿Querés subir un video para que tu entrenador lo vea y te corrija?"; debajo **Tu entrenamiento de hoy** con vista previa de ejercicios. Corrige además que la tarjeta de hoy podía quedar invisible. | Piloto. | HECHO (probado con datos simulados) |
+| C39 | **Mensajes protagonistas** (Coach v30): tarjeta **Mensajes** en el Inicio de entrenador y piloto (arriba y resaltada si hay sin leer, con las últimas conversaciones y botón directo); conversación con aspecto de chat (burbujas con iniciales, colores por rol, caja de respuesta más grande); insignia del menú más marcada. | Entrenador y piloto. | HECHO (probado con datos simulados) |
+| C40 | **PROPUESTAS sin aprobar** (decisión de Eric): (a) piloto con Sender y sin entrenador: entrada a Coach con plan genérico precargado y directorio de entrenadores que el entrenador habilita; (b) análisis con IA; (c) mensajes directos entrenador ↔ alumno no ligados a un análisis; (d) seguimiento en el hub de Bike; (e) cumplimiento y racha semanal visibles para el entrenador. **Ideas tomadas de la guía de SportSense (14/10):** (f) **selector con tacto** en la línea de tiempo (marcas por cuadro y vibración al pasar de cuadro) y deslizar para pasar al análisis anterior/siguiente del piloto; (g) **Comparar con diferencia de tiempo** ("RaceTime": alinear dos bajadas y mostrar cuánto se saca una a la otra) y modo fantasma ya existente; (h) **esqueleto con centro de gravedad** y ángulo tocando dos segmentos del esqueleto; (i) **biblioteca de referencia**: guardar clips de técnica correcta y de errores con nombre para reutilizarlos al comparar y al dar devoluciones; (j) **transcripción y resumen escrito** de cada comentario de voz (para el piloto); (k) **etiquetas de sector** 1 a 10 en bajadas de carrera; (l) **chat de grupo** por equipo y enlace para que un piloto vea una devolución sin cuenta. | — | PROPUESTA |
+| C24 | **Hilo de entrenamiento**: desde una devolución, el piloto manda la **corrección** (video nuevo colgado de esa devolución); el entrenador la analiza y elige **Aprobado ✓** o **Corregir de nuevo**. Todo anidado: video 1 → devolución → respuesta → video 2 → devolución 2 / aprobado. Barra **Entrenamiento** en el Estudio (rondas con su veredicto y la corrección que espera), veredicto por ronda, mail "¡Aprobado!" / "hay que corregir" con [Avisar al piloto]. | El piloto real manda una corrección, el entrenador la analiza y la aprueba. | A VALIDAR (Coach v18 + `coach_v7.sql` + `avisos-coach` v2) |
+
+### 6.3 Coach — segunda etapa (aprobado, sin hacer)
+
+| # | Función | Estado |
+|---|---|---|
+| C14 | **Planificación hecha por el entrenador** (pretemporada y temporada): fases, sesiones por tipo (bici, gimnasio, técnica, recuperación) con ejercicios/series/repeticiones, carreras con cuenta regresiva y bajada de carga, el piloto marca lo hecho. Modelo de datos tomado de BMX Pro. | **HECHO (adelantado, 11/10)**: Coach v26 + `coach_v13.sql` — Planes / Mi plan, fases con barra y HOY, semana con sesiones por tipo y ejercicios, copiar semana, "Sugerir fases", el piloto marca hecha + esfuerzo 1–10 + nota; "Hoy en tu plan" en Inicio y en la tarjeta de Bike (v29). Falta validar con un entrenador real (y alinear con BMX Pro si Eric lo comparte). |
+| C15 | **Horas de uso de la bici** = bajadas + lo que pide el plan + carga manual → aviso de service → **solicitar service** a un taller (llega a Lab). | FASE 5 |
+| C16 | **Copia local en la app** del plan del día y las devoluciones para verlos sin señal en la pista. | FASE 4 |
+| C17 | ~~Mensajes entrenador ↔ piloto por análisis~~ (adelantado: C23); exportar un análisis. | FASE 4 |
+| C18 | ~~Pantalla dividida y "fantasma"~~ → **HECHO como "Comparar"** (v21): lado a lado o superpuesto con transparencia, sincronizados en un punto, controles comunes; desde el Estudio y "Comparar con la anterior" en el hilo. A VALIDAR con videos reales. | ADELANTADO |
+| C19 | Carga y fatiga semanal, tests físicos DH, largada medida, escalera de saltos medida, debrief de carrera, registro de caídas automático, nivel medido + autoevaluación, plan de progresión con ejercicios, programas con fecha, revisión remota como producto. | FASE 6 (backlog priorizado por Eric) |
+| C20 | Postura con IA (MediaPipe) y cámaras de sector automáticas. | **Prueba hecha (Coach v27, 11/10; v28: solo para el entrenador —el piloto ve las etiquetas que el entrenador aceptó—, detección en dos pasos con recorte alrededor del cuerpo + mediana de 3 cuadros, cada 0,1 s; primera prueba real del 11/10: detecta pero impreciso con desenfoque/ropa suelta)**: pestaña Postura en el Estudio con video — esqueleto y ángulos (codos, rodillas, cadera, tronco) en un cuadro o en todo el recorte (5 c/s), gráfico y etiquetas sugeridas fuera de una referencia orientativa de posición de ataque; corre en el navegador (`vendor/pose`, sin internet). **Falta validar con videos reales filmados desde afuera** y ajustar los rangos. Cámaras de sector: C25 / FASE 8. |
+| C21 | App de Coach instalable (Capacitor). | FASE 6 |
+
+---
+
+## 7. FlowBench + SendFlow Lab
+
+| # | Función | Quién / para qué | Terminado cuando | Estado |
+|---|---|---|---|---|
+| L1 | **Banco autónomo** (scotch yoke, carrera 200 mm, celda 10 kN, plato de 23 posiciones: shocks 40–75 mm y horquillas 100–200 mm, horquillas completas hasta Fox 40 / BoXXer). Pantalla táctil 15,6" y computadora Linux propias, sin PC aparte. | Taller. | Prototipo validado con Fox y RockShox. | FASE 7 |
+| L2 | **Alimentación**: 220 V monofásica vs. trifásica con servo EMG-30/50DFA. | — | — | **ABIERTO** |
+| L3 | **SendFlow Lab (app en el banco)**: ensayos automáticos, seteo por peso, informes PDF, historial, **CRM de clientes**; funciona sin señal con base local. | Taller. | Un ensayo completo sale con informe. | FASE 7 |
+| L4 | **Importar datos del piloto**: `.sfdb` y `.sftl` por archivo (plan B) y, con red, el historial de esa suspensión desde la nube (bajadas donde estuvo montada, con permiso del dueño). | Taller: ajustar por uso real, no "estándar". | Lab muestra el uso real de una suspensión de un cliente. | FASE 7 |
+| L5 | **Portal web `sendflowlab.com`** con la misma cuenta: clientes que autorizaron al taller, solicitudes de service, historial de servicios e informes. | Taller. | Un service pedido desde Coach/app se acepta y cierra en el portal; el contador del piloto vuelve a cero. | FASE 7 |
+
+---
+
+## 8. Requisitos que valen para todo
+
+- **Offline-first** en Sender y SendFlow Bike app: ninguna función necesita red en el momento de uso.
+- **Español** en toda la interfaz; tono técnico y directo; sin jerga estadística ("P95", "percentil") en pantalla.
+- **No se nombra el hardware** en la app (ni modelos de chip, ni "acelerómetro"/"barómetro"), salvo en los gráficos de IMU. Las explicaciones van en el botón (i).
+- **Nada de funciones de relleno**: todo control visible hace algo real.
+- **Salidas siempre "VOLVER"** con flecha, nunca una X.
+- **Sin referencias a pistas reales** en los cálculos: un único perfil universal; el nombre de pista es solo texto.
+- **Sensor de rueda solo delantero**; no existe "wheel slip".
+- **Nadie ve datos de otro sin permiso de su dueño**; el piloto corta un vínculo cuando quiere.
+- **Privacidad**: consultar a un abogado (ley argentina y GDPR) antes de abrir el registro público.
+
+## 9. Descartado (no se construye)
+
+Wheel slip / bloqueo de rueda · sensor de rueda trasero · selector de "calibración automática/manual" · Auto-tuning con sliders (lo cubren los semáforos) · perfiles por pista real (PERFILES_TERRENO) · reemplazar las KTC por láser, encoder articulado, IMU o presión (se siguen usando KTC; una regla inductiva casera queda como investigación personal, sin chip LDC1101 disponible) · pod BLE de presión tipo ShockWiz · temperatura de pastillas · galgas en el manubrio · temperatura IR MLX90614 (se eligió DS18B20) · dos carcasas con umbilical GX12 · conectores GX12 y M5 Phoenix (pasan a M8) · relé y IRF9530 · MPU-6050 y BMP280 en la placa definitiva · Bluefruit y ESP-01S (pasa a ESP32-C3) · CSV + JSON sidecar como formato de grabación (pasa a `.sfb`) · Coach en PHP/MySQL en GoDaddy · desplegar en Vercel (solo se usa como registrador de dominios) · planes de entrenamiento hechos por IA · nutrición, juegos de reflejos, feed social general · cian en las capas del mapa.
+
+## 10. Decisiones abiertas
+
+1. **FlowBench**: alimentación monofásica 220 V o trifásica con servo EMG (L2); medidas pendientes del relevamiento; sensor de posición.
+2. **Conectores 4 y 5**: ¿pasan también a 8 polos para aceptar presión? (hoy no).
+3. **Freno proporcional** (Hall analógico): pendiente, se retoma cuando Eric lo pida.
+7. **Presión de cubiertas (TPMS Bluetooth)**: sumarlo o no; elegir modelo (Presta o Schrader con adaptador) y verificar su protocolo antes de comprar. Implica el ESP32-C3 prendido en pista (+30–60 mA). Sirve para presión real y pérdidas, no para lo dinámico.
+8. **Altura real en saltos con LiDAR** (TFmini-S / TFmini Plus, no VL53L1X): opcional para una versión posterior, solo si la estimación por software no alcanza.
+9. **Conector de rueda (3)**: confirmar el tipo/codificación distinta a los universales.
+4. **Qué es gratis y qué se cobra en Coach** y forma de cobro (hoy todo manual).
+5. **Marca**: usuario de Instagram, búsqueda de marca con abogado (INPI e internacional), nombre en tiendas ("SendFlow: Suspension Telemetry"). Nombre de la empresa sin definir.
+6. **Región de la base de datos** para producción y términos comerciales de Cloudflare/Supabase.

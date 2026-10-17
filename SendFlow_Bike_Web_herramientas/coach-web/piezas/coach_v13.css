@@ -1,0 +1,5 @@
+
+/* ===================== v13 (11/10/2026): puente con Bike ===================== */
+.nav-item.volver-bike{color:var(--cian);}
+.barra-movil-acciones{display:flex;gap:8px;align-items:center;}
+@media (max-width:900px){.nav .nav-item.volver-bike{display:none;}}

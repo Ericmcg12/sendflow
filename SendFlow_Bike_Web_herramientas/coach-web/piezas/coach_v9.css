@@ -1,0 +1,51 @@
+
+/* ===================== v9 (10/10/2026) ===================== */
+/* Ingreso igual al de sendflow.bike: marca + texto a la izquierda, formulario a la derecha;
+   en celular: marca chica -> formulario -> texto */
+.ingreso{grid-template-areas:"marca caja" "info caja";align-items:start;align-content:center;row-gap:0;}
+.ingreso-marca{grid-area:marca;align-self:end;}
+.ingreso-info{grid-area:info;}
+.ingreso-caja{grid-area:caja;align-self:center;}
+.ingreso-marca .marca-txt{font-size:40px;}
+.ingreso-marca .marca-coach{font-size:12px;}
+.ingreso-info .prosa{max-width:440px;margin-top:20px;}
+.familia{list-style:none;padding:0;margin:22px 0 0;display:grid;gap:10px;max-width:440px;}
+.familia li{display:flex;flex-direction:column;gap:2px;padding:12px 16px;border-left:3px solid var(--cian);background:rgba(17,23,26,.6);border-radius:0 var(--r-md) var(--r-md) 0;}
+.familia li:nth-child(2){border-left-color:var(--oro);}
+.familia li:nth-child(3){border-left-color:var(--azul);}
+.familia strong{letter-spacing:.04em;font-size:13px;}
+.familia span{font-family:var(--sans);color:var(--ink-dim);font-size:13.5px;}
+.form-grilla.una-col{grid-template-columns:1fr;}
+.ancho-total{width:100%;}
+.captcha-caja{min-height:70px;}
+.ayuda-chica{color:var(--ink-dim);font-size:11px;}
+.titulo-caja{margin:0 0 14px;font-size:14px;letter-spacing:.12em;text-transform:uppercase;}
+.btn-texto{background:none;border:0;color:var(--ink-dim);font:12px var(--mono);cursor:pointer;text-decoration:underline;padding:4px 0;text-align:left;justify-self:start;}
+.btn-texto:hover{color:var(--oro);}
+@media (max-width:900px){
+  .ingreso{grid-template-areas:"marca" "caja" "info";grid-template-columns:1fr;row-gap:18px;align-content:start;}
+  .ingreso-marca{display:grid;grid-template-columns:auto 1fr;align-items:center;column-gap:14px;}
+  .ingreso-marca .ingreso-zigzag{grid-row:span 2;width:72px;margin:0;}
+  .ingreso-marca .marca-txt{font-size:28px !important;line-height:1;}
+  .ingreso-marca .marca-coach{margin-top:4px;}
+  .ingreso-info .prosa{margin-top:0;}
+}
+/* Ojo en las contraseñas */
+.clave-caja{position:relative;}
+.clave-caja .input{padding-right:46px;}
+.clave-ojo{position:absolute;right:4px;top:50%;transform:translateY(-50%);width:38px;height:38px;display:grid;place-items:center;background:none;border:0;color:var(--ink-dim);border-radius:var(--r-sm);cursor:pointer;}
+.clave-ojo:hover{color:var(--oro);background:rgba(255,189,0,.06);}
+.clave-ojo[aria-pressed="true"]{color:var(--cian);}
+.tipo-tag .btn{white-space:nowrap;}
+/* Celular: barra de abajo sin "Salir" (ya está arriba, junto al logo); contador sobre el ícono */
+@media (max-width:900px){
+  .nav button.nav-item[data-accion=salir-nav]{display:none;}
+  .nav-item{position:relative;}
+  .nav-item .insignia{position:absolute;top:4px;left:calc(50% + 4px);margin:0;min-width:18px;padding:1px 5px;font-size:10px;}
+  .btn.chico{height:44px;}
+  .grilla.g4{grid-template-columns:repeat(2,minmax(0,1fr));}
+  .kpi .num{font-size:28px;}
+  .hero-zigzag{top:auto;bottom:-6px;transform:none;opacity:.2;width:80%;right:-12%;}
+}
+/* Videos sin miniatura: panel con el zigzag tenue, no un rectángulo negro */
+.t-analisis .mini[style=""]{background:var(--panel-3) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 200 120'%3E%3Cpath d='M10,100 L40,60 L60,85 L85,28 L110,80 L130,55 L160,95 L190,100' fill='none' stroke='%234fe3c2' stroke-opacity='.25' stroke-width='6' stroke-linejoin='round' stroke-linecap='round'/%3E%3C/svg%3E") center/38% no-repeat;}

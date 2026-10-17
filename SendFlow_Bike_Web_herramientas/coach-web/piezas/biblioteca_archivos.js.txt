@@ -1,0 +1,98 @@
+  // v37: ARCHIVOS = una sola biblioteca (entrenador y piloto). Reemplaza Recibidos / Enviar / Análisis / Devoluciones.
+  // Videos y bajadas (sin analizar), análisis (con o sin video), fotos y documentos, todo junto y ordenado por la ÚLTIMA ACTIVIDAD:
+  // un envío nuevo, una devolución, un mensaje, una foto o un documento nuevos suben arriba aunque el video sea viejo.
+  async function pantallaBiblioteca(v) {
+    const coach = esCoach();
+    const [renv, ra, rarch, rconv, rpil, rent] = await Promise.all([
+      API.get("envios"), coach ? cargarCoach() : API.get("analisis").then(r => ({ analisis: r.analisis, porId: {}, pilotos: [] })),
+      API.get("archivos-lista").catch(() => ({ archivos: [] })), API.get("conversaciones").catch(() => ({ conversaciones: [] })),
+      coach ? API.get("pilotos").catch(() => ({ pilotos: [] })) : Promise.resolve({ pilotos: [] }),
+      coach ? Promise.resolve({ entrenadores: [] }) : API.get("entrenadores").catch(() => ({ entrenadores: [] }))]);
+    const { analisis, porId } = ra, fichas = rpil.pilotos || [], entrenadores = rent.entrenadores || [];
+    const ultimoMsj = {}; (rconv.conversaciones || []).forEach(c => { ultimoMsj[c.analisisId] = c.ultimo; });
+    const colorDe = (nombre, uid) => { const f = fichas.find(p => (uid && p.usuarioId === uid) || (nombre && p.nombre === nombre)); return (f && f.color) || colorFijo(uid || nombre); };
+    const masNuevo = (...f) => f.filter(Boolean).sort().pop() || "";
+    const items = [];
+    analisis.forEach(a => items.push({ clase: a.soloDatos ? "datos" : "video", tipo: a.tipo, fecha: masNuevo(a.creado, a.editado, a.avisadoPiloto, a.veredictoEn, ultimoMsj[a.id]),
+      nombre: coach ? ((porId[a.pilotoId] && porId[a.pilotoId].nombre) || a.pilotoNombre || "Sin piloto") : (a.coachNombre || "Entrenador"), uid: a.pilotoId, texto: (a.titulo || "") + " " + (a.pista || ""), a }));
+    (coach ? renv.recibidos : renv.enviados).filter(e => e.estado !== "analizado").forEach(e => items.push({ clase: e.soloDatos ? "datos" : "video", tipo: e.tipo, fecha: e.creado || e.fecha,
+      nombre: coach ? (e.pilotoNombre || "Sin piloto") : (e.coachNombre || "Entrenador"), uid: e.pilotoUsuarioId, texto: (e.titulo || "") + " " + (e.pista || ""), e }));
+    (rarch.archivos || []).forEach(x => items.push({ clase: x.clase === "documento" ? "documento" : (x.clase === "envio" || x.clase === "video") ? "video" : "foto", tipo: null, fecha: x.creado,
+      nombre: x.conNombre || x.pilotoNombre || (coach ? "Sin piloto" : "Entrenador"), uid: null, texto: (x.titulo || "") + " " + (x.nombre || "") + " " + (x.conNombre || ""), x }));
+    // pide ya los enlaces de las fotos (mientras se arma la pantalla) para que aparezcan al instante
+    API.urls((rarch.archivos || []).filter(x => x.clase === "imagen").map(x => x.archivoId)).catch(() => {});
+    items.forEach(it => { it._pil = { k: String(it.nombre).toLowerCase(), nombre: it.nombre, color: colorDe(it.nombre, it.uid) }; });
+    items.sort((p, q) => String(q.fecha || "").localeCompare(String(p.fecha || "")));
+    const sinVer = coach ? renv.sinVer : 0;
+    const puedeEnviar = !coach && entrenadores.length;
+    v.appendChild(html(`<div>
+      <div class="cab-pagina entra"><div><h1 class="titulo-pagina">Archivos</h1>
+        <div class="sub-pagina">${items.length ? (sinVer ? sinVer + (sinVer === 1 ? " envío nuevo" : " envíos nuevos") + " de tus pilotos. " : "") + "Lo último que pasó arriba: videos, bajadas sin video, análisis, fotos y documentos. Tocá uno para abrirlo, analizarlo o mandarlo por mensaje." : (coach ? "Los videos, bajadas, fotos y documentos que te manden tus pilotos aparecen acá." : "Tus videos, devoluciones, fotos y documentos aparecen acá.")}</div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button class="btn primario" data-accion="subir">${ICONOS.subir}Subir archivos</button></div></div>
+      ${!coach && !entrenadores.length ? `<div class="vacio entra" style="margin-bottom:16px">Todavía no tenés un entrenador vinculado.<br>Pedile que te invite con tu email (<b>${esc(USUARIO.email)}</b>) y aceptá la invitación al entrar a sendflow.bike.</div>` : ""}
+      <div class="filtro-tipos entra" id="filtroClase" role="group" aria-label="Filtrar por clase de archivo"></div>
+      ${items.length ? `<div class="form-grilla entra" style="margin-bottom:18px"><div class="campo ancho"><label>Buscar</label><input class="input" id="filtroTexto" placeholder="Título, pista, nombre o archivo"></div></div>` : ""}
+      <div class="grilla g3" id="listaArchivos"></div></div>`));
+    // un solo botón: fotos y documentos se suben ahí; un video abre el formulario de análisis (entrenador) o de envío (piloto)
+    const subirArch = async () => {
+      if (!coach && !entrenadores.length) { aviso("Todavía no tenés un entrenador vinculado: pedile que te invite.", "oro"); return; }
+      const r = await Archivos.subir({ coach, fichas, entrenadores, bajada: !coach });
+      if (!r) return;
+      if (r.video) { if (coach) await nuevoAnalisis(undefined, r.video); else await enviarVideo(entrenadores, null, r.video); navegar(); }
+      else if (r.bajada) { await enviarVideo(entrenadores); navegar(); }
+      else navegar();
+    };
+    $("[data-accion=subir]", v).addEventListener("click", subirArch);
+    const enviar = { click: () => subirArch() };   // /enviar abre directo el selector
+    const g = $("#listaArchivos", v);
+    if (!items.length) { g.replaceWith(html(`<div class="vacio entra">Todavía no hay archivos.</div>`)); actualizarInsignia(sinVer); if (window.__abrirEnviar) { window.__abrirEnviar = false; if (enviar) enviar.click(); } return; }
+    let clase = ""; try { clase = sessionStorage.getItem("sf-filtro-clase") || ""; } catch (e) {}
+    const NOMBRES = [["", "Todos"], ["video", "Videos"], ["datos", "Solo datos"], ["foto", "Fotos"], ["documento", "Documentos"]];
+    const cuenta = (k) => k ? items.filter(i => i.clase === k).length : items.length;
+    if (clase && !cuenta(clase)) clase = "";
+    const fClase = $("#filtroClase", v);
+    fClase.innerHTML = NOMBRES.filter(([k]) => k === "" || cuenta(k)).map(([k, t]) => `<button type="button" data-f="${k}" class="${k === clase ? "sel" : ""}">${t}<span>${cuenta(k)}</span></button>`).join("");
+    // el entrenador usa un video como ejemplo para otro piloto (botón arriba a la derecha de la tarjeta)
+    const botonCompartir = (el, archivoId, titulo, deNombre, usuarioId) => {
+      const b = html(`<button type="button" class="btn chico compartir-video" title="Compartir este video con otro piloto" aria-label="Compartir este video con otro piloto">${ICONOS.subir}Compartir</button>`);
+      b.addEventListener("click", (ev) => { ev.stopPropagation(); ev.preventDefault(); Archivos.compartirVideo({ archivoId, titulo, deNombre, excluirUsuarioId: usuarioId, fichas }); });
+      el.style.position = "relative"; el.appendChild(b);
+    };
+    const pintarA = () => {
+      const ft = ($("#filtroTexto", v) ? $("#filtroTexto", v).value : "").trim().toLowerCase();
+      g.innerHTML = "";
+      const vis = items.filter(it => (!clase || it.clase === clase) && filtroT.pasa(it) && (!filtroP || filtroP.pasa(it)) && (!ft || (it.texto + " " + it.nombre).toLowerCase().includes(ft)));
+      vis.forEach(it => {
+        if (it.a) { const el = tarjetaAnalisis(it.a, porId[it.a.pilotoId]); g.appendChild(el); if (coach && it.a.videoId) botonCompartir(el, it.a.videoId, it.a.titulo, it._pil.nombre, (porId[it.a.pilotoId] || {}).usuarioId); }
+        else if (it.e) {
+          it.e._pil = it._pil; const el = tarjetaEnvio(it.e, coach); g.appendChild(el);
+          if (coach && it.e.archivoId && !it.e.soloDatos) botonCompartir(el, it.e.archivoId, it.e.titulo, it._pil.nombre, it.e.pilotoUsuarioId);
+          if (!coach) {
+            const b = html(`<button class="btn icono chico peligro" title="Retirar envío" aria-label="Retirar envío" style="position:absolute;top:10px;right:10px;z-index:2">${ICONOS.basura}</button>`);
+            b.addEventListener("click", async (ev) => {
+              ev.stopPropagation();
+              if (!(await confirmar("¿Retirar este video? Tu entrenador ya no lo va a ver.", "Retirar"))) return;
+              try { await API.borrar("envios/" + it.e.id); aviso("Envío retirado."); navegar(); } catch (er) { aviso(er.message, "error"); }
+            });
+            el.style.position = "relative"; el.appendChild(b);
+          }
+        } else g.appendChild(Archivos.tarjeta(it, { coach, fichas, entrenadores, alCambiar: () => navegar() }));
+      });
+      if (!vis.length) g.innerHTML = `<div class="vacio" style="grid-column:1/-1">No hay archivos con ese filtro.</div>`;
+      else if (window.Archivos) Archivos.pintar(g);
+      entradaEscalonada(g, 40);
+    };
+    const filtroT = barraTipos(items, "archivos", pintarA);
+    const filtroP = coach ? barraPilotos(items, "archivos", it => it._pil, pintarA) : null;
+    $$("button", fClase).forEach(b => b.addEventListener("click", () => {
+      clase = b.dataset.f; try { sessionStorage.setItem("sf-filtro-clase", clase); } catch (e) {}
+      $$("button", fClase).forEach(x => x.classList.toggle("sel", x === b)); pintarA();
+    }));
+    if ($("#filtroTexto", v)) $("#filtroTexto", v).addEventListener("input", pintarA);
+    if (filtroP) g.before(filtroP);
+    g.before(filtroT);
+    pintarA();
+    actualizarInsignia(sinVer);
+    if (window.__abrirEnviar) { window.__abrirEnviar = false; if (enviar) enviar.click(); }
+  }
+

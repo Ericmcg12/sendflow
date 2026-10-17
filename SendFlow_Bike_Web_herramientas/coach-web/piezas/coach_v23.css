@@ -1,0 +1,5 @@
+
+/* ===== v23: leyenda de eventos ===== */
+.leyenda-ev{margin-top:4px;}
+.leyenda-ev span{cursor:default;}
+.leyenda-ev b{display:inline-block;width:12px;height:8px;border-radius:2px;background:var(--c);margin-right:6px;vertical-align:middle;}

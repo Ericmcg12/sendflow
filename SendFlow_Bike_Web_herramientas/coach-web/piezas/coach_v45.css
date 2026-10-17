@@ -1,0 +1,9 @@
+
+/* ==========================================================================
+   v45 (15/10/2026) — tarjetas como en sendflow.bike: al pasar el mouse, borde más claro y una luz que sigue al
+   puntero. Las que se pueden tocar (.click) además se levantan; las que son solo información, no.
+   ========================================================================== */
+.tarjeta{transition:border-color .25s, transform .25s var(--ease), box-shadow .25s;}
+.tarjeta::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .3s;
+  background:radial-gradient(400px circle at var(--mx,50%) var(--my,50%), rgba(79,227,194,.09), transparent 40%);}
+@media (hover:hover){ .tarjeta:hover{border-color:var(--borde-2);} .tarjeta:hover::after{opacity:1;} }

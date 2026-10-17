@@ -1,0 +1,15 @@
+
+/* ===================== v18 (11/10/2026): tipo de video ===================== */
+.tipos-video{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;}
+.tipo-video{display:grid;gap:2px;text-align:left;background:var(--panel-2);border:1px solid var(--borde);border-radius:var(--r-md);padding:10px 12px;color:var(--ink);cursor:pointer;font:inherit;}
+.tipo-video:hover{border-color:var(--borde-2, var(--borde));}
+.tipo-video b{font-weight:600;font-size:13.5px;}
+.tipo-video span{font-size:12px;color:var(--ink-dim);}
+.tipo-video.sel{border-color:var(--oro);background:color-mix(in srgb, var(--oro) 9%, var(--panel-2));}
+.tipo-video.sel b{color:var(--oro);}
+.chip.tipo-entrenamiento{color:var(--cian);border-color:color-mix(in srgb, var(--cian) 45%, transparent);}
+.chip.tipo-carrera{color:var(--rojo);border-color:color-mix(in srgb, var(--rojo) 45%, transparent);}
+.chip.tipo-previa{color:#4a9eff;border-color:color-mix(in srgb, #4a9eff 45%, transparent);}
+.tipo-txt{font-weight:600;}
+.tipo-txt.tipo-entrenamiento{color:var(--cian);} .tipo-txt.tipo-carrera{color:var(--rojo);} .tipo-txt.tipo-previa{color:#4a9eff;} .tipo-txt.tipo-otro{color:var(--ink-dim);}
+@media (max-width:520px){ .tipos-video{grid-template-columns:1fr;} }

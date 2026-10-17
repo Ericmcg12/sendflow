@@ -1,0 +1,78 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<base href="/">
+<script src="js/puente.js"></script>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#070b0c">
+<meta name="description" content="SendFlow Coach — análisis de video para entrenar pilotos de MTB, con o sin datos del Sender.">
+<title>SendFlow Coach</title>
+<link rel="icon" href="img/isotipo.svg" type="image/svg+xml">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="apple-touch-icon" href="/img/aviso-192.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/coach.css">
+</head>
+<body class="sin-sesion">
+<div class="fondo" aria-hidden="true"><div class="grilla"></div><div class="halo h1"></div><div class="halo h2"></div></div>
+
+<div class="app">
+  <nav class="nav" aria-label="Principal">
+    <a class="marca" href="/inicio" aria-label="SendFlow Coach, inicio">
+      <svg viewBox="0 0 200 120" width="40" height="24" aria-hidden="true"><path d="M10,100 L40,60 L60,85 L85,28 L110,80 L130,55 L160,95 L190,100" fill="none" stroke="#4fe3c2" stroke-width="12" stroke-linejoin="round" stroke-linecap="round"/><circle cx="85" cy="28" r="11" fill="#fff"/></svg>
+      <span><span class="marca-txt">Send<span class="flow">Flow</span></span><span class="marca-coach">COACH</span></span>
+    </a>
+    <div class="nav-items"></div>
+    <div class="nav-pie"></div>
+  </nav>
+
+  <main class="principal">
+    <div class="barra-movil">
+      <a class="marca" href="/inicio" aria-label="SendFlow Coach, inicio">
+        <svg viewBox="0 0 200 120" width="34" height="20" aria-hidden="true"><path d="M10,100 L40,60 L60,85 L85,28 L110,80 L130,55 L160,95 L190,100" fill="none" stroke="#4fe3c2" stroke-width="12" stroke-linejoin="round" stroke-linecap="round"/><circle cx="85" cy="28" r="11" fill="#fff"/></svg>
+        <span><span class="marca-txt">Send<span class="flow">Flow</span></span><span class="marca-coach">COACH</span></span>
+      </a>
+      <div class="barra-movil-acciones"><a class="btn chico fantasma volver-bike oculto" href="https://sendflow.bike/">Volver a Bike</a><button type="button" class="btn chico fantasma" data-accion="salir-nav">Salir</button></div>
+    </div>
+    <div id="vista" class="vista"></div>
+  </main>
+</div>
+
+<div id="modales"></div>
+<div id="avisos" class="avisos" aria-live="polite"></div>
+
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+<script src="vendor/supabase.bundle.js"></script>
+<script src="js/config.js"></script>
+<script src="js/formato-sfb.js"></script>
+<script src="js/gopro-gpmf.js"></script>
+<script src="js/api.js"></script>
+<script src="js/ui.js"></script>
+<script src="js/avisos-push.js"></script>
+<script src="js/sender.js"></script>
+<script src="js/datos-pista.js"></script>
+<script src="js/postura.js"></script>
+<script src="js/estudio.js"></script>
+<script src="vendor/mediabunny-1.58.1.min.js"></script>
+<script src="js/compresor.js"></script>
+<script src="js/comparar.js"></script>
+<script src="js/biblioteca.js"></script>
+<script src="js/archivos.js"></script>
+<script src="js/calendario-ics.js"></script>
+<script src="js/calendario.js"></script>
+<script src="js/planes.js"></script>
+<script src="js/bicis-piloto.js"></script>
+<script src="js/tarjetas-luz.js"></script>
+<script src="js/entrada.js"></script>
+<script src="js/avisos-email.js"></script>
+<script src="js/editor-bici.js"></script>
+<script src="js/mi-perfil.js"></script>
+<script src="js/ciclo-cuenta.js"></script>
+<script src="js/ciclo-coach.js"></script>
+<script src="js/perfil-ficha.js"></script>
+<script src="js/app.js"></script>
+</body>
+</html>

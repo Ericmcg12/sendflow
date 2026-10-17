@@ -1,0 +1,21 @@
+Faltan 2 archivos en esta carpeta para que el mapa 3D funcione (no los pude
+generar yo: son ~1MB de código de una librería externa).
+
+Descargalos UNA vez, con internet, y ponelos en esta misma carpeta (vendor/)
+sin cambiarles el nombre:
+
+1) https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js
+2) https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css
+
+Cómo bajarlos: abrí cada link en el navegador, click derecho -> "Guardar
+como..." (o Ctrl+S) -> guardalo en esta carpeta con el nombre que ya tiene
+en la URL (maplibre-gl.js / maplibre-gl.css).
+
+Por qué la versión 5 y no la más nueva: MapLibre lanzó la versión 6 en
+julio de 2026, pero cambió a un formato de módulos (ESM) que ya no admite
+el <script src="..."> simple que usamos acá para que todo funcione abriendo
+el archivo directo (file://), sin servidor. La 5.x es la última que sí
+funciona así.
+
+Una vez que estén los dos archivos acá, borrá este LEEME.txt (no molesta
+si lo dejás, pero no hace falta).

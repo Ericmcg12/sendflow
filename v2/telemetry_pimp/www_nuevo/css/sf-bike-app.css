@@ -1,0 +1,59 @@
+/* SendFlow Bike · parche de la app v2 (16/10/2026): modos, perfiles de la cuenta, set-ups, bajada definitiva.
+   Va enlazada después de estilos.css (y de estilo-v2.css si se aplica el parche de estilo). */
+[hidden]{ display:none !important; }
+
+/* Modo de la app en Configuración */
+.sf-modo{ margin:10px 0 4px; padding:12px 14px; border:1px solid var(--borde, #232b2c); border-left:3px solid var(--cian, #4fe3c2);
+  border-radius:var(--r-md, 8px); background:rgba(79,227,194,.05); }
+.sf-modo-titulo{ font:600 14px/1.3 'IBM Plex Sans', system-ui, sans-serif; color:var(--texto, #f2f5f4); }
+.sf-modo-sub{ margin-top:4px; font:13px/1.5 'IBM Plex Sans', system-ui, sans-serif; color:var(--texto-dim, #8b9a98); }
+
+/* Qué se ve en cada modo */
+html.sf-modo-rider #btnNuevoPerfil, html.sf-modo-profesional #btnNuevoPerfil,
+html.sf-modo-rider #btnIrANuevoPerfilDesdeHome{ display:none !important; }
+html:not(.sf-modo-profesional) #sfBtnPilotoNuevo,
+html:not(.sf-modo-profesional) #sfBuscarPerfil{ display:none !important; }
+html.sf-modo-invitado #sfBtnImportarCuenta, html.sf-modo-invitado #sfAvisoPerfiles,
+html.sf-modo-invitado #listaGuardados .sf-btn-def{ display:none !important; }
+
+/* Perfiles */
+.sf-aviso-cuenta{ margin:6px 0 10px; }
+.sf-buscar{ width:100%; max-width:420px; margin:0 0 10px; padding:10px 12px; font:14px 'IBM Plex Sans', system-ui, sans-serif;
+  color:var(--texto, #f2f5f4); background:var(--bg-abs, #070b0c); border:1px solid var(--borde-2, #2e393a); border-radius:var(--r-sm, 6px); }
+.sf-buscar:focus{ outline:none; border-color:var(--cian, #4fe3c2); }
+.sf-grupo{ margin:14px 0 6px; font:600 12px/1.2 'IBM Plex Sans', system-ui, sans-serif; color:var(--cian, #4fe3c2); }
+.sf-grupo:first-child{ margin-top:2px; }
+.sf-chip{ display:inline-block; margin-left:8px; padding:2px 8px; border-radius:999px; border:1px solid var(--borde-2, #2e393a);
+  font:500 10.5px/1.5 'IBM Plex Sans', system-ui, sans-serif; color:var(--texto-dim, #8b9a98); vertical-align:middle; letter-spacing:0; text-transform:none; }
+.sf-chip.pend{ border-color:var(--oro, #ffbd00); color:var(--oro, #ffbd00); }
+.sf-chip.oro{ border-color:var(--oro, #ffbd00); color:var(--oro, #ffbd00); }
+.sf-chips{ display:flex; flex-wrap:wrap; gap:6px; margin:4px 0 12px; }
+.sf-chips .sf-chip{ margin-left:0; }
+
+/* Set-up de la bajada / ficha */
+.sf-setup-rc{ margin:0 0 12px; }
+.sf-setup-fila{ display:flex; flex-wrap:wrap; align-items:flex-end; gap:10px; }
+.sf-setup-fila .campo{ flex:1 1 220px; margin-bottom:0; }
+.sf-setup-fila .btn{ margin-bottom:2px; }
+.sf-nota{ margin-top:6px; font:12.5px/1.5 'IBM Plex Sans', system-ui, sans-serif; color:var(--texto-dim, #8b9a98); }
+
+#modalSfFicha .fila-botones{ margin-top:12px; }
+#sfFichaAviso:empty{ display:none; }
+
+/* Piloto nuevo */
+.sf-piloto-nuevo{ margin:4px 0 8px; }
+
+/* Bajada definitiva */
+.sf-def{ margin:12px 0 4px; }
+.sf-btn-definitiva.activo, .sf-btn-def.activo{ border-color:var(--oro, #ffbd00) !important; color:var(--oro, #ffbd00) !important; background:rgba(255,189,0,.08); }
+
+/* Aviso flotante */
+.sf-flotante{ position:fixed; left:50%; bottom:22px; transform:translateX(-50%); z-index:10002; max-width:min(560px, calc(100vw - 32px));
+  padding:11px 16px; border-radius:var(--r-md, 8px); border:1px solid var(--borde-2, #2e393a); background:#11171a; color:var(--texto, #f2f5f4);
+  font:13.5px/1.45 'IBM Plex Sans', system-ui, sans-serif; box-shadow:0 10px 40px rgba(0,0,0,.45); }
+.sf-flotante.ok{ border-color:var(--cian, #4fe3c2); }
+.sf-flotante.e{ border-color:#e0483f; color:#ffb4ae; }
+.sfn .sf-pend{ display:block; margin-top:8px; color:#8b9a98; font:12.5px 'IBM Plex Sans', system-ui, sans-serif; }
+
+/* Marca en el PDF */
+.reporte-marca-bike{ font-weight:400; margin-left:4px; }

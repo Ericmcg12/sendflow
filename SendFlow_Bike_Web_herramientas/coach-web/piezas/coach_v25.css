@@ -1,0 +1,14 @@
+
+/* ===== v25: mapa 3D ===== */
+.escenario .mapa3d{position:absolute;inset:0;}
+.escenario:not(.ver-3d) .mapa3d{visibility:hidden;pointer-events:none;}
+.escenario.ver-3d canvas.zoom-datos{opacity:0;pointer-events:none;}
+.escenario.ver-3d.herr-mano canvas.capa{pointer-events:none;}
+.escenario.ver-3d{touch-action:auto;}
+.mapa3d .maplibregl-canvas{outline:none;}
+.pin3d{width:12px;height:12px;border-radius:50%;background:#4fe3c2;border:2px solid #070b0c;box-shadow:0 1px 4px rgba(0,0,0,.6);}
+.pin3d.fin{border-radius:2px;background:#fff;}
+.ev3d{width:18px;height:18px;border-radius:50%;background:rgba(7,11,12,.88);border:2px solid var(--c);color:var(--c);display:grid;place-items:center;font:700 9px "Roboto Mono", monospace;cursor:pointer;box-shadow:0 1px 4px rgba(0,0,0,.6);}
+.ev3d.chico{width:7px;height:7px;border:0;background:var(--c);}
+.ev3d:hover{transform:scale(1.25);}
+.pto3d{width:14px;height:14px;border-radius:50%;background:#ffbd00;border:2.5px solid #070b0c;box-shadow:0 0 0 7px rgba(255,189,0,.25),0 1px 6px rgba(0,0,0,.7);pointer-events:none;}

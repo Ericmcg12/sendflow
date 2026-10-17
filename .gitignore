@@ -1,0 +1,20 @@
+# Dependencias y cachés (se regeneran)
+node_modules/
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Zips de cada versión publicada del sitio Coach: ~350 MB, se regeneran con
+# SendFlow_Bike_Web_herramientas/coach-web/construir_coach.py desde el código fuente
+SendFlow_Bike_Web_herramientas/*.zip
+
+# Variables de entorno y claves: nunca al repositorio
+.env
+.env.*
+*.pem
+*.key
+
+# Basura del sistema
+Thumbs.db
+.DS_Store

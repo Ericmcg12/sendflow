@@ -1,0 +1,19 @@
+{
+  "config_confirmada": false,
+  "config": null,
+  "nombre_piloto": "piloto",
+  "peso_piloto_kg": 75,
+  "frecuencia_muestreo_hz": 1000,
+  "duracion_ms": 35000,
+  "lineas_escritas": 35000,
+  "calibracion_adc": {
+    "horquilla_adc_min": 0,
+    "horquilla_adc_max": 4095,
+    "shock_adc_min": 0,
+    "shock_adc_max": 4095
+  },
+  "montaje": {
+    "calibrado": false,
+    "ultima_calibracion_fue_manual": false
+  }
+}

@@ -1,0 +1,7 @@
+# v34/v35: secciones del sitio base con su propia dirección (sendflow.bike/perfil, /mensajes, /bajadas)
+/perfil/    /perfil     301
+/mensajes/  /mensajes   301
+/bajadas/   /bajadas    301
+/perfil     /index.html 200
+/mensajes   /index.html 200
+/bajadas    /index.html 200

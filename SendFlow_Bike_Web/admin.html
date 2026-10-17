@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Administración · SendFlow</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0d1117">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="estilo/sendflow.css">
+  <link rel="stylesheet" href="css/sitio.css">
+</head>
+<body class="sin-sesion">
+
+<div class="app">
+<nav class="nav" id="nav-sitio" aria-label="Principal">
+  <a class="marca" href="./" aria-label="SendFlow, inicio"><svg viewBox="0 0 200 120" width="40" height="24" aria-hidden="true"><path d="M10,100 L40,60 L60,85 L85,28 L110,80 L130,55 L160,95 L190,100" fill="none" stroke="#4fe3c2" stroke-width="12" stroke-linejoin="round" stroke-linecap="round"/><circle cx="85" cy="28" r="11" fill="#fff"/></svg><span><span class="marca-txt">Send<span class="flow">Flow</span></span><span class="marca-coach">BIKE</span></span></a>
+  <div class="nav-items">
+    <a class="nav-item" href="./"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg><span>Inicio</span></a>
+    <a class="nav-item" href="/perfil"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.5 4.2-7 8-7s7 2.5 8 7"/></svg><span>Perfil</span></a>
+    <a class="nav-item sel" href="admin.html"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg><span>Admin</span></a>
+    <button class="nav-item" id="adm-nav-salir" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H5v16h4"/><path d="M16 8l4 4-4 4M20 12H9"/></svg><span>Salir</span></button>
+  </div>
+</nav>
+
+<main class="principal">
+<div class="vista admin">
+  <section id="adm-bloqueo" class="tarjeta bloqueo">
+    <h2 id="adm-bloqueo-t">Verificando acceso…</h2>
+    <p id="adm-bloqueo-p" class="ayuda"></p>
+    <form id="adm-login" hidden novalidate>
+      <label for="adm-email">Email</label>
+      <input id="adm-email" type="email" autocomplete="username" required>
+      <label for="adm-clave">Contraseña</label>
+      <div class="clave-caja"><input id="adm-clave" type="password" autocomplete="current-password" required>
+        <button type="button" id="adm-ojo" class="clave-ojo" aria-label="Mostrar u ocultar la contraseña"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+      <button class="btn primario" type="submit">Entrar</button>
+      <p id="adm-login-msg" class="mensaje" role="status" aria-live="polite" hidden></p>
+    </form>
+    <button id="adm-salir" class="btn" type="button" hidden>Cerrar sesión</button>
+  </section>
+  <div id="adm-panel" hidden>
+  <div class="cab-pagina"><div><h1 class="titulo-pagina">Cuentas</h1><div class="sub-pagina">Aprobá cuentas nuevas y asigná roles y productos.</div></div></div>
+  <div class="admin-barra">
+    <div class="tipo-tag" role="tablist">
+      <button class="btn chico sel" id="f-pend" type="button" role="tab">Pendientes <span id="n-pend"></span></button>
+      <button class="btn chico" id="f-todas" type="button" role="tab">Todas <span id="n-todas"></span></button>
+    </div>
+    <input id="f-buscar" type="search" placeholder="Buscar por nombre o email" autocomplete="off">
+  </div>
+  <p id="adm-msg" class="mensaje" role="status" aria-live="polite" hidden></p>
+  <div id="adm-lista" class="adm-lista"></div>
+  </div>
+</div>
+</main>
+</div>
+<script src="estilo/sendflow.js"></script>
+<script src="vendor/supabase.bundle.js"></script>
+<script src="js/config.js"></script>
+<script src="js/admin.js"></script>
+</body>
+</html>

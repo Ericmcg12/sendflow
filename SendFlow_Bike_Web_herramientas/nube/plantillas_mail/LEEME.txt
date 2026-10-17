@@ -1,0 +1,7 @@
+SendFlow · Plantillas de mail de Supabase Auth (15/10/2026)
+Dónde: Supabase → Authentication → Emails → Templates. En cada plantilla: pegar el Asunto y reemplazar TODO el cuerpo (Source/HTML) por el archivo.
+No borrar {{ .ConfirmationURL }}: es el enlace del botón. El logo se toma de https://sendflow.bike/img/aviso-192.png (no borrar ese archivo del sitio).
+
+1_confirmar_cuenta.html  →  plantilla «Confirm signup»  ·  Asunto: Confirmá tu cuenta de SendFlow
+2_recuperar_contrasena.html  →  plantilla «Reset password»  ·  Asunto: Cambiá tu contraseña de SendFlow
+3_cambio_de_mail.html  →  plantilla «Change email address»  ·  Asunto: Confirmá tu nuevo mail en SendFlow

@@ -1,0 +1,7 @@
+/* Entrada protegida (login + producto Sender): mientras se verifica, la app no se ve */
+html.sf-bloqueado body > *:not(#sfGate) { visibility: hidden !important; }
+#sfGate { position: fixed; inset: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 20px; background: #0a0f10; }
+#sfGate .sf-gate-card { max-width: 420px; width: 100%; padding: 28px 26px; background: linear-gradient(180deg, rgba(21,27,28,.95), rgba(13,18,20,.95)); border: 1px solid #232b2c; border-radius: 6px; text-align: left; }
+#sfGate h2 { margin: 0 0 10px; font: 600 15px/1.3 "Roboto Mono", monospace; letter-spacing: .08em; text-transform: uppercase; color: #ffbd00; }
+#sfGate p { margin: 0 0 18px; color: #9aa7a5; font: 14px/1.5 system-ui, sans-serif; }
+#sfGate .sf-gate-btn { display: inline-block; padding: 12px 18px; background: #4fe3c2; color: #06110f; font: 700 12px "Roboto Mono", monospace; letter-spacing: .1em; text-transform: uppercase; text-decoration: none; border-radius: 2px; }

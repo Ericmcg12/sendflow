@@ -1,0 +1,10 @@
+
+/* ===================== v19 (11/10/2026): filtro por tipo de video ===================== */
+.filtro-tipos{display:flex;gap:6px;flex-wrap:wrap;margin:0 0 16px;}
+.filtro-tipos button{display:inline-flex;gap:6px;align-items:center;background:var(--panel-2);border:1px solid var(--borde);border-radius:999px;padding:6px 12px;color:var(--ink-dim);font:500 11px var(--sans, inherit);letter-spacing:.06em;text-transform:uppercase;cursor:pointer;}
+.filtro-tipos button span{font-family:"Roboto Mono", monospace;color:var(--ink-mute);}
+.filtro-tipos button:hover{border-color:var(--borde-2, var(--borde));}
+.filtro-tipos button.sel{border-color:var(--oro);color:var(--oro);background:color-mix(in srgb, var(--oro) 9%, var(--panel-2));}
+.filtro-tipos button.tipo-entrenamiento.sel{border-color:var(--cian);color:var(--cian);background:color-mix(in srgb, var(--cian) 9%, var(--panel-2));}
+.filtro-tipos button.tipo-carrera.sel{border-color:var(--rojo);color:var(--rojo);background:color-mix(in srgb, var(--rojo) 9%, var(--panel-2));}
+.filtro-tipos button.tipo-previa.sel{border-color:#4a9eff;color:#4a9eff;background:color-mix(in srgb, #4a9eff 9%, var(--panel-2));}

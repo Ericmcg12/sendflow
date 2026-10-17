@@ -1,0 +1,43 @@
+
+/* ===== v50 / Bike v42 (16/10/2026): ciclo de vida de la cuenta — espacio, dejar entrenador/piloto, cerrar cuenta (ciclo-cuenta.js) ===== */
+.sfc-caja { display: grid; gap: 16px; }
+.sfc-caja, .sfc-modal, #pf-entrenadores { font-family: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif; }
+.sfc-ent-mail { font-family: inherit; }
+.sfc-espacio-txt { margin: 4px 0 10px; font-size: 14px; color: var(--ink); }
+.sfc-espacio-txt b { font-weight: 600; }
+.sfc-barra { height: 10px; border-radius: 999px; background: var(--panel-3, #1b2426); border: 1px solid var(--borde); overflow: hidden; }
+.sfc-barra i { display: block; height: 100%; width: 0; background: var(--cian); border-radius: inherit; transition: width .6s cubic-bezier(.2,.8,.2,1); }
+.sfc-barra.aviso i { background: var(--oro); }
+.sfc-barra.lleno i { background: var(--rojo); }
+.sfc-espacio-det { margin: 8px 0 0; font-size: 12.5px; }
+.sfc-espacio .mensaje { margin-top: 10px; }
+.mensaje.sfc-aviso { color: var(--oro); border-color: rgba(255,189,0,.45); background: rgba(255,189,0,.08); }
+.sfc-cerrar .ayuda { margin: 4px 0 12px; }
+.btn.sfc-peligro-lleno { background: var(--rojo); border-color: var(--rojo); color: #2a0704; font-family: 'IBM Plex Sans', system-ui, sans-serif; }
+.btn.sfc-peligro-lleno:hover:not(:disabled) { filter: brightness(1.08); }
+.btn.sfc-peligro-lleno:disabled { opacity: .45; cursor: not-allowed; }
+.sfc-modal { width: min(480px, 100%); }
+.sfc-modal .modal-cab h2 { text-transform: none; letter-spacing: 0; font-size: 17px; }
+.sfc-modal .sfc-p { margin-top: 10px; }
+.sfc-lista { margin: 10px 0 0; padding-left: 20px; color: var(--ink-dim); font-size: 13.5px; line-height: 1.55; }
+.sfc-queda { margin-top: 12px !important; color: var(--ink); }
+.sfc-palabra { display: block; margin: 16px 0 6px; font-size: 13px; color: var(--ink-dim); }
+.sfc-palabra b { color: var(--rojo); font-weight: 600; letter-spacing: .04em; }
+.sfc-modal .input { width: 100%; }
+.sfc-trabajando .modal-cuerpo { display: flex; align-items: center; gap: 14px; }
+.sfc-trabajando .ayuda { margin: 0; }
+.sfc-giro { width: 22px; height: 22px; flex: none; border-radius: 50%; border: 2px solid var(--borde-2); border-top-color: var(--oro); animation: sfc-gira .9s linear infinite; }
+@keyframes sfc-gira { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .sfc-giro { animation-duration: 3s; } .sfc-barra i { transition: none; } }
+.sfc-ent { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--borde); flex-wrap: wrap; }
+.sfc-ent:first-of-type { border-top: 0; }
+.sfc-ent-nom { font-weight: 500; }
+.sfc-ent-mail { font-size: 12.5px; color: var(--ink-dim); word-break: break-all; }
+/* Coach: la tarjeta de Espacio y Cerrar mi cuenta en Perfil → Mis datos (columna derecha) */
+.pf-col > .sfc-caja { margin-top: 16px; }
+.cp-dejar { white-space: nowrap; }
+.btn.peligro.cp-dejar { color: #ffb4ae; border-color: rgba(224,72,63,.5); }
+.btn.peligro.cp-dejar:hover { border-color: var(--rojo); color: var(--rojo); background: rgba(224,72,63,.08); }
+.cp-entrenadores .fila-piloto { flex-wrap: wrap; row-gap: 10px; }
+.cp-entrenadores .cp-ent-txt { flex: 1 1 140px; min-width: 0; overflow-wrap: anywhere; }
+.cp-entrenadores .cp-dejar { margin-left: auto; }

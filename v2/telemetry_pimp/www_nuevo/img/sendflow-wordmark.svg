@@ -1,0 +1,9 @@
+<svg viewBox="0 0 320 170" width="320" height="170" xmlns="http://www.w3.org/2000/svg">
+  <g transform="translate(80,4) scale(0.8)">
+    <path d="M10,100 L40,60 L60,85 L85,28 L110,80 L130,55 L160,95 L190,100" fill="none" stroke="#4fe3c2" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"></path>
+    <circle cx="85" cy="28" r="9" fill="#ffffff"></circle>
+  </g>
+  <text x="160" y="152" text-anchor="middle" font-family="'Chakra Petch', system-ui, sans-serif" font-weight="600" font-size="42" letter-spacing="0.5">
+    <tspan fill="#f2f5f4">Send</tspan><tspan fill="#4fe3c2">Flow</tspan>
+  </text>
+</svg>

@@ -1,0 +1,6 @@
+
+/* Rendimiento en PC: el fondo se queda estático y sin desenfoques costosos (el scrubber compite con la GPU) */
+.modo-web .sf-fondo .grilla{animation:none !important;}
+.modo-web .sf-fondo .halo{filter:none !important;animation:none !important;background:radial-gradient(circle at center,rgba(79,227,194,1) 0%,rgba(79,227,194,.55) 30%,rgba(79,227,194,0) 70%) !important;opacity:.32 !important;}
+.modo-web .sf-fondo .halo.h2{background:radial-gradient(circle at center,rgba(74,158,255,1) 0%,rgba(74,158,255,.55) 30%,rgba(74,158,255,0) 70%) !important;opacity:.24 !important;}
+.modo-web .suite-sidebar{-webkit-backdrop-filter:none !important;backdrop-filter:none !important;background:rgba(11,15,16,.82) !important;}

@@ -1,0 +1,112 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1760" height="1500" viewBox="0 0 880 750" font-family="Helvetica, Arial, sans-serif">
+<rect width="880" height="750" fill="#FFFFFF"/>
+<defs>
+<g id="base">
+<rect x="0" y="510" width="209" height="190" rx="4" fill="#F1EFE8" stroke="#888780"/>
+<rect x="0" y="502" width="209" height="10" fill="#D3D1C7" stroke="#888780"/>
+<rect x="16" y="524" width="177" height="164" rx="3" fill="#E6F1FB" stroke="#85B7EB" stroke-dasharray="4 3"/>
+<rect x="55" y="522" width="6" height="166" fill="#D3D1C7" stroke="#888780"/>
+<rect x="148" y="522" width="6" height="166" fill="#D3D1C7" stroke="#888780"/>
+<circle cx="104" cy="645" r="49" fill="#FAECE7" stroke="#D85A30"/>
+<circle cx="104" cy="645" r="7" fill="#F5C4B3" stroke="#D85A30"/>
+<rect x="46" y="598" width="117" height="26" rx="3" fill="#F5C4B3" stroke="#D85A30"/>
+<rect x="54" y="605" width="101" height="12" rx="6" fill="#FFFFFF" stroke="#D85A30"/>
+<circle cx="136" cy="611" r="6" fill="#712B13"/>
+<line x1="104" y1="645" x2="136" y2="611" stroke="#D85A30" stroke-width="3"/>
+<rect x="98" y="460" width="12" height="138" fill="#D3D1C7" stroke="#888780"/>
+<rect x="90" y="500" width="28" height="12" fill="#5F5E5A"/>
+<rect x="172" y="560" width="6" height="110" fill="#9FE1CB" stroke="#1D9E75"/>
+<rect x="33" y="35" width="14" height="475" fill="#D3D1C7" stroke="#888780"/>
+<rect x="162" y="35" width="14" height="475" fill="#D3D1C7" stroke="#888780"/>
+<rect x="30" y="700" width="16" height="6" fill="#888780"/>
+<rect x="163" y="700" width="16" height="6" fill="#888780"/>
+<rect x="84" y="480" width="40" height="22" rx="3" fill="#F09595" stroke="#A32D2D"/>
+<rect x="92" y="485" width="24" height="17" fill="#FFFFFF" stroke="#A32D2D"/>
+</g>
+<g id="puente">
+<rect x="22" y="0" width="165" height="22" rx="3" fill="#444441" stroke="#2C2C2A"/>
+<rect x="30" y="-2" width="20" height="26" rx="3" fill="#D3D1C7" stroke="#888780"/>
+<rect x="159" y="-2" width="20" height="26" rx="3" fill="#D3D1C7" stroke="#888780"/>
+<line x1="30" y1="11" x2="8" y2="30" stroke="#E24B4A" stroke-width="6" stroke-linecap="round"/>
+<line x1="179" y1="11" x2="201" y2="30" stroke="#E24B4A" stroke-width="6" stroke-linecap="round"/>
+<rect x="92" y="22" width="24" height="14" fill="#F1EFE8" stroke="#888780"/>
+<rect x="88" y="36" width="32" height="24" rx="3" fill="#9FE1CB" stroke="#1D9E75"/>
+<rect x="84" y="60" width="40" height="24" rx="3" fill="#F09595" stroke="#A32D2D"/>
+<rect x="92" y="60" width="24" height="17" fill="#FFFFFF" stroke="#A32D2D"/>
+</g>
+</defs>
+<g transform="translate(170,0)">
+<use xlink:href="#base"/>
+<rect x="31" y="322" width="18" height="8" fill="#FAC775" stroke="#BA7517"/>
+<rect x="160" y="322" width="18" height="8" fill="#FAC775" stroke="#BA7517"/>
+<g transform="translate(0,300)"><use xlink:href="#puente"/></g>
+<circle cx="104" cy="371" r="6" fill="#F1EFE8" stroke="#888780"/>
+<rect x="97" y="377" width="14" height="55" rx="4" fill="#D3D1C7" stroke="#888780"/>
+<rect x="113" y="383" width="10" height="38" rx="4" fill="#D3D1C7" stroke="#888780"/>
+<rect x="101" y="432" width="6" height="36" fill="#F1EFE8" stroke="#888780"/>
+<circle cx="104" cy="474" r="6" fill="#F1EFE8" stroke="#888780"/>
+<rect x="47" y="420" width="14" height="8" fill="#5F5E5A"/>
+<rect x="61" y="421" width="14" height="6" fill="#9FE1CB" stroke="#1D9E75"/>
+</g>
+<g transform="translate(500,0)">
+<use xlink:href="#base"/>
+<rect x="31" y="100" width="18" height="8" fill="#FAC775" stroke="#BA7517"/>
+<rect x="160" y="100" width="18" height="8" fill="#FAC775" stroke="#BA7517"/>
+<g transform="translate(0,78)"><use xlink:href="#puente"/></g>
+<rect x="98" y="160" width="12" height="18" fill="#5F5E5A"/>
+<rect x="100" y="178" width="8" height="60" fill="#D3D1C7" stroke="#888780"/>
+<rect x="72" y="200" width="64" height="9" rx="3" fill="#D3D1C7" stroke="#888780"/>
+<rect x="72" y="236" width="64" height="11" rx="3" fill="#D3D1C7" stroke="#888780"/>
+<rect x="78" y="196" width="10" height="130" fill="#F1EFE8" stroke="#888780"/>
+<rect x="120" y="196" width="10" height="130" fill="#F1EFE8" stroke="#888780"/>
+<rect x="75" y="320" width="16" height="150" rx="4" fill="#D3D1C7" stroke="#888780"/>
+<rect x="117" y="320" width="16" height="150" rx="4" fill="#D3D1C7" stroke="#888780"/>
+<rect x="73" y="472" width="62" height="8" fill="#F1EFE8" stroke="#888780"/>
+</g>
+<g font-size="13" fill="#444441">
+<g stroke="#888780" stroke-width="0.7" stroke-dasharray="3 2">
+<line x1="160" y1="80" x2="203" y2="80"/>
+<line x1="160" y1="311" x2="192" y2="311"/>
+<line x1="160" y1="326" x2="201" y2="326"/>
+<line x1="160" y1="348" x2="258" y2="348"/>
+<line x1="160" y1="404" x2="267" y2="404"/>
+<line x1="160" y1="424" x2="217" y2="424"/>
+<line x1="160" y1="491" x2="254" y2="491"/>
+<line x1="160" y1="560" x2="225" y2="560"/>
+<line x1="160" y1="611" x2="216" y2="611"/>
+<line x1="160" y1="660" x2="225" y2="660"/>
+<line x1="714" y1="89" x2="676" y2="89"/>
+<line x1="714" y1="126" x2="620" y2="126"/>
+<line x1="714" y1="168" x2="610" y2="168"/>
+<line x1="714" y1="204" x2="636" y2="204"/>
+<line x1="714" y1="400" x2="633" y2="400"/>
+<line x1="714" y1="476" x2="635" y2="476"/>
+<line x1="714" y1="507" x2="618" y2="507"/>
+<line x1="714" y1="615" x2="678" y2="615"/>
+<line x1="714" y1="690" x2="709" y2="690"/>
+</g>
+<text x="155" y="84" text-anchor="end">Columnas (sin travesaño)</text>
+<text x="155" y="315" text-anchor="end">Puente con palancas</text>
+<text x="155" y="330" text-anchor="end">Tope de seguridad</text>
+<text x="155" y="352" text-anchor="end">Celda y U superior</text>
+<text x="155" y="408" text-anchor="end">Shock</text>
+<text x="155" y="428" text-anchor="end">Sensor de temperatura</text>
+<text x="155" y="495" text-anchor="end">U inferior en el vástago</text>
+<text x="155" y="564" text-anchor="end">Guías del yugo</text>
+<text x="155" y="615" text-anchor="end">Yugo con doble rodillo</text>
+<text x="155" y="664" text-anchor="end">Plato de manivela</text>
+<text x="718" y="93">Puente</text>
+<text x="718" y="130">Celda de carga</text>
+<text x="718" y="172">Manguito en el steerer</text>
+<text x="718" y="208">Coronas</text>
+<text x="718" y="404">Horquilla</text>
+<text x="718" y="480">Bloque de eje</text>
+<text x="718" y="511">Buje guía y rascador</text>
+<text x="718" y="619">Sensor de posición</text>
+<text x="718" y="694">Base 550 × 450</text>
+</g>
+<g font-size="15" fill="#2C2C2A" text-anchor="middle">
+<text x="275" y="735">Con shock trasero</text>
+<text x="605" y="735">Con horquilla de doble corona</text>
+</g>
+</svg>

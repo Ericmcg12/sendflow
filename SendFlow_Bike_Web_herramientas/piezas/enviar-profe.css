@@ -1,0 +1,28 @@
+/* v27: Enviar al profe (solo si hay entrenador vinculado). El viejo "SendFlow Coach" de Configuración no va en la web. */
+#btnConfigCoach { display: none !important; }
+#btnEnviarProfe, [data-accion="enviar-coach"] { display: none !important; }
+html.sf-con-profe #btnEnviarProfe { display: inline-flex !important; color: var(--oro); border-color: var(--oro-dim); }
+html.sf-con-profe [data-accion="enviar-coach"] { display: inline-flex !important; }
+.sf-profe { z-index: 400; }
+.sf-profe .sf-profe-bajada { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; margin: 10px 0 4px; padding: 10px 12px; border: 1px solid var(--borde); border-radius: 3px; background: rgba(255,255,255,.02); }
+.sf-profe .sf-profe-bajada b { color: var(--texto); font-size: 13px; word-break: break-word; }
+.sf-profe .sf-profe-bajada span { color: var(--texto-dim); font-size: 11px; }
+.sf-profe .sf-profe-ayuda, .sf-profe .sf-profe-para, .sf-profe .sf-profe-ok { color: var(--texto-dim); font: 13px/1.5 system-ui, sans-serif; margin: 8px 0 0; }
+.sf-profe .sf-profe-para { color: var(--texto); }
+.sf-profe .sf-profe-ok { color: var(--texto); font-size: 14px; margin: 12px 0 16px; }
+.sf-profe .sf-profe-input { width: 100%; box-sizing: border-box; background: var(--bg-abs, #050808); color: var(--texto); border: 1px solid var(--borde); border-radius: 3px; padding: 10px; font: 13px system-ui, sans-serif; }
+.sf-profe textarea.sf-profe-input { resize: vertical; }
+.sf-profe .sf-profe-tipos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.sf-profe .sf-profe-tipo { text-align: left; padding: 10px 12px; background: transparent; border: 1px solid var(--borde); border-radius: 3px; color: var(--texto); cursor: pointer; display: flex; flex-direction: column; gap: 3px; font-family: inherit; }
+.sf-profe .sf-profe-tipo b { font-size: 12px; letter-spacing: .5px; }
+.sf-profe .sf-profe-tipo span { font: 11.5px/1.35 system-ui, sans-serif; color: var(--texto-dim); }
+.sf-profe .sf-profe-tipo:hover { border-color: var(--oro-dim); }
+.sf-profe .sf-profe-tipo.sel { border-color: var(--oro); background: rgba(255,189,0,.08); }
+.sf-profe .sf-profe-tipo.sel b { color: var(--oro); }
+.sf-profe .sf-profe-prog { margin-top: 14px; }
+.sf-profe .sf-profe-prog.oculto { display: none; }
+.sf-profe .sf-profe-barra { height: 6px; background: rgba(255,255,255,.06); border-radius: 3px; overflow: hidden; }
+.sf-profe .sf-profe-barra i { display: block; height: 100%; width: 0; background: var(--cian); transition: width .2s; }
+.sf-profe .sf-profe-prog small { display: block; margin-top: 6px; color: var(--texto-dim); font-size: 11px; }
+.sf-profe .sf-profe-botones { margin-top: 16px; justify-content: flex-end; }
+@media (max-width: 520px) { .sf-profe .sf-profe-tipos { grid-template-columns: 1fr; } }

@@ -1,0 +1,72 @@
+
+/* ==========================================================================
+   v47 (16/10/2026) — Inicio: pantalla de entrada (una vez por sesión), orden fijo de tarjetas (plan → mensajes),
+   accesos en una fila, sin "Últimos análisis"; actividad de los pilotos con 4 visibles + scroll y pulgar para validar.
+   ========================================================================== */
+/* ---- pantalla de entrada */
+.entrada-sf{position:fixed;inset:0;z-index:9000;display:flex;align-items:center;justify-content:center;padding:24px 16px;cursor:pointer;
+  background:radial-gradient(900px 520px at 70% 30%, rgba(79,227,194,.10), transparent 60%), var(--bg);-webkit-tap-highlight-color:transparent;}
+body.con-entrada{overflow:hidden;}
+.entrada-sf.saliendo{opacity:0;transition:opacity .28s ease-out;pointer-events:none;}
+.ent-caja{width:min(860px,100%);display:grid;grid-template-columns:minmax(0,1fr);gap:18px;justify-items:start;}
+.ent-zigzag{width:min(300px,62vw);height:auto;overflow:visible;}
+.ent-zigzag path{stroke-dasharray:1;stroke-dashoffset:1;animation:entTrazo .9s cubic-bezier(.65,0,.35,1) .1s forwards;}
+.ent-zigzag .ent-brillo{opacity:.35;filter:blur(3px);}
+.ent-punto{opacity:0;transform-box:fill-box;transform-origin:center;animation:entPunto .5s cubic-bezier(.34,1.56,.64,1) .85s forwards;}
+.ent-txt{opacity:0;transform:translateY(10px);animation:entTxt .55s cubic-bezier(.2,.8,.2,1) .55s forwards;}
+.ent-txt .etiqueta{color:var(--oro);}
+.ent-txt h1{font-family:var(--display);font-size:clamp(28px,5vw,52px);font-weight:800;line-height:1.08;letter-spacing:-.5px;margin:10px 0 0;max-width:680px;}
+.ent-txt h1 .acento{color:var(--cian);}
+.ent-txt p{font-family:var(--sans);font-size:15.5px;line-height:1.6;color:var(--ink-dim);max-width:560px;margin:14px 0 0;}
+.ent-saltear{position:absolute;left:0;right:0;bottom:max(18px, env(safe-area-inset-bottom));text-align:center;font:500 12px var(--sans);color:var(--ink-mute);
+  opacity:0;animation:entTxt .4s ease 1s forwards;}
+@keyframes entTrazo{to{stroke-dashoffset:0;}}
+@keyframes entPunto{0%{opacity:0;transform:scale(.3);}60%{opacity:1;transform:scale(1.35);}100%{opacity:1;transform:scale(1);}}
+@keyframes entTxt{to{opacity:1;transform:none;}}
+.entrada-sf.quieta .ent-zigzag path,.entrada-sf.quieta .ent-punto,.entrada-sf.quieta .ent-txt,.entrada-sf.quieta .ent-saltear{animation:none;opacity:1;transform:none;stroke-dashoffset:0;}
+.entrada-sf.quieta .ent-zigzag .ent-brillo{opacity:.35;}
+@media (prefers-reduced-motion: reduce){
+  .ent-zigzag path,.ent-punto,.ent-txt,.ent-saltear{animation:none !important;opacity:1;transform:none;stroke-dashoffset:0;}
+  .ent-zigzag .ent-brillo{opacity:.35;}
+}
+
+/* ---- Inicio: cabecera con accesos + orden fijo (plan, mensajes) */
+.inicio-cab{margin-bottom:16px;align-items:center;}
+.inicio-cab .acciones-inicio{display:flex;gap:8px;flex-wrap:wrap;}
+.inicio-orden{display:grid;gap:14px;margin-bottom:16px;}
+.inicio-orden:empty{display:none;}
+.inicio-orden > :empty{display:none;}
+.inicio-orden .inicio-arriba > .tarjeta,.inicio-orden .actividad-pilotos,.inicio-orden .mensajes-inicio,.inicio-orden .inicio-arriba,.inicio-orden .oferta-avisos{margin:0;}
+@media (max-width:600px){
+  .inicio-cab{align-items:flex-start;gap:12px;}
+  .inicio-cab .acciones-inicio{width:100%;}
+  .inicio-cab .acciones-inicio .btn{flex:1 1 auto;justify-content:center;}
+}
+
+/* ---- actividad de los pilotos: 4 visibles, el resto con scroll dentro de la tarjeta */
+.act-lista{max-height:372px;overflow-y:auto;overscroll-behavior:contain;padding-right:4px;scrollbar-width:thin;scrollbar-color:var(--borde-2) transparent;}
+.act-fila{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:10px;cursor:default;}
+.act-ir{display:grid;gap:6px;min-width:0;text-align:left;background:none;border:0;padding:0;color:inherit;font:inherit;cursor:pointer;}
+.act-ir:focus-visible{outline:2px solid var(--oro);outline-offset:4px;border-radius:6px;}
+.act-pulgar{width:40px;height:40px;border-radius:var(--r-md,8px);border:1px solid var(--borde-2);background:transparent;color:var(--ink-dim);
+  display:inline-flex;align-items:center;justify-content:center;cursor:pointer;transition:color .2s, border-color .2s, background .2s, transform .15s;}
+.act-pulgar svg{width:20px;height:20px;}
+.act-pulgar:hover{color:var(--oro);border-color:var(--oro);}
+.act-pulgar.sel{color:var(--on-oro,#2b1d00);background:var(--oro);border-color:var(--oro);}
+.act-pulgar.sel svg path{fill:currentColor;}
+.act-pulgar:active{transform:scale(.92);}
+.act-pulgar:disabled{opacity:.5;cursor:wait;}
+.act-fila.validada{border-left-color:var(--borde-2);background:transparent;}
+.act-fila.validada .act-que b,.act-fila.validada .act-est{opacity:.7;}
+.act-val{display:inline-flex;align-items:center;gap:4px;font-size:11.5px;color:var(--oro);font-weight:600;}
+.act-val svg{width:13px;height:13px;}
+.act-val svg path{fill:currentColor;}
+
+/* ---- el piloto ve la validación en Mi plan */
+.ses-val{display:inline-flex;align-items:center;color:var(--oro);}
+.ses-val svg{width:13px;height:13px;}
+.ses-val svg path{fill:currentColor;}
+.ses-validada-txt{display:flex;align-items:center;gap:8px;margin:12px 0 0;padding:8px 12px;border-radius:var(--r-md,8px);
+  border:1px solid color-mix(in srgb, var(--oro) 45%, var(--borde));color:var(--oro);font:600 13px var(--sans);}
+.ses-validada-txt svg{width:16px;height:16px;flex:none;}
+.ses-validada-txt svg path{fill:currentColor;}

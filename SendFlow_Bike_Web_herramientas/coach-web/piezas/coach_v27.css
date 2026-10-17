@@ -1,0 +1,10 @@
+
+/* ===== v27: avisos push ===== */
+.sf-avisos{display:flex;align-items:center;gap:14px;flex-wrap:wrap;}
+.sf-avisos-txt{flex:1;min-width:200px;display:flex;flex-direction:column;gap:3px;}
+.sf-avisos-txt b{font-size:13.5px;}
+.sf-avisos-txt span{font-size:12.5px;color:var(--ink-dim);}
+.sf-avisos[data-estado="activo"] .sf-avisos-txt b::after{content:" · activos";color:var(--cian);font-weight:500;}
+.oferta-avisos{position:relative;margin-bottom:16px;border-color:rgba(79,227,194,.35);padding-right:44px;}
+.oferta-avisos .cerrar-oferta{position:absolute;top:8px;right:8px;}
+.avisos-perfil{margin-top:16px;}

@@ -1,0 +1,34 @@
+
+/* ===================== v14 (11/10/2026): conversación de entrenamiento ===================== */
+.marcas-piloto{display:grid;gap:8px;}
+.lista-marcas{list-style:none;margin:0;padding:0;display:grid;gap:6px;}
+.lista-marcas li{display:flex;gap:6px;align-items:center;}
+.lista-marcas li .t{flex:none;font:500 12px var(--mono, "Roboto Mono", monospace);color:var(--cian);background:var(--panel-2);border:1px solid var(--borde);border-radius:6px;padding:6px 8px;cursor:pointer;}
+.lista-marcas li .input{flex:1;min-width:0;height:34px;}
+.lista-marcas li .quitar{flex:none;background:none;border:none;color:var(--ink-mute);font-size:20px;cursor:pointer;padding:0 6px;}
+.marca-piloto{display:flex;gap:10px;align-items:flex-start;width:100%;text-align:left;background:var(--panel-2);border:1px solid var(--borde);border-left:3px solid #fff;border-radius:8px;padding:8px 10px;margin-top:6px;color:var(--ink);cursor:pointer;font:inherit;font-size:13px;}
+.marca-piloto:hover{border-color:var(--borde-2, var(--borde));}
+.marca-piloto .t{flex:none;font:500 12px "Roboto Mono", monospace;color:var(--cian);}
+.chips-conv{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px;}
+.insignia-pestana{display:inline-grid;place-items:center;min-width:16px;height:16px;padding:0 4px;margin-left:4px;border-radius:999px;background:var(--oro);color:#111;font-size:9.5px;line-height:1;}
+.msj .msj-piloto{background:var(--panel-2);border:1px solid var(--borde);border-radius:var(--r-md);padding:12px;}
+.msj .msj-piloto .prosa{white-space:pre-wrap;margin:6px 0 4px;color:var(--ink);}
+.msj-lista{display:grid;gap:8px;margin-top:8px;max-height:min(42vh,360px);overflow:auto;padding-right:2px;}
+.burbuja{background:var(--panel-2);border:1px solid var(--borde);border-radius:10px;padding:8px 10px;max-width:92%;}
+.burbuja.mia{justify-self:end;border-color:color-mix(in srgb, var(--cian) 35%, var(--borde));}
+.burbuja.de-coach:not(.mia){border-left:3px solid var(--oro);}
+.burbuja.de-piloto:not(.mia){border-left:3px solid #fff;}
+.burbuja .cab{display:flex;gap:8px;align-items:center;font-size:11px;color:var(--ink-mute);margin-bottom:4px;flex-wrap:wrap;}
+.burbuja .cab b{color:var(--ink-dim);font-weight:600;}
+.burbuja .cab .ir{background:none;border:1px solid var(--borde);border-radius:6px;color:var(--cian);font:500 11px "Roboto Mono", monospace;padding:1px 6px;cursor:pointer;}
+.burbuja .cab .borrar{margin-left:auto;background:none;border:none;color:var(--ink-mute);font-size:16px;cursor:pointer;line-height:1;}
+.burbuja .txt{white-space:pre-wrap;font-size:13.5px;color:var(--ink);overflow-wrap:anywhere;}
+.burbuja .leido{font-size:10.5px;color:var(--cian);margin-top:4px;text-align:right;}
+.msj-nuevo{display:grid;gap:8px;margin-top:12px;}
+.msj-nuevo textarea{min-height:70px;}
+.msj-pie{display:flex;gap:8px;align-items:center;justify-content:space-between;flex-wrap:wrap;}
+.msj-momento{display:flex;gap:6px;align-items:center;font-size:12px;color:var(--ink-dim);cursor:pointer;}
+.msj-momento .msj-t{color:var(--cian);font-family:"Roboto Mono", monospace;}
+.pestanas button{position:relative;}
+/* 6 pestañas (entrenador): entran sin cortar el texto */
+.pestanas:has(> button:nth-child(6)) button{min-width:0;padding-left:2px;padding-right:2px;letter-spacing:.03em;font-size:9.5px;}

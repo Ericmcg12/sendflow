@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 120">
+  <!-- Single flat color for print, embroidery, laser etching. Change #111111 to whatever one color the medium needs. -->
+  <path d="M10,100 L40,60 L60,85 L85,28 L110,80 L130,55 L160,95 L190,100"
+        fill="none" stroke="#111111" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/>
+  <circle cx="85" cy="28" r="8" fill="#111111"/>
+</svg>

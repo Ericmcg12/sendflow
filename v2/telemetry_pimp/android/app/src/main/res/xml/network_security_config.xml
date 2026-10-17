@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  HTTP sin cifrar permitido para hablar con el Sender por WiFi local.
+  Android no acepta rangos de IP (192.168.0.0/16) en domain-config: sólo
+  nombres o IPs exactas, y la IP del Sender cambia si se une a otra red.
+  Por eso se habilita en base-config. Todo lo que va a internet (mapas)
+  sigue yendo por https igual.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="true">
+        <trust-anchors>
+            <certificates src="system" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

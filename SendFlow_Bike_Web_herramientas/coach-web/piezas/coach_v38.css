@@ -1,0 +1,12 @@
+/* ---- v38: botón único Mapa/Datos en bajadas sin video ---- */
+.barra-vista{position:absolute;top:8px;left:50%;transform:translateX(-50%);z-index:3;display:flex;}
+.bv-b.bv-vista{width:auto;height:42px;border-radius:21px;padding:0 14px;gap:8px;display:flex;align-items:center;font:700 11px var(--mono,"Roboto Mono",monospace);letter-spacing:.08em;text-transform:uppercase;}
+.bv-b.bv-vista[hidden]{display:none;}
+.bv-b.bv-vista svg{width:16px;height:16px;}
+@media (max-width:420px){.bv-b.bv-vista{height:38px;padding:0 10px;font-size:10px;}}
+/* fotos de Archivos y de los mensajes: fondo de carga (no cuadro negro con texto) hasta que aparece la imagen */
+@keyframes brillo-carga{0%{background-position:200% 0}100%{background-position:-200% 0}}
+img[data-arch]{color:transparent;font-size:0;background:linear-gradient(110deg,#0d1517 30%,#1a2a28 50%,#0d1517 70%) 0 0/200% 100%;animation:brillo-carga 1.4s linear infinite;}
+.burbuja .snap-msj:not([src]){background:linear-gradient(110deg,#0d1517 30%,#1a2a28 50%,#0d1517 70%) 0 0/200% 100%;}
+img[data-arch][src]{animation:none;background-color:#000;}
+img[data-arch].sin-archivo{font-size:12px;color:var(--ink-mute);animation:none;display:grid;place-items:center;text-align:center;}

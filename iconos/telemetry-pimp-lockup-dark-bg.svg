@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 420 360">
+  <!-- Transparent background — for placing on dark surfaces. Text is live/editable, set in Space Grotesk (Google Font); install it or outline the text if your editor substitutes a fallback. -->
+  <g transform="translate(120,20) scale(0.9)">
+    <path d="M10,100 L40,60 L60,85 L85,28 L110,80 L130,55 L160,95 L190,100"
+          fill="none" stroke="#a48bff" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
+    <circle cx="85" cy="28" r="9" fill="#a48bff"/>
+  </g>
+  <text x="210" y="195" text-anchor="middle" font-family="'Space Grotesk', system-ui, sans-serif"
+        font-weight="600" font-size="20" letter-spacing="10" fill="#8f89a0">TELEMETRY</text>
+  <text x="210" y="285" text-anchor="middle" font-family="'Space Grotesk', system-ui, sans-serif"
+        font-weight="700" font-size="86" fill="#f7f6f3">PIMP</text>
+</svg>

@@ -1,0 +1,32 @@
+
+/* ===== v22: estudio sin video con mapa ===== */
+.mapa-ctrl{position:absolute;top:10px;left:10px;z-index:3;display:flex;gap:6px;flex-wrap:wrap;max-width:calc(100% - 20px);align-items:center;}
+.mapa-ctrl .seg{display:flex;background:rgba(7,11,12,.78);backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.1);border-radius:var(--r-md);overflow:hidden;}
+.mapa-ctrl button{all:unset;cursor:pointer;font:600 10px var(--mono, "Roboto Mono", monospace);letter-spacing:.1em;text-transform:uppercase;color:var(--ink-dim);padding:7px 10px;}
+.mapa-ctrl button:hover{color:var(--ink);}
+.mapa-ctrl button:focus-visible{outline:2px solid var(--cian);outline-offset:-2px;}
+.mapa-ctrl .seg button.sel{background:rgba(79,227,194,.16);color:var(--cian);}
+.mapa-ctrl .seguir{background:rgba(7,11,12,.78);border:1px solid rgba(255,255,255,.1);border-radius:var(--r-md);}
+.mapa-ctrl .seguir.sel{color:var(--oro);border-color:rgba(255,189,0,.5);}
+.mapa-ctrl.en-cerca .met,.mapa-ctrl.en-cerca .seguir{display:none;}
+.estudio .escenario.solo-datos .hud{top:auto;bottom:12px;}
+.resumen-pista{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:8px;margin-bottom:16px;}
+.resumen-pista .rp{background:var(--panel-2, rgba(255,255,255,.03));border:1px solid var(--borde);border-radius:var(--r-md);padding:9px 10px;}
+.resumen-pista .k{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink-dim);}
+.resumen-pista .v{font-size:17px;font-weight:500;margin-top:3px;font-variant-numeric:tabular-nums;}
+.resumen-pista .s{font-size:10.5px;color:var(--ink-dim);margin-top:2px;}
+.resumen-pista .nota{grid-column:1/-1;margin:0;font-size:11px;color:var(--ink-dim);}
+@media (max-width:640px){
+  .mapa-ctrl{top:6px;left:6px;gap:4px;}
+  .mapa-ctrl button{padding:6px 7px;font-size:9px;letter-spacing:.06em;}
+  .estudio .escenario.solo-datos .hud{bottom:6px;}
+}
+.estudio .escenario.solo-datos .hud{max-width:calc(100% - 20px);flex-wrap:nowrap;}
+.estudio .escenario.solo-datos .hud .h{min-width:0;padding:5px 8px;}
+.estudio .escenario.solo-datos .hud .h .v{font-size:15px;}
+@media (max-width:900px){ .estudio .escenario.solo-datos .hud{flex-wrap:wrap;} }
+@media (max-width:640px){
+  .estudio .escenario.solo-datos{aspect-ratio:4/5;max-height:none;}
+  .estudio .escenario.solo-datos .hud .h{padding:3px 5px;}
+  .estudio .escenario.solo-datos .hud .h .v{font-size:12px;}
+}

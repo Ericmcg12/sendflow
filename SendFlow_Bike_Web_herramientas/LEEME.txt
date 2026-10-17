@@ -1,0 +1,5 @@
+Herramientas de SendFlow Bike Web (NO se suben al hosting).
+Regenerar la carpeta SendFlow_Bike_Web/analisis a partir de la app:
+  python construir_web.py <ruta a telemetry_pimp\\www> <carpeta de salida>
+y copiar la salida a SendFlow_Bike_Web/analisis. La app original no se modifica.
+nube/ = código de la nube (core, panel, parche de la app y nube_v1.sql).

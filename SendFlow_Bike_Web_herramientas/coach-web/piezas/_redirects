@@ -1,0 +1,17 @@
+# SendFlow Coach — direcciones limpias (11/10/2026)
+# Cada sección de la app se sirve con index.html (la app decide qué mostrar). Destino "/" y no "/index.html": Cloudflare redirige /index.html a /.
+# Solo direcciones de la app: los archivos reales (js/, css/, vendor/, img/) no se tocan.
+/inicio        /  200
+/ingreso       /  200
+/salir         /  200
+/recibidos     /  200
+/recibido/*    /  200
+/pilotos       /  200
+/piloto/*      /  200
+/analisis      /  200
+/analisis/*    /  200
+/bajadas       /  200
+/perfil        /  200
+/enviar        /  200
+/mensajes      /  200
+/mensajes/*    /  200

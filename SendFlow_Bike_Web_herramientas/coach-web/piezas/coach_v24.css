@@ -1,0 +1,15 @@
+
+/* ===== v24: piloto con color + filtro por piloto ===== */
+.t-analisis.con-piloto{box-shadow:inset 3px 0 0 var(--cp);}
+.fila-sello{margin-bottom:6px;}
+.sello-piloto{display:inline-flex;align-items:center;gap:7px;max-width:100%;}
+.sello-piloto .av{flex:none;width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:color-mix(in srgb, var(--c) 22%, transparent);border:1.5px solid var(--c);color:var(--c);font:700 9.5px var(--mono, "Roboto Mono", monospace);letter-spacing:.02em;}
+.sello-piloto .nm{font-size:12px;font-weight:600;color:var(--c);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.filtro-pilotos{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:10px;}
+.filtro-pilotos button{display:inline-flex;align-items:center;gap:7px;padding:5px 10px 5px 6px;border-radius:999px;border:1px solid var(--borde);background:transparent;color:var(--ink-dim);font:600 11.5px var(--sans, system-ui);cursor:pointer;}
+.filtro-pilotos button[data-p=""]{padding-left:12px;}
+.filtro-pilotos button i{font-style:normal;width:20px;height:20px;border-radius:50%;display:grid;place-items:center;border:1.5px solid var(--c);color:var(--c);font:700 8.5px var(--mono, "Roboto Mono", monospace);}
+.filtro-pilotos button span{font:500 10px var(--mono, "Roboto Mono", monospace);color:var(--ink-mute);}
+.filtro-pilotos button:hover{color:var(--ink);border-color:var(--borde-fuerte, #3a4546);}
+.filtro-pilotos button.sel{color:var(--ink);border-color:var(--c, var(--cian));background:color-mix(in srgb, var(--c, #4fe3c2) 14%, transparent);}
+.filtro-pilotos button:focus-visible{outline:2px solid var(--cian);outline-offset:2px;}

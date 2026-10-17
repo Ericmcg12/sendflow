@@ -1,0 +1,249 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SendFlow Bike · Telemetría de suspensión para DH</title>
+  <meta name="description" content="Un solo acceso al sistema SendFlow: Sender, SendFlow Bike, SendFlow Coach y SendFlow Lab.">
+  <meta name="theme-color" content="#0d1117">
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="manifest" href="/manifest.webmanifest">
+  <link rel="apple-touch-icon" href="/img/aviso-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="/estilo/sendflow.css">
+  <link rel="stylesheet" href="/css/sitio.css">
+</head>
+<body class="sin-sesion">
+
+<div class="app">
+<nav class="nav" id="nav-sitio" aria-label="Principal">
+  <a class="marca" href="/" aria-label="SendFlow, inicio"><svg viewBox="0 0 200 120" width="40" height="24" aria-hidden="true"><path d="M10,100 L40,60 L60,85 L85,28 L110,80 L130,55 L160,95 L190,100" fill="none" stroke="#4fe3c2" stroke-width="12" stroke-linejoin="round" stroke-linecap="round"/><circle cx="85" cy="28" r="11" fill="#fff"/></svg><span><span class="marca-txt">Send<span class="flow">Flow</span></span><span class="marca-coach">BIKE</span></span></a>
+  <div class="nav-items">
+    <button class="nav-item" id="nav-inicio" data-ruta="inicio" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 11l9-7 9 7"/><path d="M5 10v10h14V10"/></svg><span>Inicio</span></button>
+    <button class="nav-item" id="nav-analisis" data-ruta="analisis" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M3 20h18"/><path d="M4 16l4-6 4 3 4-7 4 5"/></svg><span>Análisis</span></button>
+    <button class="nav-item" id="nav-mensajes" data-ruta="mensajes" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg><span>Mensajes</span><b class="nav-insignia" id="nav-mensajes-n" hidden></b></button>
+    <button class="nav-item" id="nav-perfil" data-ruta="perfil" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.5 4.2-7 8-7s7 2.5 8 7"/></svg><span>Perfil</span><b id="nav-perfil-insignia" class="nav-insignia" hidden></b></button>
+    <a class="nav-item" id="nav-admin" href="/admin.html" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg><span>Admin</span></a>
+    <button class="nav-item" id="btn-salir" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H5v16h4"/><path d="M16 8l4 4-4 4M20 12H9"/></svg><span>Salir</span></button>
+  </div>
+  <div class="nav-pie" id="nav-pie"></div>
+</nav>
+
+<main class="principal">
+
+  <!-- ===== BIENVENIDA + LOGIN ===== -->
+  <section id="vista-bienvenida" class="vista bienvenida ingreso" hidden>
+    <div class="ingreso-lado ingreso-marca entra">
+      <svg class="ingreso-zigzag hero-zigzag" viewBox="0 0 200 120" aria-hidden="true"><path d="M10,100 L40,60 L60,85 L85,28 L110,80 L130,55 L160,95 L190,100" fill="none" stroke="#4fe3c2" stroke-width="7" stroke-linejoin="round" stroke-linecap="round"/><circle cx="85" cy="28" r="8" fill="#fff"/></svg>
+      <div class="marca-txt">Send<span class="flow">Flow</span></div>
+      <span class="marca-coach">BIKE</span>
+    </div>
+    <div class="ingreso-lado ingreso-info entra">
+      <p class="prosa">Un solo acceso para todo tu sistema SendFlow: del Sender en la bici al análisis, el entrenamiento y el taller. Tus datos viven en tu dispositivo y la nube es opcional.</p>
+      <ul class="familia">
+        <li><strong>SendFlow Bike</strong><span>Analizá tus bajadas en la app o en la compu.</span></li>
+        <li><strong>SendFlow Coach</strong><span>Planes, devoluciones y evolución con tu entrenador.</span></li>
+        <li><strong>SendFlow Lab</strong><span>Suspensión en el taller, con historial de uso real.</span></li>
+      </ul>
+    </div>
+
+    <div class="tarjeta auth ingreso-caja entra" role="region" aria-label="Acceso">
+      <div class="tipo-tag" role="tablist">
+        <button id="tab-entrar" class="btn chico sel" role="tab" aria-selected="true" type="button">Entrar</button>
+        <button id="tab-crear" class="btn chico" role="tab" aria-selected="false" type="button">Crear cuenta</button>
+      </div>
+
+      <form id="form-entrar" novalidate>
+        <label for="e-email">Email</label>
+        <input id="e-email" type="email" autocomplete="email" required>
+        <label for="e-clave">Contraseña</label>
+        <input id="e-clave" type="password" autocomplete="current-password" required>
+        <button class="btn primario" type="submit">Entrar</button>
+        <button id="btn-olvide" class="btn-texto" type="button">Olvidé mi contraseña</button>
+      </form>
+
+      <form id="form-crear" novalidate hidden>
+        <label for="c-nombre">Nombre</label>
+        <input id="c-nombre" type="text" autocomplete="name" required>
+        <label for="c-email">Email</label>
+        <input id="c-email" type="email" autocomplete="email" required>
+        <label for="c-clave">Contraseña <small>(mínimo 8 caracteres)</small></label>
+        <input id="c-clave" type="password" autocomplete="new-password" minlength="8" required>
+        <div id="c-captcha" class="cf-turnstile-caja"></div>
+        <button class="btn primario" type="submit">Crear cuenta</button>
+      </form>
+
+      <p id="msg-auth" class="mensaje" role="status" aria-live="polite" hidden></p>
+    </div>
+  </section>
+
+  <!-- ===== NUEVA CONTRASEÑA (desde el email de recuperación) ===== -->
+  <section id="vista-recuperar" class="vista centrada" hidden>
+    <div class="tarjeta auth entra">
+      <h2>Nueva contraseña</h2>
+      <form id="form-recuperar" novalidate>
+        <label for="r-clave">Contraseña nueva <small>(mínimo 8 caracteres)</small></label>
+        <input id="r-clave" type="password" autocomplete="new-password" minlength="8" required>
+        <button class="btn primario" type="submit">Guardar contraseña</button>
+      </form>
+      <p id="msg-recuperar" class="mensaje" role="status" aria-live="polite" hidden></p>
+    </div>
+  </section>
+
+  <!-- ===== CUENTA PENDIENTE DE APROBACIÓN ===== -->
+  <section id="vista-pendiente" class="vista centrada" hidden>
+    <div class="tarjeta auth entra">
+      <h2>Cuenta pendiente de aprobación</h2>
+      <p class="ayuda">Tu cuenta se creó bien, pero todavía no fue aprobada. Apenas la aprueben vas a poder usar SendFlow. Volvé a revisar más tarde con el botón de abajo.</p>
+      <p id="pendiente-email" class="ayuda"></p>
+      <div class="fila-botones"><button id="btn-revisar" class="btn primario" type="button">Revisar de nuevo</button><button id="btn-salir-pend" class="btn" type="button">Cerrar sesión</button></div>
+      <p id="msg-pendiente" class="mensaje" role="status" aria-live="polite" hidden></p>
+    </div>
+  </section>
+
+  <!-- ===== HUB: a dónde ir según tu rol ===== -->
+  <section id="vista-hub" class="vista hub" hidden>
+    <div class="cab-pagina entra">
+      <div><h1 id="hub-saludo" class="titulo-pagina">Hola</h1>
+      <div class="sub-pagina">Elegí a dónde querés ir.</div></div>
+    </div>
+
+    <div id="hub-invitaciones"></div>
+    <div id="hub-tarjetas" class="rejilla"></div>
+
+
+  </section>
+
+  <!-- ===== ANÁLISIS (v35): /analisis dentro del sitio; al abrir una bajada el menú se esconde ===== -->
+  <section id="vista-analisis" class="vista vista-analisis" hidden><div id="analisis-marco" class="analisis-marco"></div></section>
+
+  <!-- ===== MENSAJES (v23) ===== -->
+  <section id="vista-mensajes" class="vista hub" hidden>
+    <div class="cab-pagina entra">
+      <div><h1 class="titulo-pagina">Mensajes</h1><div class="sub-pagina" id="msj-sub">Lo que hablás con tu entrenador sobre cada devolución.</div></div>
+    </div>
+    <div class="bandeja entra" id="bandeja">
+      <div class="bandeja-lista" id="bandeja-lista"></div>
+      <div class="bandeja-conv" id="bandeja-conv" hidden>
+        <div class="conv-cab">
+          <button type="button" class="btn conv-volver" id="conv-volver" aria-label="Volver a Mensajes">←</button>
+          <div class="conv-cab-txt"><b id="conv-quien"></b><span id="conv-titulo"></span></div>
+          <button type="button" class="btn" id="conv-ver">Ver el análisis</button>
+        </div>
+        <div class="conv-mensajes" id="conv-mensajes"></div>
+        <div class="msj-nuevo">
+          <textarea class="input" id="conv-texto" maxlength="2000" placeholder="Escribí tu respuesta…"></textarea>
+          <div class="msj-pie"><small class="ayuda-enter">Enter envía · Shift+Enter, otra línea</small>
+            <button type="button" class="btn primario" id="conv-enviar">Enviar</button></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===== PERFIL ===== -->
+  <section id="vista-perfil" class="vista hub" hidden>
+    <div class="cab-pagina entra">
+      <div><h1 class="titulo-pagina">Perfil</h1><div id="perfil-email" class="sub-pagina"></div></div>
+    </div>
+    <div class="pestanas pf-pestanas entra" role="tablist">
+      <button class="pestana activa" type="button" role="tab" data-pt="datos" aria-selected="true">Mis datos</button>
+      <button class="pestana" type="button" role="tab" data-pt="bicis" aria-selected="false">Mis bicis <b id="pf-insignia" class="nav-insignia" hidden></b></button>
+    </div>
+    <p id="pf-sin-sql" class="mensaje error" hidden>Falta correr <b>perfiles_v1.sql</b> en Supabase para guardar bicis y set-ups.</p>
+    <div id="pt-datos">
+    <div class="perfil-grid entra">
+      <form id="form-perfil-datos" class="tarjeta" novalidate>
+        <div class="etiqueta etq-tarjeta">Tus datos</div>
+        <div class="form-grilla">
+          <div class="campo ancho"><label for="pf-nombre">Nombre y apellido</label><input class="input" id="pf-nombre" type="text" maxlength="120" autocomplete="name"></div>
+          <div class="campo"><label for="pf-nacimiento">Fecha de nacimiento</label><input class="input" id="pf-nacimiento" type="date" autocomplete="bday"></div>
+          <div class="campo"><label for="pf-edad">Edad</label><input class="input" id="pf-edad" type="text" inputmode="numeric" maxlength="2"></div>
+          <div class="campo"><label for="pf-peso">Peso (kg)</label><input class="input" id="pf-peso" type="text" inputmode="decimal" maxlength="6"></div>
+          <div class="campo"><label for="pf-telefono">Teléfono</label><input class="input" id="pf-telefono" type="tel" maxlength="24" autocomplete="tel" placeholder="+54 261 555 1234"></div>
+          <div class="campo"><label for="pf-disciplina">Disciplina</label><select class="input" id="pf-disciplina"></select></div>
+          <div class="campo"><label for="pf-nivel">Nivel</label><select class="input" id="pf-nivel"></select></div>
+          <div class="campo"><label for="pf-categoria">Categoría</label><input class="input" id="pf-categoria" type="text" maxlength="40"></div>
+          <div class="campo"><label for="pf-estilo">Estilo de manejo</label><select class="input" id="pf-estilo"></select></div>
+          <div class="campo ancho pf-foto-campo">
+            <span class="pf-foto-etq">Foto</span>
+            <div class="pf-foto-fila">
+              <img id="pf-foto-img" class="pf-foto-img" alt="Tu foto" hidden>
+              <span id="pf-foto-vacia" class="pf-foto-img vacia" aria-hidden="true"></span>
+              <label class="btn chico" for="pf-foto">Elegir foto</label>
+              <input id="pf-foto" type="file" accept="image/*" hidden>
+              <button id="pf-foto-quitar" class="btn chico fantasma" type="button" hidden>Quitar</button>
+            </div>
+          </div>
+          <label id="pf-permiso-caja" class="campo ancho pf-permiso" hidden><span><input id="pf-permiso" type="checkbox"> Mi entrenador puede cambiar mis bicis y set-ups</span><small class="ayuda">Siempre las puede ver. Esto le permite además editarlas.</small></label>
+        </div>
+        <button class="btn primario" type="submit">Guardar</button>
+        <p id="msg-pf-datos" class="mensaje" role="status" aria-live="polite" hidden></p>
+      </form>
+      <div class="pf-col">
+      <form id="form-perfil-clave" class="tarjeta" novalidate>
+        <div class="etiqueta etq-tarjeta">Contraseña</div>
+        <div class="form-grilla una-col">
+          <div class="campo"><label for="pf-actual">Actual</label><input class="input" id="pf-actual" type="password" autocomplete="current-password"></div>
+          <div class="campo"><label for="pf-nueva">Nueva (8 o más)</label><input class="input" id="pf-nueva" type="password" autocomplete="new-password"></div>
+        </div>
+        <button class="btn" type="submit">Cambiar contraseña</button>
+        <p class="ayuda">Es la misma contraseña de tu cuenta SendFlow.</p>
+        <p id="msg-pf-clave" class="mensaje" role="status" aria-live="polite" hidden></p>
+      </form>
+      <section class="tarjeta pf-avisos-caja" hidden>
+        <div class="etiqueta etq-tarjeta">Avisos por email</div>
+        <div id="pf-avisos-email"></div>
+      </section>
+      <section id="pf-entrenadores" class="tarjeta" hidden></section>
+      <p id="msg-pf-cuenta" class="mensaje" role="status" aria-live="polite" hidden></p>
+      <div id="pf-cuenta"></div>
+      </div>
+    </div>
+    </div>
+    <div id="pt-bicis" hidden>
+      <div id="pf-editor" hidden></div>
+      <div id="pf-bicis-lista">
+      <div id="pf-traer"></div>
+      <div class="pf-bicis-cab entra">
+        <p class="ayuda">Cada bici con tus datos es un perfil (<b>Nombre · Bici</b>) que usás en la app y en el análisis. Las presiones y los clicks de la bici son su <b>Base</b>; acá armás también set-ups por pista. La app los importa con «Importar perfiles».</p>
+        <button id="pf-agregar" class="btn primario" type="button">+ Agregar bici</button>
+      </div>
+      <p id="msg-pf-bicis" class="mensaje" role="status" aria-live="polite" hidden></p>
+      <div id="pf-bicis" class="sf-bicis"></div>
+      <div class="titulo-seccion entra">Perfiles subidos desde la app (versión anterior)</div>
+      <p class="ayuda entra">Los perfiles que mandó la app actual desde Configuración → SendFlow nube. Podés pasarlos a Mis bicis.</p>
+      <div id="pf-lista" class="rejilla"></div>
+      </div>
+    </div>
+  </section>
+
+  <div id="confirmar" class="modal-fondo" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="confirmar-t">
+      <div class="modal-cab"><h2 id="confirmar-t">Confirmar</h2></div>
+      <div class="modal-cuerpo"><p id="confirmar-p" class="ayuda"></p></div>
+      <div class="modal-pie"><button id="confirmar-no" class="btn" type="button">Cancelar</button><button id="confirmar-si" class="btn peligro-lleno" type="button">Borrar</button></div>
+    </div>
+  </div>
+
+  <p id="cargando" class="cargando">Cargando…</p>
+  <footer class="pie">
+  <span>SendFlow Bike · SendFlow Coach · SendFlow Lab</span>
+  <span class="tenue">Prototipo</span>
+</footer>
+</main>
+</div>
+
+<script src="/estilo/sendflow.js"></script>
+<script src="/vendor/supabase.bundle.js"></script>
+<script src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit" async defer></script>
+<script src="/js/config.js"></script>
+<script src="/js/avisos-push.js"></script>
+<script src="/js/avisos-email.js"></script>
+<script src="/js/editor-bici.js"></script>
+<script src="/js/mi-perfil.js"></script>
+<script src="/js/ciclo-cuenta.js"></script>
+<script src="/js/app.js"></script>
+</body>
+</html>

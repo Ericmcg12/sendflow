@@ -1,0 +1,11 @@
+/* v26: aviso de datos guardados antes de separar por cuenta */
+#sfBaseVieja { position: fixed; inset: 0; z-index: 99998; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(5,8,9,.82); }
+#sfBaseVieja .sf-bv-card { max-width: 460px; width: 100%; padding: 26px 24px; background: linear-gradient(180deg, rgba(21,27,28,.98), rgba(13,18,20,.98)); border: 1px solid #232b2c; border-radius: 6px; }
+#sfBaseVieja h2 { margin: 0 0 10px; font: 600 15px/1.3 "Roboto Mono", monospace; letter-spacing: .08em; text-transform: uppercase; color: #ffbd00; }
+#sfBaseVieja p { margin: 0 0 14px; color: #9aa7a5; font: 14px/1.5 system-ui, sans-serif; }
+#sfBaseVieja .sf-bv-preg { color: #e8efed; font-weight: 600; }
+#sfBaseVieja .sf-bv-botones { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+#sfBaseVieja .sf-bv-btn { padding: 11px 14px; border: 1px solid #2d3738; background: transparent; color: #cfd8d6; font: 700 11px "Roboto Mono", monospace; letter-spacing: .08em; text-transform: uppercase; border-radius: 2px; cursor: pointer; }
+#sfBaseVieja .sf-bv-si { background: #4fe3c2; border-color: #4fe3c2; color: #06110f; }
+#sfBaseVieja .sf-bv-btn:disabled { opacity: .6; cursor: wait; }
+#sfBaseVieja .sf-bv-nota { margin: 0; font-size: 12px; color: #6f7c7a; }
