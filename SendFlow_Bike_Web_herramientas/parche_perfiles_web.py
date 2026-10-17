@@ -84,3 +84,52 @@ for r_, pares in TEXTOS.items():
     for viejo, nuevo in pares: x = x.replace(viejo, nuevo)
     escribir(r_, x)
 print("perfiles web OK ->", D)
+
+# v43 (16/10/2026): (1) inicio de /analisis con título «Análisis» y los pasos (elegí perfil y bici → importá), igual que las
+# demás páginas de sendflow.bike; (2) Importar bajada: «Desde archivo .sfb» (el formato del Sender; antes decía .CSV) y
+# «Desde la nube» (las bajadas que subió la app); «Guardadas en este navegador»; (3) estilo v2 de la app (mayúscula inicial,
+# IBM Plex Sans), el mismo que el parche v2 de la app.
+shutil.copy(os.path.join(PIEZAS, "analisis-guia.js"), os.path.join(D, "js", "analisis-guia.js"))
+css = leer("css/modo-web.css")
+if "/* ---- v43: inicio de /analisis" in css: css = css[:css.index("/* ---- v43: inicio de /analisis")].rstrip("\n") + "\n"
+escribir("css/modo-web.css", css + "\n" + open(os.path.join(PIEZAS, "analisis-guia.css"), encoding="utf-8").read())
+h = leer("index.html")
+h = una_vez(h, '<script src="./js/perfiles-web.js"></script>', '<script src="./js/perfiles-web.js"></script>\n<script src="./js/analisis-guia.js"></script>', "analisis-guia.js")
+h = una_vez(h, '<section class="pantalla activa" id="pantallaBienvenida">\n    <div class="hero">',
+  '''<section class="pantalla activa" id="pantallaBienvenida">
+    <div class="hero">
+      <div class="sf-an-cab">
+        <h1 class="sf-an-titulo">Análisis</h1>
+        <p class="sf-an-sub">Tus bajadas en pantalla grande: gráficos, mapa y comparación.</p>
+        <ol class="sf-an-pasos">
+          <li><b>Elegí tu perfil y la bici</b> que querés analizar, con el botón Perfil.</li>
+          <li><b>Importá la bajada</b> desde un archivo .sfb guardado en tu computadora (por ejemplo, copiado de la microSD del Sender) o desde la nube, donde están las que subiste con la app.</li>
+        </ol>
+      </div>''', 'class="sf-an-cab"')
+for viejo, nuevo in (
+  ('<input type="file" id="inputSD" accept=".sfb,.csv,text/csv,application/octet-stream">', '<input type="file" id="inputSD" accept=".sfb,application/octet-stream">'),
+  ('<span class="fila-config-titulo">DESDE ARCHIVO (TARJETA SD)</span>', '<span class="fila-config-titulo">Desde archivo .sfb</span>'),
+  ('<span class="fila-config-titulo">Desde archivo (tarjeta SD)</span>', '<span class="fila-config-titulo">Desde archivo .sfb</span>'),
+  ('<span class="fila-config-sub">Importar un log .CSV directo del datalogger</span>', '<span class="fila-config-sub">Una bajada de Sender guardada como archivo, por ejemplo copiada de la microSD</span>'),
+  ('<span class="fila-config-titulo">BAJADAS GUARDADAS EN ESTA APP</span>', '<span class="fila-config-titulo">Guardadas en este navegador</span>'),
+  ('<span class="fila-config-titulo">Bajadas guardadas en esta app</span>', '<span class="fila-config-titulo">Guardadas en este navegador</span>'),
+  ('<span class="fila-config-sub">Bajadas ya analizadas y guardadas en este dispositivo</span>', '<span class="fila-config-sub">Bajadas que ya abriste y guardaste en este navegador</span>'),
+  ('title="Importar bajada — desde tarjeta SD, guardadas en la app, o la carpeta del dispositivo"', 'title="Importar bajada: archivo .sfb, la nube o las guardadas en este navegador"')):
+    h = h.replace(viejo, nuevo)
+h = una_vez(h, '        <button class="fila-config-menu" id="btnImportarGuardadas">',
+  '''        <button class="fila-config-menu sf-solo-web" id="btnImportarNube">
+          <span class="fila-config-titulo">Desde la nube</span>
+          <span class="fila-config-sub">Las bajadas que subiste con la app SendFlow Bike</span>
+        </button>
+        <button class="fila-config-menu" id="btnImportarGuardadas">''', 'id="btnImportarNube"')
+escribir("index.html", h)
+a = leer("js/app.js")
+a = a.replace('alert("No se pudo interpretar el archivo. Tiene que ser una bajada del Sender (.sfb) o un CSV con las columnas tiempo, pos_h, pos_s, vel_r, vel_g, altura.");',
+              'alert("No se pudo leer el archivo. Tiene que ser una bajada de Sender (.sfb).");')
+escribir("js/app.js", a)
+x = leer("js/nube-ui.js")
+x = x.replace("quedan en IMPORTAR BAJADA › Guardadas.", "quedan en Importar bajada › Guardadas en este navegador.")
+escribir("js/nube-ui.js", x)
+import subprocess
+subprocess.run([sys.executable, os.path.join(PIEZAS, "estilo", "aplicar_estilo_app.py"), D, D], check=True)
+print("v43 /analisis OK")

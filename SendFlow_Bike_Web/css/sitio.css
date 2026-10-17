@@ -561,3 +561,90 @@ body.analisis-completo .analisis-marco { left: 0; bottom: 0; }
 .adm-espacio-txt.lleno { color: var(--rojo); }
 .adm-espacio-in { width: 86px; }
 .adm-espacio-u { color: var(--ink-dim); font-size: 12.5px; }
+
+/* ===== v51 / Bike v43 (16/10/2026): entrenadores libres (entrenadores-libres.js) y bienvenida de primera vez (bienvenida-nueva.js) ===== */
+.sfe-modal { width: min(640px, 100%); max-height: calc(100dvh - 36px); overflow: auto; font-family: var(--sans); }
+.sfe-modal .modal-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sfe-modal .modal-cab h2 { text-transform: none; letter-spacing: 0; font-size: 17px; margin: 0; }
+.sfe-modal .btn.sfe-cerrar { margin: 0; }
+.sfe-intro { margin: 0 0 14px; }
+.input.sfe-buscar { width: 100%; margin-bottom: 14px; font-family: var(--sans); }
+.sfe-estado { margin: 6px 0; }
+.sfe-lista { display: grid; gap: 12px; }
+.sfe-ent, .sfe-sol { border: 1px solid var(--borde); border-radius: var(--r-lg); padding: 14px 16px; background: rgba(7,11,12,.45); transition: border-color .2s; }
+.sfe-ent:hover, .sfe-sol:hover { border-color: var(--borde-2); }
+.sfe-ent-cab { display: flex; align-items: center; gap: 12px; }
+.sfe-foto { width: 46px; height: 46px; flex: none; border-radius: 50%; object-fit: cover; border: 1px solid var(--borde-2); }
+.sfe-foto.vacia { display: grid; place-items: center; background: var(--panel-3); color: var(--cian); font: 600 15px/1 var(--sans); }
+.sfe-ent-txt { min-width: 0; }
+.sfe-ent-nom { font: 600 15.5px/1.3 var(--sans); color: var(--ink); }
+.sfe-ent-meta { font: 13px/1.4 var(--sans); color: var(--cian); margin-top: 2px; }
+.sfe-ent-disc { font: 12.5px/1.4 var(--sans); color: var(--ink-dim); margin-top: 2px; }
+.sfe-ent-pres { margin: 10px 0 0; font: 14px/1.55 var(--sans); color: var(--ink); white-space: pre-line; overflow-wrap: anywhere; }
+.sfe-ent-acc { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 12px; }
+.sfe-ent-acc .btn { margin-top: 0; }
+.sfe-chip { display: inline-flex; align-items: center; padding: 5px 10px; border-radius: 999px; border: 1px solid var(--oro-dim); color: var(--oro); font: 500 12.5px/1.3 var(--sans); }
+.sfe-chip.ok { border-color: rgba(79,227,194,.45); color: var(--cian); }
+.sfe-chip.no { border-color: var(--borde-2); color: var(--ink-dim); }
+.sfe-pedir { width: 100%; display: grid; gap: 6px; }
+.sfe-pedir label { font: 12.5px/1.4 var(--sans); color: var(--ink-dim); text-transform: none; letter-spacing: 0; font-weight: 500; margin: 0; }
+textarea.input.sfe-texto { width: 100%; height: auto; min-height: 84px; padding: 10px 12px; resize: vertical; font: 14px/1.5 var(--sans); }
+.sfe-fila { display: flex; gap: 8px; justify-content: flex-end; flex-wrap: wrap; }
+.sfe-fila .btn { margin-top: 0; }
+/* tarjeta del piloto (Perfil) */
+.sfe-sin { margin: 4px 0 12px; }
+.btn.sfe-buscar-btn { margin-top: 0; }
+.sfe-sol-p { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 0; border-top: 1px solid var(--borde); flex-wrap: wrap; font-family: var(--sans); }
+.sfe-sol-p:first-of-type { border-top: 0; }
+.btn.sfe-buscar-btn + .sfe-sol-p { margin-top: 14px; border-top: 1px solid var(--borde); }
+.sfe-sol-p .btn { margin-top: 0; }
+.sfe-sol-txt { display: grid; gap: 2px; }
+.sfe-sol-txt b { font-weight: 600; }
+.sfe-sol-est { font-size: 12.5px; color: var(--oro); }
+.sfe-sol-est.aceptada { color: var(--cian); }
+.sfe-sol-est.rechazada { color: var(--ink-dim); }
+/* entrenador: ficha pública y solicitudes */
+.sfe-pub { display: grid; gap: 12px; font-family: var(--sans); }
+.sfe-pub .btn { justify-self: start; margin-top: 4px; }
+.sfe-switch { display: flex; align-items: center; gap: 10px; font: 500 14px/1.4 var(--sans); color: var(--ink); text-transform: none; letter-spacing: 0; cursor: pointer; margin: 0; }
+.sfe-switch input { width: 18px; height: 18px; accent-color: var(--cian); flex: none; }
+.sfe-campo { display: flex; flex-direction: column; gap: 6px; }
+.sfe-campo label { margin: 0; }
+.sfe-cuenta { margin: -6px 0 0; text-align: right; }
+.sfe-sol-cab { margin-bottom: 12px; }
+.sfe-sol-tit { font: 600 17px/1.3 var(--sans); margin: 0; color: var(--ink); text-transform: none; letter-spacing: 0; }
+.sfe-solicitudes { display: grid; gap: 12px; }
+.sfe-solicitudes[hidden] { display: none; }
+.sfe-solicitudes .sfe-sol { border-left: 3px solid var(--oro); }
+
+/* bienvenida de primera vez */
+html.sfw-abierta, html.sfw-abierta body { overflow: hidden; }
+.sfw-fondo { position: fixed; inset: 0; z-index: 200; overflow: auto; padding: 28px 16px 40px; background: radial-gradient(1200px 600px at 15% -10%, rgba(79,227,194,.12), transparent 60%), rgba(5,8,9,.96); backdrop-filter: blur(8px); animation: sfw-entra .35s ease-out both; }
+.sfw-caja { max-width: 760px; margin: 0 auto; font-family: var(--sans); color: var(--ink); }
+.sfw-etq { font: 600 11px/1 var(--mono); letter-spacing: .18em; text-transform: uppercase; color: var(--oro); margin-bottom: 12px; }
+.sfw-titulo { font-family: var(--display); font-size: clamp(26px, 4.2vw, 38px); line-height: 1.12; font-weight: 700; letter-spacing: -.3px; margin: 0 0 12px; }
+.sfw-bajada { font-size: 16px; line-height: 1.6; color: var(--ink-dim); margin: 0 0 22px; max-width: 60ch; }
+.sfw-pasos { list-style: none; margin: 0 0 26px; padding: 0; display: grid; gap: 10px; }
+.sfw-paso { display: flex; gap: 14px; align-items: flex-start; padding: 14px 16px; border: 1px solid var(--borde-2); border-left: 3px solid var(--oro); border-radius: var(--r-lg); background: linear-gradient(180deg, rgba(21,27,28,.92), rgba(17,23,26,.92)); }
+.sfw-paso.hecho { border-left-color: var(--cian); }
+.sfw-paso b { display: block; font-weight: 600; font-size: 15.5px; margin-bottom: 2px; }
+.sfw-paso span:not(.sfw-n) { color: var(--ink-dim); font-size: 14px; line-height: 1.5; }
+.sfw-n { flex: none; width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center; border: 1px solid var(--oro); color: var(--oro); font: 600 13px/1 var(--mono); }
+.sfw-paso.hecho .sfw-n { border-color: var(--cian); color: var(--cian); }
+.sfw-sub { font: 600 11px/1 var(--mono); letter-spacing: .16em; text-transform: uppercase; color: var(--cian); margin: 0 0 12px; }
+.sfw-grilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; margin-bottom: 26px; }
+.sfw-item { padding: 12px 14px; border: 1px solid var(--borde); border-radius: var(--r-lg); background: rgba(7,11,12,.5); }
+.sfw-item b { display: block; font-weight: 600; font-size: 14px; margin-bottom: 4px; }
+.sfw-item span { color: var(--ink-dim); font-size: 13px; line-height: 1.5; }
+.sfw-pie { display: flex; gap: 10px; flex-wrap: wrap; }
+.sfw-pie .btn { margin-top: 0; }
+.sfw-nota { margin: 14px 0 0; font-size: 12.5px; color: var(--ink-mute); }
+@keyframes sfw-entra { from { opacity: 0; } to { opacity: 1; } }
+@media (prefers-reduced-motion: reduce) { .sfw-fondo { animation: none; } }
+@media (max-width: 560px) { .sfw-pie .btn { flex: 1; } }
+.sfe-toast { position: fixed; left: 50%; bottom: calc(24px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 300; max-width: min(520px, calc(100% - 32px)); padding: 12px 16px; border-radius: var(--r-md); border: 1px solid rgba(79,227,194,.45); background: var(--panel); color: var(--ink); font: 14px/1.45 var(--sans); box-shadow: 0 18px 50px rgba(0,0,0,.55); animation: sfw-entra .2s ease-out both; }
+.sfe-toast.error { border-color: var(--rojo); color: #ffb4ae; }
+@media (max-width: 900px) { .sfe-toast { bottom: calc(var(--nav-h, 64px) + 16px + env(safe-area-inset-bottom)); } }
+/* Coach: tarjeta «Lista de entrenadores» en Perfil → Mis alumnos */
+.sfe-pub-caja { margin-top: 16px; max-width: 760px; }
+.sfe-buscar-caja { margin-bottom: 16px; }

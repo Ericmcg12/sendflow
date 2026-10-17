@@ -151,7 +151,7 @@
 
   function seccionBajadasWeb(cont) {
     var s = el("div", "sfn-sec"); s.appendChild(el("p", "sfn-tit", "Bajadas en tu cuenta"));
-    s.appendChild(el("p", "sfn-sub", "Las que subió la app cuando tuvo señal. «Traer» las copia a este navegador y quedan en IMPORTAR BAJADA › Guardadas."));
+    s.appendChild(el("p", "sfn-sub", "Las que subió la app cuando tuvo señal. «Traer» las copia a este navegador y quedan en Importar bajada › Guardadas en este navegador."));
     var lista = el("div", "sfn-lista"); s.appendChild(lista); cont.appendChild(s);
     lista.appendChild(el("div", "sfn-vacio", "Buscando…"));
     Promise.all([window.SFNube.bajadasNube(), window.SFNube.bajadasLocales()]).then(function (r) {

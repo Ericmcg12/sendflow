@@ -2143,7 +2143,7 @@ function manejarArchivoElegido(ev, etiquetaOrigen){
       }
       const muestras = parsearCSV(new TextDecoder("utf-8").decode(datos));
       if (muestras.length < 2){
-        alert("No se pudo interpretar el archivo. Tiene que ser una bajada del Sender (.sfb) o un CSV con las columnas tiempo, pos_h, pos_s, vel_r, vel_g, altura.");
+        alert("No se pudo leer el archivo. Tiene que ser una bajada de Sender (.sfb).");
         return;
       }
       cargarCrudo(muestras, file.name, etiquetaOrigen);

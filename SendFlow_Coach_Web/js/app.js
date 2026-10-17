@@ -71,6 +71,7 @@
     document.body.classList.remove("sin-sesion");
     construirNav();
     if (window.CoachEntrada) CoachEntrada.mostrar(usuario, usuario.modo === "coach");   // v47
+    if (window.CoachLibres) CoachLibres.bienvenida();   // v51: primera vez
     if (saludar) aviso(`Hola, ${usuario.nombre.split(" ")[0]}.`);
     if (location.pathname === "/" || location.pathname === "/ingreso") irA("/inicio"); else navegar();
   }
@@ -114,6 +115,7 @@
   function pantallaIngreso(error) {
     document.body.classList.add("sin-sesion");
     if (window.CoachEntrada) CoachEntrada.olvidar();   // v47: el próximo ingreso vuelve a mostrar la entrada
+    if (window.CoachLibres) CoachLibres.olvidar();
     if (window.Estudio) Estudio.cerrar();
     rutaActual = "ingreso";
     if (location.pathname !== "/ingreso") history.replaceState(null, "", "/ingreso");
@@ -259,6 +261,7 @@
     window.scrollTo(0, 0);
     try {
       if (seccion === "inicio") { await (esCoach() ? inicioCoach(v) : inicioPiloto(v)); ofrecerAvisos(v); montarMensajes(v);
+    if (esCoach() && window.SFEntrenadores) SFEntrenadores.pintarSolicitudes($("[data-slot=solicitudes]", v));   // v51
     // entrenador: tarjeta con lo que marcaron los pilotos (coach_v16.sql), arriba del saludo
     if (esCoach() && window.Planes) Planes.actividad().then(c => { const s = $("[data-slot=plan]", v); if (c && s && s.isConnected) { s.appendChild(c); entradaEscalonada(s, 0); } }).catch(() => {}); }
       else if (seccion === "pilotos" && esCoach()) await pantallaPilotos(v);
@@ -352,7 +355,7 @@
   function cabInicio(acciones) {
     return `<div class="cab-pagina inicio-cab entra"><div><h1 class="titulo-pagina">Hola, ${esc(String(USUARIO.nombre || "").split(" ")[0])}</h1><div class="sub-pagina">${esCoach() ? "Entrenador" : "Piloto"}</div></div>
         <div class="acciones-inicio">${acciones}</div></div>
-      <div class="inicio-orden"><div data-slot="plan"></div><div data-slot="mensajes"></div></div>`;
+      <div class="inicio-orden"><div data-slot="solicitudes" class="sfe-solicitudes" hidden></div><div data-slot="plan"></div><div data-slot="mensajes"></div></div>`;
   }
   function animarHero(v) {
     $$("[data-n]", v).forEach(el => contar(el, +el.dataset.n));
@@ -434,7 +437,7 @@
     if (top.length) $("#inicioMejorar", v).appendChild(html(`<div><div class="titulo-seccion entra">Lo que más se repite a mejorar</div>${barrasCategorias(top)}</div>`));
     const cont = $("#inicioRecientes", v);
     if (!analisis.length) {
-      cont.appendChild(html(`<div class="vacio entra" style="margin-top:20px">${entrenadores.length ? "Todavía no te hicieron análisis." : `Todavía no tenés entrenador. Pedile que te cargue como piloto con tu email: <b>${esc(USUARIO.email)}</b>.`}</div>`));
+      cont.appendChild(html(`<div class="vacio entra" style="margin-top:20px">${entrenadores.length ? "Todavía no te hicieron análisis." : `Todavía no tenés entrenador. Buscá uno en la lista de entrenadores, o pedile que te cargue como piloto con tu email: <b>${esc(USUARIO.email)}</b>.<br><a class="btn primario" style="margin-top:14px" href="/perfil#entrenadores">Buscar entrenador</a>`}</div>`));
     }
     $$(".nivel-barra i", v).forEach((b, i) => UI.animar(b, [{ width: "0%" }, { width: b.style.width }], { duration: 800, delay: 300 + i * 90, easing: "cubic-bezier(.2,.8,.2,1)" }));
     // v28: lo de hoy en el plan de entrenamiento
@@ -1216,7 +1219,7 @@
       <div class="grilla g3" id="listaArchivos"></div></div>`));
     // un solo botón: fotos y documentos se suben ahí; un video abre el formulario de análisis (entrenador) o de envío (piloto)
     const subirArch = async () => {
-      if (!coach && !entrenadores.length) { aviso("Todavía no tenés un entrenador vinculado: pedile que te invite.", "oro"); return; }
+      if (!coach && !entrenadores.length) { aviso("Todavía no tenés un entrenador vinculado. Buscá uno en Perfil → Mis entrenadores, o pedile que te invite.", "oro"); return; }
       const r = await Archivos.subir({ coach, fichas, entrenadores, bajada: !coach });
       if (!r) return;
       if (r.video) { if (coach) await nuevoAnalisis(undefined, r.video); else await enviarVideo(entrenadores, null, r.video); navegar(); }
@@ -1350,11 +1353,11 @@
     const enviados = re.enviados, entrenadores = rn.entrenadores;
     v.appendChild(html(`<div>
       <div class="cab-pagina entra"><div><h1 class="titulo-pagina">Enviar</h1>
-        <div class="sub-pagina">${entrenadores.length ? "Mandale un video, una bajada del Sender o las dos cosas a tu entrenador y recibí su devolución: dibujos, notas escritas, comentarios grabados." : "Tu entrenador tiene que invitarte primero."}</div></div>
+        <div class="sub-pagina">${entrenadores.length ? "Mandale un video, una bajada del Sender o las dos cosas a tu entrenador y recibí su devolución: dibujos, notas escritas, comentarios grabados." : "Primero necesitás un entrenador: buscalo en la lista o pedile que te invite."}</div></div>
         ${entrenadores.length ? `<button class="btn primario" data-accion="enviar">${ICONOS.subir}Enviar video o bajada</button>` : ""}</div>
       <div class="grilla g3" id="listaEnvios"></div></div>`));
     const g = $("#listaEnvios", v);
-    if (!entrenadores.length) g.replaceWith(html(`<div class="vacio entra">Todavía no tenés un entrenador vinculado.<br>Pedile que te invite con tu email (<b>${esc(USUARIO.email)}</b>) y aceptá la invitación al entrar a sendflow.bike.</div>`));
+    if (!entrenadores.length) g.replaceWith(html(`<div class="vacio entra">Todavía no tenés un entrenador vinculado.<br>Buscá uno en la lista de entrenadores, o pedile que te invite con tu email (<b>${esc(USUARIO.email)}</b>).<br><a class="btn primario" style="margin-top:14px" href="/perfil#entrenadores">Buscar entrenador</a></div>`));
     else if (!enviados.length) g.replaceWith(html(`<div class="vacio entra">Todavía no mandaste videos.</div>`));
     else enviados.forEach(e => {
       const el = tarjetaEnvio(e, false);

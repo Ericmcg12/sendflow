@@ -329,6 +329,7 @@
     return el;
   }
 
+  var TIENE_SENDER = false;   // v43
   function pintarHub(nombre, roles, accesos, esAdmin, conEntrenador) {
     var sal = $("hub-saludo"); sal.textContent = nombre ? "Hola, " : "Hola";
     if (nombre) { var nm = document.createElement("span"); nm.className = "saludo-nombre"; nm.textContent = nombre; sal.appendChild(nm); }
@@ -351,6 +352,11 @@
       cont.appendChild(tarjeta("Panel de entrenador", "Tus alumnos, sus bajadas, planes y devoluciones.",
         { url: CFG.destinos.coach.url, disponible: CFG.destinos.coach.disponible, alHacer: function (el) { irACoach("inicio", el); } }, "oro"));
     if (tiene("sender") && conEntrenador) cont.appendChild(tarjetaEntrenamiento());
+    /* v43: sin entrenador → la lista de entrenadores libres (coach_v23.sql, js/entrenadores-libres.js) */
+    if (tiene("sender") && !conEntrenador && window.SFEntrenadores)
+      cont.appendChild(tarjeta("Encontrá un entrenador", "Entrenadores que usan SendFlow Coach y toman pilotos nuevos. Mandale una solicitud al que elijas.",
+        { url: "/perfil#entrenador", disponible: true, alHacer: function () { SFEntrenadores.abrirLista(); } }, "oro"));
+    TIENE_SENDER = tiene("sender");
     if (tiene("taller") && roles.indexOf("taller") >= 0)
       cont.appendChild(tarjeta("SendFlow Lab · Taller", "Abrí SendFlow Lab en tu equipo del taller e iniciá sesión con esta cuenta.", CFG.destinos.lab, "azul"));
     if (!cont.children.length) {
@@ -416,7 +422,7 @@
 
   /* ---------- invitar alumno (entrenador) ---------- */
 
-  var cargandoHub = false;
+  var cargandoHub = false, bienvenidaRevisada = false;
   function cargarHub(manual) {
     if (cargandoHub) return;
     cargandoHub = true;
@@ -450,6 +456,7 @@
         var qc = new URLSearchParams(location.search).get("coach");
         if (qc && /^[\w\-\/]+$/.test(qc)) { history.replaceState(null, "", location.pathname); irACoach(qc); return; }
         if (window.SFMiPerfil) SFMiPerfil.contarPendientes();
+        if (window.SFBienvenida && !bienvenidaRevisada) { bienvenidaRevisada = true; SFBienvenida.revisar(); }   // v43
         var ri = rutaInicial; rutaInicial = null;
         if (ri && ri.p === "/perfil") { history.replaceState(null, "", "/perfil" + ri.h); abrirPerfil(ri.h, true); }
         else if (ri && ri.p === "/bajadas" && !$("nav-analisis").hidden) { history.replaceState(null, "", "/bajadas"); abrirAnalisis(ri.h, true); }
@@ -693,10 +700,18 @@
     if (window.SFEditorBici && SFEditorBici.abierto()) SFEditorBici.cerrar(false);
     mostrarVista("vista-perfil", true);
     if (!sinRuta) ponerRuta("vista-perfil", hash === "#bicis" ? "#bicis" : "", false);
-    if (window.SFMiPerfil) SFMiPerfil.pestana(hash ? "bicis" : "datos");
+    if (window.SFMiPerfil) SFMiPerfil.pestana(hash && hash !== "#entrenador" ? "bicis" : "datos");
     cargarPerfil(/^#bici=/.test(hash) ? hash.slice(6) : null);
     mensaje("msg-pf-cuenta", "");
-    if (window.SFCuenta) { SFCuenta.pintarEntrenadores($("pf-entrenadores")); SFCuenta.pintarEn($("pf-cuenta")); }   // v42
+    if (window.SFCuenta) {   // v42 (+ v43: entrenadores libres)
+      SFCuenta.pintarEntrenadores($("pf-entrenadores")).then(function () {
+        if (window.SFEntrenadores && TIENE_SENDER) SFEntrenadores.pintarBuscar($("pf-buscar-ent"), !$("pf-entrenadores").hidden).then(function () {
+          if (hash === "#entrenador" && !$("pf-buscar-ent").hidden) { $("pf-buscar-ent").scrollIntoView({ block: "center" }); if ($("pf-entrenadores").hidden) SFEntrenadores.abrirLista(); }
+        });
+        else $("pf-buscar-ent").hidden = true;
+      });
+      SFCuenta.pintarEn($("pf-cuenta"));
+    }
   }
   $("nav-perfil").addEventListener("click", function () { abrirPerfil(""); });
   // Atrás / adelante del navegador entre Inicio, Perfil (y sus pestañas o el editor de una bici) y Mensajes
@@ -722,6 +737,9 @@
       try { sb.auth.signOut({ scope: "local" }); } catch (e) {}
       location.replace("/?cuenta=cerrada");
     } });
+  /* v43: entrenadores libres (js/entrenadores-libres.js) y bienvenida de primera vez (js/bienvenida-nueva.js), coach_v23.sql */
+  if (window.SFEntrenadores) SFEntrenadores.iniciar({ sb: sb, alVincular: function () {} });
+  if (window.SFBienvenida) SFBienvenida.iniciar({ sb: sb, irAPerfil: function () { abrirPerfil(""); }, irABicis: function () { abrirPerfil("#bicis"); } });
   $("form-perfil-clave").addEventListener("submit", function (ev) {
     ev.preventDefault();
     var actual = $("pf-actual").value, nueva = $("pf-nueva").value, email = $("perfil-email").textContent;

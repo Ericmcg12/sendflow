@@ -222,12 +222,18 @@
         }).catch(function (e) { bAl.disabled = false; mensajeBase("msg-cp-alumno", traducir(e), "error"); });
       });
       c.appendChild(t);
+      if (window.SFEntrenadores) { var pub = el("section", "tarjeta sfe-pub-caja"); c.appendChild(pub); SFEntrenadores.pintarPerfilPublico(pub); }   // v51
     }
     var cont = el("div", "cp-entrenadores"); c.appendChild(cont);
     API.get("entrenadores").then(function (re) {
       var ents = (re && re.entrenadores) || [];
       if (!ents.length && ctx.esCoach) return;
       cont.appendChild(el("div", "titulo-seccion", "Tus entrenadores"));
+      if (window.SFEntrenadores) {   // v51: buscar en la lista de entrenadores + mis solicitudes
+        var bus = el("section", "tarjeta sfe-buscar-caja"); bus.hidden = true; cont.appendChild(bus);
+        SFEntrenadores.pintarBuscar(bus, ents.length > 0);
+        if (!ents.length) return;
+      }
       if (!ents.length) {
         var v = el("div", "vacio"); v.appendChild(document.createTextNode("Ningún entrenador te cargó todavía. Pasale tu email: "));
         v.appendChild(el("b", null, (ctx.usuario && ctx.usuario.email) || "")); v.appendChild(document.createTextNode(".")); cont.appendChild(v); return;

@@ -164,6 +164,16 @@ Cada subida **reemplaza el sitio entero**: siempre la carpeta completa del zip, 
 - [ ] Perfil en Coach = Mis datos + Mis bicis (igual que Bike) + Avisos por email. En Bike también Avisos por email. Apagar «Mensajes nuevos» → no llega el mail (el aviso push sí).
 - [ ] App: `SendFlow_Bike_App_parche_v2.zip` → seguir su LEEME (aplicar_todo.py sobre una copia de www, `npx cap sync android`, appName «SendFlow Bike»).
 
+### Coach v51 + Bike v43 + app parche v3 — 16/10, tercera tanda
+- [ ] SQL: `coach_v23.sql` (después de `coach_v22` y `app_v2`).
+- [ ] Edge Function `avisos-coach` → redesplegar con `nube/funcion_avisos/index.ts` (v5). Verify JWT sí. Sin secretos nuevos.
+- [ ] Subir Coach v51 y Bike v43 completos. App: `SendFlow_Bike_App_parche_v3.zip` (o directo la carpeta `telemetry_pimp\www_nuevo`), `npx cap sync android` y compilar.
+- [ ] Cuenta nueva → al entrar ve la bienvenida (una sola vez, en Bike o en Coach). «Completar mi perfil» lleva a Perfil.
+- [ ] Entrenador → Perfil → Mis alumnos → «Lista de entrenadores» → activar con zona, modalidad, disciplinas y presentación → Guardar.
+- [ ] Piloto sin entrenador → Inicio de Bike → «Encontrá un entrenador» → pedir con mensaje → llega mail/push al entrenador → en su Inicio de Coach, «Aceptar» → el piloto aparece en Pilotos y el piloto recibe el aviso.
+- [ ] Bike → Análisis: título, pasos; Importar bajada → «Desde archivo .sfb» abre el selector con .sfb; «Desde la nube» abre la nube.
+- [ ] App → Importar bajada → «Desde archivo .sfb»: en Android probar que el selector deja elegir un .sfb (si aparecen en gris, avisar).
+
 ### Coach v50 + Bike v42 + app parche v2 (actualizado) — 16/10, segunda tanda
 - [ ] SQL: `coach_v22.sql` (borrados + espacio) y después `app_v2.sql` (bajadas del Profesional a la cuenta del piloto).
 - [ ] Edge Functions: nueva `borrar-datos` (Verify JWT sí); redesplegar `admin-cuentas` y `archivos-coach` v6.

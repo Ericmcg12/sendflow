@@ -47,7 +47,7 @@
       </div>
       <p class="hero-sub" style="opacity:0;">Telemetría de suspensiones</p>
       <div class="hero-iconos">
-        <button class="tile-hero" id="btnAbrirImportar" style="opacity:0;" title="Importar bajada — desde tarjeta SD, guardadas en la app, o la carpeta del dispositivo">
+        <button class="tile-hero" id="btnAbrirImportar" style="opacity:0;" title="Importar bajada: archivo .sfb, guardadas en la app o el Sender">
           <span class="tile-hero-icono"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7 10l5 5 5-5"/><path d="M4 19h16"/></svg></span>
           <span class="tile-hero-texto">Importar bajada</span>
         </button>
@@ -65,7 +65,7 @@
         </button>
       </div>
       <button class="enlace-demo" id="btnDemo" style="opacity:0;">No tengo datalogger a mano — generar pista de demostración</button>
-      <input type="file" id="inputSD" accept=".sfb,.csv,text/csv,application/octet-stream">
+      <input type="file" id="inputSD" accept=".sfb,application/octet-stream">
     </div>
   </section>
 
@@ -79,8 +79,8 @@
       </div>
       <div class="lista-config-menu">
         <button class="fila-config-menu" id="btnImportarSD">
-          <span class="fila-config-titulo">Desde archivo (tarjeta SD)</span>
-          <span class="fila-config-sub">Importar un log .CSV directo del datalogger</span>
+          <span class="fila-config-titulo">Desde archivo .sfb</span>
+          <span class="fila-config-sub">Una bajada de Sender guardada como archivo, por ejemplo copiada de la microSD</span>
         </button>
         <button class="fila-config-menu" id="btnImportarGuardadas">
           <span class="fila-config-titulo">Bajadas guardadas en esta app</span>

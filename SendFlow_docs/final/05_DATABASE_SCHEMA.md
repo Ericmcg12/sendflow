@@ -166,3 +166,11 @@ Diseño completo en `claude/PERFILES_Y_MODOS_APP.md`. Se ejecuta después de `co
 - `coach_v22.sql`: purgas por cuenta cerrada (piloto o entrenador) y por vínculo terminado; cola `archivos_por_borrar` (la vacía la Edge Function `borrar-datos` en R2 y Storage); límite de espacio por usuario (15 GiB por defecto, editable por el admin) con control en la base y en `archivos-coach`.
 - `app_v2.sql`: `app_bajada_piloto_registrar` y política de Storage de solo-crear para que un profesional con vínculo activo suba bajadas a la carpeta del piloto (a nombre del piloto; cuenta en su espacio). Correr después de `coach_v22.sql`.
 - Decisiones (Eric, 16/10): piloto cierra cuenta → se borra todo lo suyo; termina el vínculo (lo corte quien lo corte) → se borra lo que el entrenador hizo para ese piloto y lo que el piloto le mandó; entrenador cierra cuenta → se borra todo lo que subió (asignado o genérico). Las bajadas del modo Profesional son siempre del piloto.
+
+## coach_v23.sql (16/10/2026) — entrenadores libres y bienvenida
+- `coach_publico` (una fila por entrenador: `visible`, `zona`, `modalidad`, `disciplinas`, `presentacion`) y `coach_solicitudes` (`piloto_id`, `coach_id`, `mensaje`, `estado` pendiente/aceptada/rechazada/cancelada, fechas y marcas de aviso). RLS sin políticas: se usan solo por funciones. Se borran en cascada al cerrar la cuenta.
+- Funciones: `coach_publico_mio/guardar`, `entrenadores_disponibles`, `solicitud_entrenador_crear/cancelar`, `mis_solicitudes_entrenador`, `coach_solicitudes_listar`, `coach_solicitud_responder`, `aviso_solicitud_preparar` (solo service_role), `bienvenida_estado`, `bienvenida_lista`.
+- Al aceptar: ficha en `coach_pilotos` (o la existente con ese email) + vínculo activo; un vínculo viejo no activo se borra y se crea uno nuevo (el trigger `vinculo_restringir` no deja que el profesional lo reactive).
+- Frenos: 3 pendientes por piloto, una por entrenador, 10 por día, 1 día tras cancelar, 30 días tras un rechazo. El email del piloto no se muestra en la solicitud.
+- La marca de la bienvenida vive en `perfiles_usuario.datos_piloto.bienvenida`.
+
