@@ -1,0 +1,767 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Animaciones SendFlow</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Roboto+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: tarjeta única con el lenguaje de la app SendFlow (fondo casi negro verdoso, cian de marca,
+   oro para lo activo, bordes finos, radios 6/8/12). Arriba pestañas; abajo horquilla en transparencia
+   a la izquierda y corte del pistón a la derecha. */
+:root {
+  --bg: #070b0c; --panel: #11171a; --panel2: #151b1c; --borde: #232b2c; --borde2: #2e393a;
+  --txt: #f2f5f4; --dim: #8b9a98; --mute: #5e6b6a;
+  --cian: #4fe3c2; --oro: #ffbd00; --azul: #4a9eff;
+  --ok: #3ddc84; --bad: #ff6b5e;
+  --glass: #b9d6dc; --glassline: rgba(200,228,236,.55);
+  --line: #9fb0b3; --crown-a: #1b2326; --crown-b: #3b484d;
+  --steel-hi: #e3edf0; --steel-lo: #4f6168; --port: #0a1012; --oil: #ffbd00;
+  --flow-c: var(--oro); --flow-r: var(--azul); --flow: var(--flow-c);
+  --glow: rgba(79,227,194,.10);
+  --sombra: 0 10px 40px rgba(0,0,0,.45);
+  --font-brand: "Chakra Petch", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #e8eeed; --panel: #ffffff; --panel2: #f3f7f6; --borde: #c6d3d1; --borde2: #a9bab8;
+    --txt: #0e1b19; --dim: #52676a; --mute: #8a9b9a;
+    --cian: #0b9a7e; --oro: #b57600; --azul: #1f6fd1; --ok: #1f9d5c; --bad: #c8372d;
+    --glass: #4f6f78; --glassline: rgba(40,70,80,.55);
+    --line: #3f5559; --crown-a: #7f9298; --crown-b: #c3d0d3;
+    --steel-hi: #ffffff; --steel-lo: #6d8086; --port: #dbe6e8; --oil: #c98b00;
+    --glow: rgba(11,154,126,.10); --sombra: 0 10px 30px rgba(20,40,40,.15);
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #e8eeed; --panel: #ffffff; --panel2: #f3f7f6; --borde: #c6d3d1; --borde2: #a9bab8;
+  --txt: #0e1b19; --dim: #52676a; --mute: #8a9b9a;
+  --cian: #0b9a7e; --oro: #b57600; --azul: #1f6fd1; --ok: #1f9d5c; --bad: #c8372d;
+  --glass: #4f6f78; --glassline: rgba(40,70,80,.55);
+  --line: #3f5559; --crown-a: #7f9298; --crown-b: #c3d0d3;
+  --steel-hi: #ffffff; --steel-lo: #6d8086; --port: #dbe6e8; --oil: #c98b00;
+  --glow: rgba(11,154,126,.10); --sombra: 0 10px 30px rgba(20,40,40,.15);
+  color-scheme: light;
+}
+[hidden] { display: none !important; }
+body {
+  background: var(--bg); color: var(--txt);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased;
+  padding-block: 24px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+header { display: flex; gap: 14px; align-items: center; }
+header svg { width: 54px; height: auto; flex: none; }
+.brand { font-family: var(--font-brand); font-weight: 500; font-size: 13px; letter-spacing: .08em; color: var(--cian); margin: 0; }
+h1 { font-family: var(--font-brand); font-weight: 600; font-size: 30px; line-height: 1.1; margin: 0; text-wrap: balance; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 64ch; font-size: 14px; }
+
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.tab {
+  font: 600 13px/1 var(--font-body); color: var(--txt); background: var(--panel); border: 1px solid var(--borde2);
+  padding: 10px 16px; cursor: pointer; border-radius: 8px; transition: border-color .2s, color .2s, transform .2s;
+}
+.tab:hover { border-color: var(--oro); color: var(--oro); }
+.tab[aria-selected="true"] { border-color: var(--oro); color: var(--oro); background: rgba(255,189,0,.09); }
+.tab:active { transform: scale(.97); }
+.tab:focus-visible, .play:focus-visible, .seg button:focus-visible { outline: 2px solid var(--oro); outline-offset: 2px; }
+.play { margin-left: auto; font: 500 12px/1 var(--font-body); background: transparent; color: var(--dim); border: 1px solid var(--borde2); padding: 10px 14px; cursor: pointer; border-radius: 8px; }
+.play:hover { color: var(--txt); }
+
+.sheet {
+  position: relative; overflow: hidden; border: 1px solid var(--borde); border-radius: 12px; padding: 18px;
+  background: radial-gradient(520px circle at 85% 0%, var(--glow), transparent 55%), linear-gradient(180deg, var(--panel2), var(--panel));
+  box-shadow: var(--sombra);
+  display: grid; gap: 18px; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+}
+@media (max-width: 720px) { .sheet { grid-template-columns: minmax(0, 1fr); } }
+.modehead { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 2px 14px; align-items: baseline; }
+.modehead b { font-family: var(--font-brand); font-weight: 600; font-size: 28px; color: var(--oro); }
+.modehead span { color: var(--dim); font-size: 14px; }
+.leftcol { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.seg { display: flex; }
+.seg button { font: 500 12px/1 var(--font-body); padding: 8px 12px; background: transparent; color: var(--dim); border: 1px solid var(--borde2); cursor: pointer; }
+.seg button:first-child { border-radius: 6px 0 0 6px; } .seg button:last-child { border-radius: 0 6px 6px 0; border-left: 0; }
+.seg button[aria-pressed="true"] { color: var(--cian); border-color: var(--cian); background: rgba(79,227,194,.08); }
+figure { margin: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+figure svg { width: 100%; height: auto; max-width: 100%; display: block; }
+figcaption { font: 400 11px/1.3 var(--font-mono); letter-spacing: .04em; color: var(--mute); border-top: 1px solid var(--borde); padding-top: 6px; }
+.fig-ctx svg, .fig-shock svg { max-width: 460px; margin: 0 auto; }
+#compseg { align-self: flex-start; }
+.sagbox.one { grid-template-columns: minmax(0, 320px); justify-content: center; }
+
+/* trazos y rellenos de los dibujos */
+svg .l { fill: none; stroke: var(--line); stroke-width: 1.2; stroke-linejoin: round; stroke-linecap: round; }
+svg .f { fill: var(--panel2); stroke: var(--line); stroke-width: 1.2; stroke-linejoin: round; }
+svg .thin { fill: none; stroke: var(--mute); stroke-width: .8; }
+svg .dash { fill: none; stroke: var(--mute); stroke-width: .8; stroke-dasharray: 5 4; }
+svg .lab { font-family: var(--font-mono); font-size: 10.5px; fill: var(--txt); }
+svg .labd { font-family: var(--font-mono); font-size: 10px; fill: var(--dim); }
+svg .glassf { fill: url(#gGlass); stroke: var(--glassline); stroke-width: 1.2; stroke-linejoin: round; }
+svg .tealf { fill: url(#gTeal); stroke: var(--cian); stroke-width: 1.2; stroke-linejoin: round; }
+svg .metalf { fill: url(#gMetal); stroke: var(--line); stroke-width: 1; stroke-linejoin: round; }
+svg .steelf { fill: url(#gSteel); stroke: var(--line); stroke-width: 1; stroke-linejoin: round; }
+svg .steelt { fill: url(#gSteelT); stroke: var(--line); stroke-width: 1; stroke-linejoin: round; }
+svg .goldf { fill: url(#gGold); stroke: #7a5a00; stroke-width: 1; }
+svg .spec { fill: none; stroke: #fff; stroke-opacity: .35; stroke-width: 1; stroke-linecap: round; }
+svg .on { stroke: var(--flow); stroke-width: 1.9; }
+svg .part-on { stroke: var(--flow); stroke-width: 1.6; }
+svg .p { fill: var(--flow); stroke: none; }
+svg #parts, svg #partsB { filter: drop-shadow(0 0 3px var(--flow)); }
+svg .arrow { fill: none; stroke: var(--flow); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+.info { grid-column: 1 / -1; display: grid; gap: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 720px) { .info { grid-template-columns: minmax(0, 1fr); } }
+.card { border: 1px solid var(--borde); border-radius: 8px; padding: 12px 14px; background: rgba(255,255,255,.015); }
+.card h2 { font: 500 11px/1.2 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--cian); margin: 0 0 6px; }
+.card p { margin: 0; font-size: 14px; max-width: 60ch; }
+.note { grid-column: 1 / -1; font-size: 12.5px; color: var(--dim); max-width: 84ch; margin: 0; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font: 400 11px/1 var(--font-mono); color: var(--dim); }
+.legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+
+.sagbox { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 720px) { .sagbox { grid-template-columns: minmax(0, 1fr); } .sagbox svg { max-width: 260px; margin: 0 auto; } }
+.sagcap { border-top: 1px solid var(--borde); padding-top: 8px; display: flex; flex-direction: column; gap: 2px; }
+.sagcap b { font-family: var(--font-brand); font-weight: 600; font-size: 21px; }
+.sagcap .r { font: 400 12px/1.3 var(--font-mono); }
+.sagcap.ok b, .sagcap.ok .r { color: var(--ok); }
+.sagcap.bad b, .sagcap.bad .r { color: var(--bad); }
+.sagcap p { margin: 0; font-size: 13.5px; color: var(--dim); }
+.gauge { width: 100%; max-width: 100%; height: auto; display: block; background: var(--panel); border: 1px solid var(--borde); border-radius: 8px; }
+@media (prefers-reduced-motion: reduce) { .play { display: none; } }
+</style>
+</head>
+<body>
+
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="gGlass" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" style="stop-color:var(--glass);stop-opacity:.05"/><stop offset=".22" style="stop-color:var(--glass);stop-opacity:.30"/>
+      <stop offset=".5" style="stop-color:var(--glass);stop-opacity:.10"/><stop offset=".8" style="stop-color:var(--glass);stop-opacity:.22"/>
+      <stop offset="1" style="stop-color:var(--glass);stop-opacity:.05"/>
+    </linearGradient>
+    <linearGradient id="gTeal" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" style="stop-color:var(--cian);stop-opacity:.10"/><stop offset=".25" style="stop-color:var(--cian);stop-opacity:.42"/>
+      <stop offset=".5" style="stop-color:var(--cian);stop-opacity:.16"/><stop offset=".78" style="stop-color:var(--cian);stop-opacity:.30"/>
+      <stop offset="1" style="stop-color:var(--cian);stop-opacity:.10"/>
+    </linearGradient>
+    <linearGradient id="gMetal" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" style="stop-color:var(--crown-a)"/><stop offset=".35" style="stop-color:var(--crown-b)"/><stop offset=".7" style="stop-color:var(--crown-a)"/><stop offset="1" style="stop-color:var(--crown-b)"/>
+    </linearGradient>
+    <linearGradient id="gSteel" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" style="stop-color:var(--steel-lo)"/><stop offset=".4" style="stop-color:var(--steel-hi)"/><stop offset="1" style="stop-color:var(--steel-lo)"/>
+    </linearGradient>
+    <linearGradient id="gSteelT" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" style="stop-color:var(--steel-lo);stop-opacity:.45"/><stop offset=".4" style="stop-color:var(--steel-hi);stop-opacity:.55"/><stop offset="1" style="stop-color:var(--steel-lo);stop-opacity:.45"/>
+    </linearGradient>
+    <linearGradient id="gGold" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#7a5a00"/><stop offset=".4" stop-color="#ffd24d"/><stop offset="1" stop-color="#7a5a00"/>
+    </linearGradient>
+    <pattern id="gasDots" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="var(--panel)"/><circle cx="2" cy="2" r="1" fill="var(--dim)"/><circle cx="6" cy="6" r="1" fill="var(--dim)"/></pattern>
+    <linearGradient id="gOilV" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" style="stop-color:var(--oil);stop-opacity:.04"/><stop offset="1" style="stop-color:var(--oil);stop-opacity:.12"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<div class="wrap">
+  <header>
+    <svg viewBox="0 0 200 120" role="img" aria-label="SendFlow"><path d="M10,100 L40,60 L60,85 L85,28 L110,80 L130,55 L160,95 L190,100" fill="none" stroke="#4fe3c2" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/><circle cx="85" cy="28" r="9" fill="#ffffff"/></svg>
+    <div>
+      <p class="brand">SENDFLOW BIKE</p>
+      <h1 id="h1">Animaciones de la horquilla</h1>
+      <p class="sub" id="subtitle">Cómo pasa el aceite por el pistón en cada zona de velocidad que muestra SendFlow, y cómo se lee el SAG.</p>
+    </div>
+  </header>
+
+  <div class="seg" id="compseg" role="group" aria-label="Suspensión">
+    <button type="button" data-c="fork" aria-pressed="true">Horquilla</button>
+    <button type="button" data-c="shock" aria-pressed="false">Shock</button>
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="Función">
+    <button class="tab" role="tab" id="t-HSC" data-m="HSC" aria-selected="true">HSC</button>
+    <button class="tab" role="tab" id="t-LSC" data-m="LSC" aria-selected="false">LSC</button>
+    <button class="tab" role="tab" id="t-HSR" data-m="HSR" aria-selected="false">HSR</button>
+    <button class="tab" role="tab" id="t-LSR" data-m="LSR" aria-selected="false">LSR</button>
+    <button class="tab" role="tab" id="t-SAG" data-m="SAG" aria-selected="false">SAG</button>
+    <button class="play" id="play" type="button">Pausar</button>
+  </div>
+
+  <div class="sheet" id="sheet">
+    <div class="modehead"><b id="mTitle">HSC</b><span id="mSub">Compresión rápida</span></div>
+
+    <div class="leftcol" id="leftcol">
+      <div class="seg" id="viewseg" role="group" aria-label="Vista">
+        <button type="button" data-v="ctx" aria-pressed="true">En la horquilla</button>
+        <button type="button" data-v="fork" aria-pressed="false">Explosionada</button>
+      </div>
+
+      <figure class="fig-shock" hidden>
+        <svg viewBox="0 0 460 600" role="img" aria-label="Shock de espiral con reserva visto de frente, con cuerpo y reserva en transparencia. La reserva va junto al cuerpo y se une a él por arriba, del lado del ojal superior, con un pasaje de aceite. La válvula de compresión, marcada con la letra B, está dentro de la reserva. Dentro del cuerpo está el pistón, marcado con la letra A. El resorte va debajo del cuerpo, rodeando el vástago.">
+          <ellipse cx="190" cy="592" rx="120" ry="6" fill="#000" opacity=".18"/>
+          <!-- parte fija: ojal superior, cuerpo, reserva -->
+          <rect class="metalf" x="172" y="58" width="36" height="22"/>
+          <circle class="metalf" cx="190" cy="40" r="24"/><circle cx="190" cy="40" r="10" fill="var(--port)" stroke="var(--line)"/><circle class="steelf" cx="190" cy="40" r="6.5"/>
+          <rect class="tealf" x="160" y="76" width="60" height="214" rx="6"/>
+          <rect x="164" y="98" width="52" height="188" fill="url(#gOilV)"/>
+          <path class="spec" d="M168 84V284"/>
+          <rect class="tealf" x="252" y="96" width="44" height="176" rx="8"/>
+          <rect x="256" y="102" width="36" height="110" fill="url(#gOilV)"/>
+          <rect x="256" y="224" width="36" height="42" fill="url(#gasDots)"/>
+          <g id="shIfp"><rect class="steelf" x="256" y="212" width="36" height="9" rx="2"/></g>
+          <rect class="tealf" x="220" y="102" width="32" height="14"/>
+          <rect class="steelf" x="256" y="130" width="36" height="20" rx="1"/>
+          <rect x="262" y="130" width="5" height="20" fill="var(--port)"/><rect x="281" y="130" width="5" height="20" fill="var(--port)"/>
+          <rect class="metalf" x="156" y="290" width="68" height="14" rx="3"/>
+          <rect class="metalf" x="142" y="304" width="96" height="12" rx="4"/>
+          <g id="spG" fill="none" style="stroke:var(--line)" stroke-linecap="round"></g>
+          <circle cx="274" cy="140" r="27" fill="none" style="stroke:var(--oro);stroke-width:1.3;stroke-dasharray:4 3"/>
+          <!-- parte móvil: pistón, vástago, asiento inferior y ojal -->
+          <g id="lowG">
+            <rect class="steelf" x="186" y="228" width="8" height="284"/>
+            <path class="l" d="M173 220H207M175 217H205"/>
+            <rect class="goldf part-on" id="shPiston" x="170" y="222" width="40" height="14" rx="1"/>
+            <path class="l" d="M173 239H207M175 242H205"/>
+            <circle cx="190" cy="229" r="26" fill="none" style="stroke:var(--oro);stroke-width:1.3;stroke-dasharray:4 3"/>
+            <rect class="metalf" x="138" y="474" width="104" height="12" rx="4"/>
+            <rect class="metalf" x="172" y="512" width="36" height="20"/>
+            <circle class="metalf" cx="190" cy="558" r="24"/><circle cx="190" cy="558" r="10" fill="var(--port)" stroke="var(--line)"/><circle class="steelf" cx="190" cy="558" r="6.5"/>
+          </g>
+          <!-- flecha de movimiento -->
+          <g class="arrow"><path id="shArrowPath" d="M34 140V100M28 108L34 100L40 108"/></g>
+          <text class="labd" x="6" y="92" id="shArrowTxt">comprime</text>
+          <!-- etiquetas izquierda -->
+          <g>
+            <line class="thin" x1="166" y1="40" x2="128" y2="40"/><text class="lab" x="124" y="43" text-anchor="end">ojal superior</text>
+            <line class="thin" x1="160" y1="170" x2="128" y2="170"/><text class="lab" x="124" y="167" text-anchor="end">cuerpo</text><text class="lab" x="124" y="181" text-anchor="end">(aceite)</text>
+            <line class="thin" x1="164" y1="229" x2="128" y2="229" style="stroke:var(--oro)"/><text class="lab" x="124" y="226" text-anchor="end" style="fill:var(--oro)">A  pistón</text><text class="lab" x="124" y="240" text-anchor="end" style="fill:var(--oro)">(rebote)</text>
+            <line class="thin" x1="142" y1="310" x2="128" y2="310"/><text class="lab" x="124" y="300" text-anchor="end">tuerca de</text><text class="lab" x="124" y="314" text-anchor="end">precarga</text>
+            <line class="thin" x1="148" y1="395" x2="128" y2="395"/><text class="lab" x="124" y="398" text-anchor="end">resorte</text>
+            <line class="thin" x1="186" y1="500" x2="128" y2="500"/><text class="lab" x="124" y="503" text-anchor="end">vástago</text>
+            <line class="thin" x1="166" y1="558" x2="128" y2="558"/><text class="lab" x="124" y="561" text-anchor="end">ojal inferior</text>
+          </g>
+          <!-- etiquetas derecha -->
+          <g>
+            <line class="thin" x1="301" y1="140" x2="316" y2="140" style="stroke:var(--oro)"/><text class="lab" x="320" y="137" style="fill:var(--oro)">B  válvula de</text><text class="lab" x="320" y="151" style="fill:var(--oro)">compresión</text>
+            <line class="thin" x1="252" y1="107" x2="316" y2="84"/><text class="lab" x="320" y="87">pasaje de aceite</text>
+            <line class="thin" x1="296" y1="182" x2="316" y2="182"/><text class="lab" x="320" y="179">reserva</text><text class="lab" x="320" y="193">(piggyback)</text>
+            <line class="thin" x1="296" y1="217" x2="316" y2="217"/><text class="lab" x="320" y="214">pistón</text><text class="lab" x="320" y="228">flotante</text>
+            <line class="thin" x1="296" y1="248" x2="316" y2="248"/><text class="lab" x="320" y="258">nitrógeno</text>
+          </g>
+        </svg>
+        <figcaption>El shock por dentro · cuerpo y reserva en transparencia</figcaption>
+      </figure>
+
+      <figure class="fig-ctx">
+        <svg viewBox="0 0 460 600" role="img" aria-label="Horquilla de frente con patas y tubos en transparencia. Dentro de la pata izquierda se ve el cartucho del amortiguador, el vástago que baja desde la corona y el pistón, marcado con la letra A. La otra pata lleva el resorte.">
+          <defs>
+            <clipPath id="clipLegL"><path d="M116 332H178V516Q178 556 147 556Q116 556 116 516Z"/></clipPath>
+          </defs>
+          <!-- sombra de apoyo -->
+          <ellipse cx="230" cy="582" rx="150" ry="8" fill="#000" opacity=".18"/>
+          <!-- patas inferiores: vidrio -->
+          <path class="glassf" d="M116 332H178V516Q178 556 147 556Q116 556 116 516Z"/>
+          <path class="glassf" d="M282 332H344V516Q344 556 313 556Q282 556 282 516Z"/>
+          <path class="glassf" d="M178 404V368Q230 338 282 368V404Q230 376 178 404Z"/>
+          <path class="glassf" d="M116 436H102Q98 436 98 440V474Q98 478 102 478H116Z"/>
+          <!-- aceite en la pata izquierda -->
+          <g clip-path="url(#clipLegL)">
+            <rect x="110" y="456" width="74" height="106" fill="url(#gOilV)"/>
+            <path d="M116 456Q131 450 147 456T178 456" fill="none" style="stroke:var(--oil);stroke-opacity:.55" stroke-width="1.2"/>
+          </g>
+          <path class="spec" d="M123 350V510M289 350V510"/>
+          <!-- buje y eje -->
+          <rect class="steelf" x="178" y="518" width="104" height="22" rx="4"/>
+          <circle class="steelf" cx="147" cy="529" r="12"/><circle class="steelf" cx="313" cy="529" r="12"/>
+          <circle cx="147" cy="529" r="4.5" fill="var(--port)" stroke="var(--line)"/><circle cx="313" cy="529" r="4.5" fill="var(--port)" stroke="var(--line)"/>
+          <!-- cartucho (fijo a la pata) -->
+          <rect class="steelt" x="134" y="360" width="26" height="168"/>
+          <path class="l" d="M134 360H160" style="stroke-width:2.6"/>
+          <path d="M138 410H156M138 440H156M138 470H156" class="thin" stroke-dasharray="3 3"/>
+          <rect class="steelf" x="130" y="506" width="34" height="22" rx="2"/>
+          <circle cx="139" cy="517" r="2.2" fill="var(--port)"/><circle cx="155" cy="517" r="2.2" fill="var(--port)"/>
+          <!-- retenes (fijos a la pata) -->
+          <rect class="metalf" x="114" y="326" width="66" height="12" rx="3"/>
+          <rect class="metalf" x="280" y="326" width="66" height="12" rx="3"/>
+          <!-- parte que baja al comprimir -->
+          <g id="upG">
+            <rect class="tealf" x="130" y="120" width="34" height="300"/>
+            <rect class="tealf" x="296" y="120" width="34" height="300"/>
+            <path class="spec" d="M136 126V414M302 126V414"/>
+            <path class="thin" d="M134 120V420M160 120V420M300 120V420M326 120V420"/>
+            <polyline fill="none" style="stroke:var(--steel-hi);stroke-opacity:.85" stroke-width="2" stroke-linejoin="round" points="304,150 322,160 304,170 322,180 304,190 322,200 304,210 322,220 304,230 322,240 304,250 322,260 304,270 322,280 304,290 322,300 304,310 322,320"/>
+            <rect class="metalf" x="214" y="16" width="32" height="60"/>
+            <path class="l" d="M214 34H246M214 54H246" style="stroke-opacity:.6"/>
+            <rect class="metalf" x="207" y="8" width="46" height="10" rx="3"/>
+            <rect class="metalf" x="98" y="74" width="264" height="50" rx="15"/>
+            <path class="spec" d="M112 84H348"/>
+            <circle cx="112" cy="100" r="5" class="steelf"/><circle cx="348" cy="100" r="5" class="steelf"/>
+          </g>
+          <!-- vástago y pistón (bajan con la corona) -->
+          <g id="upG2">
+            <rect class="steelf" x="144" y="124" width="6" height="250"/>
+            <path d="M138 369H156M138 372H156" class="l" style="stroke-opacity:.9"/>
+            <rect class="goldf part-on" id="ctxPiston" x="136" y="374" width="22" height="14" rx="1"/>
+            <path d="M138 391H156M139 394H155" class="l" style="stroke-opacity:.9"/>
+            <circle cx="147" cy="381" r="27" fill="none" style="stroke:var(--oro);stroke-width:1.3;stroke-dasharray:4 3"/>
+          </g>
+          <!-- flecha de movimiento -->
+          <g class="arrow"><path id="ctxArrowPath" d="M34 44V84M28 76L34 84L40 76"/></g>
+          <text class="labd" x="6" y="34" id="ctxArrowTxt">comprime</text>
+          <!-- etiquetas izquierda -->
+          <g>
+            <line class="thin" x1="147" y1="190" x2="106" y2="190"/><text class="lab" x="102" y="193" text-anchor="end">vástago</text>
+            <line class="thin" x1="130" y1="250" x2="106" y2="250"/><text class="lab" x="102" y="247" text-anchor="end">tubo</text><text class="lab" x="102" y="261" text-anchor="end">superior</text>
+            <line class="thin" x1="120" y1="381" x2="106" y2="381" style="stroke:var(--oro)"/><text class="lab" x="102" y="378" text-anchor="end" style="fill:var(--oro)">A  pistón</text><text class="lab" x="102" y="392" text-anchor="end" style="fill:var(--oro)">+ laminillas</text>
+            <line class="thin" x1="134" y1="420" x2="106" y2="420" style="display:none"/>
+            <line class="thin" x1="134" y1="494" x2="106" y2="494" style="display:none"/>
+          </g>
+          <g>
+            <line class="thin" x1="150" y1="540" x2="150" y2="540" style="display:none"/>
+          </g>
+          <!-- etiquetas derecha -->
+          <g>
+            <line class="thin" x1="362" y1="100" x2="376" y2="100"/><text class="lab" x="380" y="103">corona</text>
+            <line class="thin" x1="322" y1="220" x2="376" y2="220"/><text class="lab" x="380" y="217">resorte</text><text class="lab" x="380" y="231">(otra pata)</text>
+            <line class="thin" x1="344" y1="440" x2="376" y2="440"/><text class="lab" x="380" y="437">pata</text><text class="lab" x="380" y="451">inferior</text>
+            <line class="thin" x1="326" y1="529" x2="376" y2="529"/><text class="lab" x="380" y="526">eje de</text><text class="lab" x="380" y="540">rueda</text>
+          </g>
+          <!-- etiquetas inferior izquierda: cartucho y válvula -->
+          <g>
+            <line class="thin" x1="134" y1="410" x2="64" y2="410"/><text class="lab" x="60" y="413" text-anchor="end">cartucho</text>
+            <line class="thin" x1="130" y1="517" x2="64" y2="517"/><text class="lab" x="60" y="514" text-anchor="end">válvula</text><text class="lab" x="60" y="528" text-anchor="end">de base</text>
+          </g>
+        </svg>
+        <figcaption>La horquilla por dentro · patas y tubos en transparencia</figcaption>
+      </figure>
+
+      <figure class="fig-fork">
+        <svg viewBox="0 0 250 560" role="img" aria-label="Vista explosionada de una horquilla en corte lateral: tapa con ajustes, tubo superior, vástago con pistón, cartucho, válvula de base y pata inferior, alineados sobre un eje.">
+          <line class="dash" x1="90" y1="4" x2="90" y2="556"/>
+          <rect class="metalf" x="80" y="4" width="20" height="9"/>
+          <rect class="metalf" x="62" y="14" width="56" height="18" rx="3"/>
+          <rect class="tealf" x="55" y="46" width="70" height="130"/>
+          <path class="spec" d="M64 52V170"/>
+          <g id="shaftG">
+            <rect class="steelf" x="84" y="190" width="12" height="72"/>
+            <rect class="goldf" id="fkPiston" x="66" y="262" width="48" height="18" rx="1"/>
+            <path class="l" id="fkShimT" d="M68 259.5H80M100 259.5H112M68 257.5H79M101 257.5H112"/>
+            <path class="l" id="fkShimB" d="M72 282.5H84M96 282.5H108M73 284.5H83M97 284.5H107"/>
+          </g>
+          <rect class="steelt" x="64" y="300" width="52" height="140"/>
+          <path class="thin" d="M74 330H106M74 352H106M74 374H106M74 396H106M74 418H106" stroke-dasharray="3 3"/>
+          <rect class="steelf" x="70" y="452" width="40" height="22" rx="2"/>
+          <circle class="l" cx="80" cy="463" r="3"/><circle class="l" cx="100" cy="463" r="3"/>
+          <path class="glassf" d="M48 492H132V540Q132 548 124 548H56Q48 548 48 540Z"/>
+          <circle class="steelf" cx="90" cy="528" r="9"/><circle cx="90" cy="528" r="3" fill="var(--port)"/>
+          <path class="dash" d="M90 32V46M90 176V190M90 284V300M90 440V452M90 474V492"/>
+          <g>
+            <line class="thin" x1="118" y1="23" x2="146" y2="23"/><text class="lab" x="150" y="26">tapa + ajustes</text>
+            <line class="thin" x1="125" y1="110" x2="146" y2="110"/><text class="lab" x="150" y="113">tubo superior</text>
+            <line class="thin" x1="114" y1="271" x2="146" y2="271"/><text class="lab" x="150" y="268">vástago</text><text class="lab" x="150" y="281">+ pistón</text>
+            <line class="thin" x1="116" y1="370" x2="146" y2="370"/><text class="lab" x="150" y="373">cartucho</text>
+            <line class="thin" x1="110" y1="463" x2="146" y2="463"/><text class="lab" x="150" y="460">válvula</text><text class="lab" x="150" y="473">de base</text>
+            <line class="thin" x1="132" y1="520" x2="146" y2="520"/><text class="lab" x="150" y="523">pata + eje</text>
+          </g>
+          <g id="shaftArrow" class="arrow"><path id="arrowPath" d="M30 210V250M24 242L30 250L36 242"/></g>
+          <text class="labd" x="12" y="204" id="arrowTxt">vástago</text>
+        </svg>
+        <figcaption>Vista explosionada</figcaption>
+      </figure>
+    </div>
+
+    <figure class="fig-detail">
+      <svg viewBox="0 0 400 420" role="img" id="detailSvg" aria-label="Corte del pistón del amortiguador con puertos, laminillas, orificio de purga y aguja. Las partículas muestran por dónde pasa el aceite en la zona elegida.">
+        <circle cx="22" cy="26" r="11" fill="var(--panel)" style="stroke:var(--oro);stroke-width:1.4"/>
+        <text x="22" y="30" text-anchor="middle" class="lab" style="fill:var(--oro)">A</text>
+        <!-- aceite en las cámaras -->
+        <rect x="60" y="40" width="200" height="360" fill="url(#gOilV)"/>
+        <!-- paredes del cartucho -->
+        <rect class="steelf" x="50" y="40" width="10" height="360"/><rect class="steelf" x="260" y="40" width="10" height="360"/>
+        <path class="dash" d="M40 8H280"/>
+        <text class="labd" x="66" y="62">cám. superior</text>
+        <text class="labd" x="66" y="392">cám. inferior</text>
+        <!-- vástago hueco -->
+        <rect class="steelf" x="146" y="0" width="28" height="192"/>
+        <rect x="154" y="120" width="12" height="72" fill="var(--port)"/>
+        <g id="boreWalls"><path class="l" id="bore" d="M154 120V192M166 120V192"/></g>
+        <path class="thin" d="M154 130H146M166 130H174"/>
+        <!-- aguja -->
+        <g id="needleG"><path class="l" id="needle" d="M160 6V138M158.5 138L160 150L161.5 138" style="stroke-width:1.6"/></g>
+        <!-- pistón -->
+        <rect class="steelf" x="62" y="192" width="196" height="36" rx="2"/>
+        <path class="spec" d="M66 198H254"/>
+        <g id="portsA">
+          <rect x="89" y="192" width="12" height="36" fill="var(--port)"/><path class="l" id="pA1" d="M89 192V228M101 192V228"/>
+          <rect x="219" y="192" width="12" height="36" fill="var(--port)"/><path class="l" id="pA2" d="M219 192V228M231 192V228"/>
+        </g>
+        <g id="portsB">
+          <rect x="119" y="192" width="12" height="36" fill="var(--port)"/><path class="l" id="pB1" d="M119 192V228M131 192V228"/>
+          <rect x="189" y="192" width="12" height="36" fill="var(--port)"/><path class="l" id="pB2" d="M189 192V228M201 192V228"/>
+        </g>
+        <rect x="154" y="192" width="12" height="36" fill="var(--port)"/><path class="l" id="holeP" d="M154 192V228M166 192V228"/>
+        <!-- laminillas de compresión (cara superior, sobre puertos A) -->
+        <g id="shT1" transform="rotate(0 106 187)"><path class="l" id="shT1p" d="M84 185.5H106M86 188H106M88 190.5H106" style="stroke-width:1.6"/></g>
+        <g id="shT2" transform="rotate(0 214 187)"><path class="l" id="shT2p" d="M214 185.5H236M214 188H234M214 190.5H232" style="stroke-width:1.6"/></g>
+        <!-- laminillas de rebote (cara inferior, sobre puertos B) -->
+        <g id="shB1" transform="rotate(0 136 233)"><path class="l" id="shB1p" d="M114 229.5H136M116 232H136M118 234.5H136" style="stroke-width:1.6"/></g>
+        <g id="shB2" transform="rotate(0 184 233)"><path class="l" id="shB2p" d="M184 229.5H206M184 232H204M184 234.5H202" style="stroke-width:1.6"/></g>
+        <!-- partículas -->
+        <g id="parts"></g>
+        <!-- etiquetas -->
+        <g>
+          <line class="thin" x1="160" y1="50" x2="290" y2="50"/><text class="lab" x="294" y="53">aguja</text>
+          <line class="thin" x1="174" y1="130" x2="290" y2="130"/><text class="lab" x="294" y="127">orificio</text><text class="lab" x="294" y="139">de purga</text>
+          <line class="thin" x1="236" y1="186" x2="290" y2="186"/><text class="lab" id="lamC1" x="294" y="183">laminillas</text><text class="lab" id="lamC2" x="294" y="195">compresión</text>
+          <line class="thin" x1="258" y1="210" x2="290" y2="210"/><text class="lab" x="294" y="213">pistón</text>
+          <line class="thin" x1="206" y1="233" x2="290" y2="233"/><text class="lab" x="294" y="236">laminillas</text><text class="lab" x="294" y="248">rebote</text>
+          <line class="thin" x1="231" y1="204" x2="250" y2="270" stroke-dasharray="2 3"/><text class="lab" x="282" y="282">puertos</text>
+        </g>
+      </svg>
+      <figcaption id="cap2">Detalle A · corte del pistón</figcaption>
+    </figure>
+
+    <figure class="fig-detailB" hidden>
+      <svg viewBox="0 0 460 420" role="img" id="detailBSvg" aria-label="Corte de la válvula de compresión en la base de la reserva del shock, con puertos, laminillas, orificio de purga, aguja, pistón flotante y nitrógeno. Las partículas muestran por dónde pasa el aceite desde el cuerpo hacia la reserva.">
+        <circle cx="22" cy="26" r="11" fill="var(--panel)" style="stroke:var(--oro);stroke-width:1.4"/>
+        <text x="22" y="30" text-anchor="middle" class="lab" style="fill:var(--oro)">B</text>
+        <!-- aceite y gas -->
+        <rect x="14" y="50" width="116" height="340" fill="url(#gOilV)"/>
+        <rect x="190" y="50" width="64" height="340" fill="url(#gOilV)"/>
+        <rect x="262" y="50" width="38" height="340" fill="url(#gasDots)"/>
+        <text class="labd" x="22" y="74">desde el cuerpo</text>
+        <text class="labd" x="196" y="74">reserva</text>
+        <!-- carcasa -->
+        <rect class="steelf" x="6" y="42" width="8" height="356"/><rect class="steelf" x="300" y="42" width="8" height="356"/>
+        <rect class="steelf" x="14" y="42" width="286" height="8"/><rect class="steelf" x="14" y="390" width="286" height="8"/>
+        <!-- bloque de válvula -->
+        <rect class="steelf" x="130" y="50" width="60" height="340"/>
+        <rect x="130" y="124" width="60" height="12" fill="var(--port)"/><path class="l" id="bPort1" d="M130 124H190M130 136H190"/>
+        <rect x="130" y="304" width="60" height="12" fill="var(--port)"/><path class="l" id="bPort2" d="M130 304H190M130 316H190"/>
+        <rect x="130" y="216" width="60" height="8" fill="var(--port)"/><path class="l" id="bBleed" d="M130 216H190M130 224H190"/>
+        <!-- aguja -->
+        <rect class="metalf" x="150" y="2" width="20" height="12" rx="2"/>
+        <g id="bNeedleG"><path class="l" id="bNeedle" d="M160 14V210M158.5 210L160 222L161.5 210" style="stroke-width:1.6"/></g>
+        <!-- laminillas de compresión sobre los puertos -->
+        <g id="bShU" transform="rotate(0 193 144)"><path class="l" id="bShUp" d="M193 116V144M195.5 118V144M198 120V144" style="stroke-width:1.6"/></g>
+        <g id="bShL" transform="rotate(0 193 296)"><path class="l" id="bShLp" d="M193 296V324M195.5 296V322M198 296V320" style="stroke-width:1.6"/></g>
+        <!-- pistón flotante -->
+        <g id="bIfp"><rect class="steelf" x="254" y="50" width="8" height="340"/></g>
+        <g id="partsB"></g>
+        <!-- etiquetas -->
+        <g>
+          <line class="thin" x1="172" y1="8" x2="312" y2="8"/><text class="lab" x="316" y="11">aguja</text>
+          <line class="thin" x1="190" y1="130" x2="312" y2="130" style="display:none"/>
+          <line class="thin" x1="200" y1="120" x2="312" y2="120"/><text class="lab" x="316" y="117">laminillas</text><text class="lab" x="316" y="131">compresión</text>
+          <line class="thin" x1="190" y1="220" x2="312" y2="220"/><text class="lab" x="316" y="217">orificio</text><text class="lab" x="316" y="231">de purga</text>
+          <line class="thin" x1="190" y1="312" x2="206" y2="340" stroke-dasharray="2 3"/><text class="lab" x="198" y="354">puertos</text>
+          <line class="thin" x1="262" y1="96" x2="312" y2="96" style="display:none"/>
+          <line class="thin" x1="262" y1="300" x2="312" y2="300"/><text class="lab" x="316" y="297">pistón</text><text class="lab" x="316" y="311">flotante</text>
+          <line class="thin" x1="300" y1="350" x2="312" y2="350"/><text class="lab" x="316" y="353">nitrógeno</text>
+        </g>
+      </svg>
+      <figcaption id="cap3">Detalle B · válvula de compresión en la reserva</figcaption>
+    </figure>
+
+    <div class="sagbox" id="sagBox" hidden></div>
+
+    <div class="info">
+      <div class="card"><h2>Qué pasa</h2><p id="iWhat"></p></div>
+      <div class="card"><h2>Cuándo trabaja</h2><p id="iWhen"></p></div>
+      <div class="card"><h2>Qué mira SendFlow</h2><p id="iApp"></p></div>
+    </div>
+    <div class="legend" id="legend"><span><i style="background:var(--oro)"></i>aceite en compresión</span><span><i style="background:var(--azul)"></i>aceite en rebote</span><span><i style="background:var(--cian)"></i>tubos (transparentes)</span></div>
+    <p class="note">Esquema genérico para explicar el principio. Cada fabricante ubica los circuitos en lugares distintos (pistón, válvula de base, cartucho aparte) y las velocidades del recuadro son ejemplos, no mediciones. Los límites de 10 % y 30 % del SAG son una referencia general; el objetivo de SendFlow sale del perfil del piloto.</p>
+    <p class="note" id="noteShock" hidden>Shock de espiral con reserva (piggyback), como en muchas bicis de descenso. Acá la compresión se regula en una válvula de la reserva y el rebote en el pistón. En un shock sin reserva, la compresión también va en el pistón, como en el detalle de la horquilla.</p>
+  </div>
+
+  <svg viewBox="0 0 400 66" role="img" id="gaugeSvg" class="gauge" aria-label="Escala de velocidad del vástago con el valor de ejemplo de la zona elegida">
+    <line class="l" x1="20" y1="30" x2="380" y2="30"/>
+    <g class="labd" id="gTicks"></g>
+    <line id="gThr" class="dash" x1="20" y1="14" x2="20" y2="38" style="stroke:var(--oro)"/>
+    <text id="gThrT" class="lab" x="20" y="10" style="fill:var(--oro)"></text>
+    <circle id="gDot" class="p" cx="20" cy="30" r="5"/>
+    <text id="gVal" class="lab" x="20" y="60"></text>
+  </svg>
+</div>
+
+<script>
+(function(){
+  var NS = "http://www.w3.org/2000/svg";
+  var $ = function(id){ return document.getElementById(id); };
+
+  var MODES = {
+    HSC: { sub:"Compresión rápida", dir:-1, speed:170, hz:1.3, amp:7, v:520, shim:"top", ports:"A", bleedN:4, portN:9, thr:true,
+      what:"Un golpe fuerte empuja el vástago muy rápido. El orificio de purga ya no da abasto, la presión sube y abre las laminillas de compresión. El aceite pasa por los puertos del pistón. La rigidez del paquete de laminillas define cuánto frena.",
+      when:"Piedras, escalones, raíces, aterrizajes y cualquier impacto en que el vástago se mueve rápido.",
+      app:"Cuenta el porcentaje del tiempo con velocidad de vástago sobre el umbral (230 mm/s en el perfil base, ajustado por peso y pista). Si es alto sugiere cerrar 1 click HSC. Si hay picos aislados sin uso sostenido, sugiere abrir." },
+    LSC: { sub:"Compresión lenta", dir:-1, speed:45, hz:.45, amp:5, v:80, shim:null, ports:null, bleedN:7, portN:0, thr:true, needle:true,
+      what:"El vástago entra despacio y el aceite alcanza a pasar por el orificio de purga que regula la aguja. Las laminillas siguen cerradas. Cerrar clicks achica el orificio: más apoyo y menos hundimiento.",
+      when:"Peso del piloto, frenadas, apoyo en curvas, compresiones de terreno suave y pedaleo.",
+      app:"Compara las compresiones lentas con el SAG objetivo. Si pasan del margen que tolera el perfil de riesgo, sugiere cerrar LSC. No cuenta velocidades menores a 5 mm/s." },
+    HSR: { sub:"Rebote rápido", dir:1, speed:170, hz:1.3, amp:7, v:480, shim:"bot", ports:"B", bleedN:4, portN:9, thr:false,
+      what:"Tras un golpe grande el resorte devuelve el vástago rápido. El aceite baja por los puertos del otro lado y abre las laminillas de rebote. Muy libre: la rueda salta y el vástago pega arriba. Muy cerrado: la horquilla no recupera entre golpes seguidos y se queda comprimida (packing).",
+      when:"Salida de golpes grandes, saltos, secciones rotas con impactos seguidos.",
+      app:"Compara el rebote alto de adelante contra el de atrás, alto contra alto. Es el mismo criterio que usa Motion Instruments." },
+    LSR: { sub:"Rebote lento", dir:1, speed:45, hz:.45, amp:5, v:70, shim:null, ports:null, bleedN:7, portN:0, thr:false, needle:true,
+      what:"La horquilla vuelve despacio a su posición. El aceite baja por el orificio de purga, controlado por la aguja de rebote. Las laminillas no se abren.",
+      when:"Recuperación tras la compresión de una curva, rodar sobre terreno ondulado suave.",
+      app:"Compara el rebote medio de adelante contra el de atrás, mediana contra mediana. Sirve para ver si el frente y la trasera vuelven al mismo ritmo." },
+    SAG: { sub:"Hundimiento con el peso del piloto", dir:-1, speed:0, hz:.3, amp:0, v:0, shim:null, ports:null, bleedN:0, portN:0, thr:false,
+      what:"El SAG es cuánto se hunde la suspensión con el piloto parado en posición de ataque, antes de rodar. Se ve en el o-ring: la pata lo empuja hacia arriba por el tubo hasta donde entró. Se lee como porcentaje del recorrido total.",
+      when:"Siempre. Es el punto de partida de todo ajuste: define cuánto recorrido queda para absorber golpes y cuánto para extender sobre los huecos. Se mide parado (estático) y rodando (dinámico).",
+      app:"SAG estático en vivo, calibrable con o sin balanza, y SAG dinámico medio (en marcha, sin saltos) contra el objetivo del perfil: 18 % en horquilla y 28 % en shock en el perfil base, con ajustes de 1 o 2 puntos según el estilo de pilotaje. Los semáforos de Ajustes lo usan." }
+  };
+
+  var comp = "fork";
+  var SHOCK_WHAT = {
+    HSC: "Un golpe fuerte empuja el vástago hacia el cuerpo y desplaza aceite hacia la reserva. A esa velocidad el orificio de purga no da abasto: la presión abre las laminillas de la válvula de compresión y el aceite pasa por los puertos.",
+    LSC: "El vástago entra despacio y el aceite pasa a la reserva por el orificio de purga que regula la aguja. Las laminillas siguen cerradas. Cerrar clicks achica el orificio: más apoyo y menos hundimiento.",
+    HSR: "El resorte devuelve el vástago rápido. El aceite vuelve de la reserva al otro lado del pistón y abre las laminillas de rebote, en el pistón. Muy libre: la rueda salta. Muy cerrado: el shock no recupera entre golpes seguidos (packing).",
+    LSR: "El shock vuelve despacio a su posición. El aceite pasa por el orificio de purga del pistón, controlado por la aguja de rebote. Las laminillas no se abren.",
+    SAG: "El SAG del shock es cuánto se hunde con el piloto en posición de ataque, antes de rodar. Se mide en el vástago con el o-ring y se lee como porcentaje del recorrido."
+  };
+  var P = {
+    bC1: [[24,130],[130,130],[192,130],[202,120],[226,104]],
+    bC2: [[24,310],[130,310],[192,310],[202,320],[226,336]],
+    bCb: [[24,220],[130,220],[190,220],[238,220]],
+    bleedUp:  [[160,330],[160,130],[176,130],[200,104]],
+    bleedDown: [[200,104],[176,130],[160,130],[160,330]],
+    aUp1: [[95,330],[95,192],[101,181],[118,158]],
+    aUp2: [[225,330],[225,192],[219,181],[202,158]],
+    bDn1: [[125,104],[125,230],[112,240],[98,262],[98,330]],
+    bDn2: [[195,104],[195,230],[208,240],[222,262],[222,330]]
+  };
+  function plen(pts){ var L=[0], t=0; for (var i=1;i<pts.length;i++){ t+=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]); L.push(t);} return {L:L,t:t}; }
+  Object.keys(P).forEach(function(k){ P[k] = {pts:P[k], m:plen(P[k])}; });
+  function at(p, d){
+    var m=p.m, pts=p.pts; d = Math.max(0, Math.min(m.t, d));
+    for (var i=1;i<m.L.length;i++){ if (d<=m.L[i]){ var s=(d-m.L[i-1])/(m.L[i]-m.L[i-1]); return [pts[i-1][0]+(pts[i][0]-pts[i-1][0])*s, pts[i-1][1]+(pts[i][1]-pts[i-1][1])*s]; } }
+    return pts[pts.length-1];
+  }
+
+  var parts = $("parts"), dots = [];
+  for (var i=0;i<40;i++){ var c=document.createElementNS(NS,"circle"); c.setAttribute("r","2.8"); c.setAttribute("class","p"); c.setAttribute("cx","-20"); c.setAttribute("cy","-20"); parts.appendChild(c); dots.push(c); }
+
+  var mode = "HSC", running = true, tPrev = performance.now(), phase = 0, streams = [];
+  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduce) running = false;
+
+  function buildStreams(){
+    var M = MODES[mode], s = [], di = 0;
+    function add(path, n, speed){ for (var k=0;k<n;k++){ s.push({p:path, off:k/n, speed:speed, el:dots[di++]}); } }
+    var B = comp === "shock";
+    var tgt = (B && M.dir < 0 && mode !== "SAG") ? $("partsB") : $("parts");
+    dots.forEach(function(d){ tgt.appendChild(d); });
+    if (mode==="HSC" && B){ add(P.bC1, M.portN/2+1|0, M.speed); add(P.bC2, M.portN/2+1|0, M.speed); add(P.bCb, M.bleedN, M.speed); }
+    else if (mode==="HSC"){ add(P.aUp1, M.portN/2+1|0, M.speed); add(P.aUp2, M.portN/2+1|0, M.speed); add(P.bleedUp, M.bleedN, M.speed); }
+    if (mode==="LSC"){ add(B ? P.bCb : P.bleedUp, M.bleedN, M.speed); }
+    if (mode==="HSR"){ add(P.bDn1, M.portN/2+1|0, M.speed); add(P.bDn2, M.portN/2+1|0, M.speed); add(P.bleedDown, M.bleedN, M.speed); }
+    if (mode==="LSR"){ add(P.bleedDown, M.bleedN, M.speed); }
+    dots.forEach(function(d){ d.style.display = "none"; });
+    s.forEach(function(q){ q.el.style.display = ""; });
+    streams = s;
+  }
+
+  function mark(ids, on){ ids.forEach(function(id){ var e=$(id); if(e) e.classList.toggle("on", on); }); }
+  function applyMode(){
+    var M = MODES[mode];
+    $("mTitle").textContent = mode; $("mSub").textContent = M.sub;
+    $("iWhat").textContent = M.what; $("iWhen").textContent = M.when; $("iApp").textContent = M.app;
+    ["bore","needle","pA1","pA2","pB1","pB2","shT1p","shT2p","shB1p","shB2p","fkPiston","holeP"].forEach(function(id){ var e=$(id); e.classList.remove("on","part-on"); });
+    mark(["bore","needle","holeP"], M.needle || mode==="HSC" || mode==="HSR");
+    if (!M.needle && (mode==="HSC"||mode==="HSR")){ mark(["needle"], false); }
+    mark(["pA1","pA2","shT1p","shT2p"], mode==="HSC");
+    mark(["pB1","pB2","shB1p","shB2p"], mode==="HSR");
+    $("fkPiston").classList.add("part-on");
+    $("arrowPath").setAttribute("d", M.dir<0 ? "M30 210V250M24 242L30 250L36 242" : "M30 250V210M24 218L30 210L36 218");
+    $("arrowTxt").textContent = M.dir<0 ? "comprime" : "extiende";
+    $("cap2").textContent = "Detalle A · corte del pistón · " + mode;
+    var isSag = mode === "SAG";
+    $("sheet").style.setProperty("--flow", isSag ? "var(--cian)" : (M.dir<0 ? "var(--flow-c)" : "var(--flow-r)"));
+    var shock = comp === "shock", useB = shock && M.dir < 0 && !isSag;
+    $("leftcol").hidden = isSag && !shock;
+    document.querySelector(".fig-detail").hidden = isSag || useB;
+    document.querySelector(".fig-detailB").hidden = !useB;
+    $("h1").textContent = shock ? "Animaciones del shock" : "Animaciones de la horquilla";
+    $("subtitle").textContent = shock ? "Cómo pasa el aceite por las válvulas del shock en cada zona de velocidad que muestra SendFlow, y cómo se lee el SAG." : "Cómo pasa el aceite por el pistón en cada zona de velocidad que muestra SendFlow, y cómo se lee el SAG.";
+    $("noteShock").hidden = !shock;
+    if (shock){
+      $("iWhat").textContent = SHOCK_WHAT[mode];
+      $("cap2").textContent = "Detalle A · pistón del shock (rebote) · " + mode;
+      $("cap3").textContent = "Detalle B · válvula de compresión en la reserva, vista girada · " + mode;
+    }
+    $("lamC1").textContent = shock ? "paso libre" : "laminillas"; $("lamC2").textContent = shock ? "(compresión)" : "compresión";
+    $("shArrowPath").setAttribute("d", M.dir<0 ? "M34 140V100M28 108L34 100L40 108" : "M34 100V140M28 132L34 140L40 132");
+    $("shArrowTxt").textContent = M.dir<0 ? "comprime" : "extiende";
+    ["bPort1","bPort2","bShUp","bShLp","bBleed","bNeedle"].forEach(function(id){ $(id).classList.remove("on"); });
+    mark(["bPort1","bPort2","bShUp","bShLp"], mode==="HSC");
+    mark(["bBleed","bNeedle"], mode==="LSC" || mode==="HSC");
+    $("shPiston").classList.add("part-on");
+    $("ctxArrowPath").setAttribute("d", M.dir<0 ? "M34 44V84M28 76L34 84L40 76" : "M34 84V44M28 52L34 44L40 52");
+    $("ctxArrowTxt").textContent = M.dir<0 ? "comprime" : "extiende";
+    applyView();
+    $("gaugeSvg").hidden = isSag;
+    $("legend").hidden = isSag;
+    $("sagBox").hidden = !isSag;
+    if (isSag) phase = 2;
+    buildStreams();
+    var gx = function(v){ return 20 + 360 * v / 800; };
+    $("gThr").style.display = M.thr ? "" : "none"; $("gThrT").style.display = M.thr ? "" : "none";
+    if (M.thr){ $("gThr").setAttribute("x1", gx(230)); $("gThr").setAttribute("x2", gx(230)); $("gThrT").setAttribute("x", gx(230)-4); $("gThrT").textContent = "umbral LSC/HSC 230"; }
+    $("gVal").textContent = "velocidad de vástago, ejemplo: " + M.v + " mm/s";
+    $("gDot").setAttribute("cx", gx(M.v));
+    document.querySelectorAll(".tab").forEach(function(b){ b.setAttribute("aria-selected", b.dataset.m===mode ? "true":"false"); });
+    frame(performance.now());
+  }
+
+  var ticks = $("gTicks");
+  [0,200,400,600,800].forEach(function(v){
+    var x = 20 + 360*v/800;
+    var l = document.createElementNS(NS,"line"); l.setAttribute("x1",x); l.setAttribute("x2",x); l.setAttribute("y1",26); l.setAttribute("y2",34); l.setAttribute("class","thin"); ticks.appendChild(l);
+    var t = document.createElementNS(NS,"text"); t.setAttribute("x",x); t.setAttribute("y",46); t.setAttribute("text-anchor","middle"); t.textContent = v; ticks.appendChild(t);
+  });
+
+  function frame(now){
+    var dt = Math.min(.05, (now - tPrev)/1000); tPrev = now;
+    if (running){ phase += dt; }
+    var M = MODES[mode], tt = phase;
+    streams.forEach(function(q){
+      var d = ((tt*q.speed + q.off*q.p.m.t) % q.p.m.t);
+      var xy = at(q.p, d); q.el.setAttribute("cx", xy[0].toFixed(1)); q.el.setAttribute("cy", xy[1].toFixed(1));
+    });
+    var s = .78 + .22*Math.sin(tt*M.hz*6.28);
+    var ang = (M.shim ? 17*s : 0);
+    $("shT1").setAttribute("transform", "rotate(" + (M.shim==="top" ?  ang : 0) + " 106 187)");
+    $("shT2").setAttribute("transform", "rotate(" + (M.shim==="top" ? -ang : 0) + " 214 187)");
+    $("shB1").setAttribute("transform", "rotate(" + (M.shim==="bot" ? -ang : 0) + " 136 233)");
+    $("shB2").setAttribute("transform", "rotate(" + (M.shim==="bot" ?  ang : 0) + " 184 233)");
+    $("needleG").setAttribute("transform", "translate(0 " + (M.needle ? (6*Math.sin(tt*1.1)).toFixed(1) : 0) + ")");
+    var up = (M.amp*1.4*(.5 + .5*Math.sin(tt*M.hz*6.28))).toFixed(1);
+    $("upG").setAttribute("transform", "translate(0 " + up + ")");
+    $("upG2").setAttribute("transform", "translate(0 " + up + ")");
+    $("shaftG").setAttribute("transform", "translate(0 " + (M.amp*Math.sin(tt*M.hz*6.28)).toFixed(1) + ")");
+    // shock: sube el vástago, se acorta el resorte, el pistón flotante sigue al aceite
+    var sw = .5 + .5*Math.sin(tt*M.hz*6.28), lowU = M.amp*2*sw;
+    $("lowG").setAttribute("transform", "translate(0 " + (-lowU).toFixed(1) + ")");
+    $("spG").setAttribute("transform", "translate(0 316) scale(1 " + (((474 - lowU) - 316)/158).toFixed(3) + ") translate(0 -316)");
+    $("shIfp").setAttribute("transform", "translate(0 " + (sw*9).toFixed(1) + ")");
+    $("bIfp").setAttribute("transform", "translate(" + (sw*16).toFixed(1) + " 0)");
+    $("bShU").setAttribute("transform", "rotate(" + (M.shim==="top" ? ang : 0) + " 193 144)");
+    $("bShL").setAttribute("transform", "rotate(" + (M.shim==="top" ? -ang : 0) + " 193 296)");
+    $("bNeedleG").setAttribute("transform", "translate(0 " + (M.needle ? (6*Math.sin(tt*1.1)).toFixed(1) : 0) + ")");
+    if (mode === "SAG") updateSag(tt);
+    var v = M.v*(1 + .08*Math.sin(tt*M.hz*6.28));
+    $("gDot").setAttribute("cx", (20 + 360*v/800).toFixed(1));
+  }
+  function loop(now){ frame(now); requestAnimationFrame(loop); }
+
+  document.querySelectorAll(".tab").forEach(function(b){
+    b.addEventListener("click", function(){ mode = b.dataset.m; applyMode(); });
+    b.addEventListener("keydown", function(e){
+      var order = ["HSC","LSC","HSR","LSR","SAG"], i = order.indexOf(mode);
+      if (e.key==="ArrowRight"){ mode = order[(i+1)%5]; applyMode(); $("t-"+mode).focus(); }
+      if (e.key==="ArrowLeft"){ mode = order[(i+4)%5]; applyMode(); $("t-"+mode).focus(); }
+    });
+  });
+  var view = "ctx";
+  function applyView(){
+    var shock = comp === "shock";
+    document.querySelector(".fig-ctx").hidden = shock || view !== "ctx";
+    document.querySelector(".fig-fork").hidden = shock || view !== "fork";
+    document.querySelector(".fig-shock").hidden = !shock;
+    $("viewseg").hidden = shock;
+    document.querySelectorAll("#viewseg button").forEach(function(b){ b.setAttribute("aria-pressed", b.dataset.v === view ? "true" : "false"); });
+    document.querySelectorAll("#compseg button").forEach(function(b){ b.setAttribute("aria-pressed", b.dataset.c === comp ? "true" : "false"); });
+  }
+  document.querySelectorAll("#viewseg button").forEach(function(b){ b.addEventListener("click", function(){ view = b.dataset.v; applyView(); }); });
+  document.querySelectorAll("#compseg button").forEach(function(b){ b.addEventListener("click", function(){ comp = b.dataset.c; buildSag(); applyMode(); }); });
+  // spiral del resorte del shock
+  (function(){
+    var h = "";
+    for (var k = 0; k < 8; k++){
+      var y = 316 + k*19.75;
+      h += '<path d="M234 '+(y+9.9)+'L146 '+(y+19.75)+'" stroke-width="2.4" stroke-opacity=".35"/>';
+      h += '<path d="M146 '+y+'L234 '+(y+9.9)+'" stroke-width="3.2" stroke-opacity=".9"/>';
+    }
+    $("spG").innerHTML = h;
+  })();
+  $("play").addEventListener("click", function(){ running = !running; this.textContent = running ? "Pausar" : "Reanudar"; });
+  if (reduce) $("play").textContent = "Reanudar";
+
+  // SAG: tres tubos con la misma escala, el o-ring sube hasta el valor de cada caso
+  var H = 200, Y0 = 250;
+  var SAGS = [
+    { t:.07, cls:"bad", name:"Muy duro", rng:"menos de 10 %", why:"Casi no usa recorrido: la rueda no copia el terreno y pierde tracción." },
+    { t:.18, cls:"ok",  name:"Objetivo", rng:"18 % en SendFlow", why:"Deja recorrido para extender en los huecos y para absorber golpes." },
+    { t:.34, cls:"bad", name:"Muy blando", rng:"más de 30 %", why:"Se hunde antes del primer golpe y llega más seguido al tope." }
+  ];
+  var sagBox = $("sagBox");
+  var SAGS_FORK = SAGS;
+  var SAGS_SHOCK = [
+    { t:.28, cls:"ok", name:"Objetivo del shock", rng:"28 % en SendFlow", why:"Es el valor del perfil base para el shock. La horquilla usa 18 %." }
+  ];
+  function buildSag(){
+  sagBox.innerHTML = "";
+  sagBox.className = "sagbox" + (comp === "shock" ? " one" : "");
+  SAGS = comp === "shock" ? SAGS_SHOCK : SAGS_FORK;
+  SAGS.forEach(function(S, i){
+    var col = S.cls === "ok" ? "var(--ok)" : "var(--bad)", ticks = "";
+    [0,.1,.2,.3,.4].forEach(function(p){
+      var y = Y0 - p*H;
+      ticks += '<line class="l" x1="140" y1="'+y+'" x2="148" y2="'+y+'"/><text class="labd" x="152" y="'+(y+3.5)+'">'+Math.round(p*100)+'%</text>';
+    });
+    var fig = document.createElement("figure");
+    fig.innerHTML =
+      '<svg viewBox="0 0 230 360" role="img" aria-label="Tubo de horquilla con escala de SAG. '+S.name+', '+S.rng+'.">' +
+      '<defs><pattern id="hatch'+i+'" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" style="stroke:'+col+';stroke-width:1.3"/></pattern></defs>' +
+      '<rect class="tealf" id="st'+i+'" x="80" y="20" width="60" height="230"/>' +
+      '<line class="spec" x1="90" x2="90" id="sh'+i+'" y1="30" y2="250"/>' +
+      '<g id="cr'+i+'"><rect class="metalf" x="52" y="6" width="116" height="14" rx="4"/></g>' +
+      '<rect id="zn'+i+'" x="82" y="250" width="56" height="0" fill="url(#hatch'+i+')" style="stroke:'+col+';stroke-width:1"/>' +
+      ticks +
+      '<path class="glassf" d="M62 250H158V330Q158 340 148 340H72Q62 340 62 330Z"/><path class="l" d="M92 340V314Q110 298 128 314V340" style="stroke-opacity:.5"/>' +
+      '<rect class="metalf" x="60" y="246" width="100" height="6" rx="2"/>' +
+      '<rect id="or'+i+'" x="76" y="244" width="68" height="6" rx="3" fill="var(--panel)" style="stroke:'+col+';stroke-width:2.4"/>' +
+      '<line id="ld'+i+'" class="thin" x1="34" x2="76" y1="247" y2="247"/>' +
+      '<text id="rd'+i+'" class="lab" x="2" y="251" style="fill:'+col+'">0 %</text>' +
+      '</svg>' +
+      '<div class="sagcap '+S.cls+'"><b>'+(S.cls==="ok" ? "✓ " : "✕ ")+S.name+'</b><span class="r">'+S.rng+'</span><p>'+S.why+'</p></div>';
+    sagBox.appendChild(fig);
+  });
+  }
+  buildSag();
+  function ease(x){ x = Math.max(0, Math.min(1, x)); return x*x*(3 - 2*x); }
+  function updateSag(tt){
+    var u = tt % 5.5;
+    var k = u < .3 ? 0 : u < 1.7 ? ease((u-.3)/1.4) : u < 4.4 ? 1 : u < 5.2 ? 1 - ease((u-4.4)/.8) : 0;
+    SAGS.forEach(function(S, i){
+      var d = S.t*k + (k >= 1 ? .006*Math.sin(tt*2.2) : 0);
+      var dy = d*H;
+      $("or"+i).setAttribute("y", (Y0 - dy - 6).toFixed(1));
+      $("zn"+i).setAttribute("y", (Y0 - dy).toFixed(1)); $("zn"+i).setAttribute("height", dy.toFixed(1));
+      $("cr"+i).setAttribute("transform", "translate(0 " + dy.toFixed(1) + ")");
+      $("st"+i).setAttribute("y", (20 + dy).toFixed(1)); $("st"+i).setAttribute("height", (230 - dy).toFixed(1));
+      $("sh"+i).setAttribute("y1", (30 + dy).toFixed(1));
+      var ly = (Y0 - dy - 3).toFixed(1);
+      $("ld"+i).setAttribute("y1", ly); $("ld"+i).setAttribute("y2", ly);
+      $("rd"+i).setAttribute("y", (Y0 - dy).toFixed(1)); $("rd"+i).textContent = Math.round(d*100) + " %";
+    });
+  }
+  applyMode();
+  requestAnimationFrame(loop);
+})();
+</script>
+
+</body>
+</html>
