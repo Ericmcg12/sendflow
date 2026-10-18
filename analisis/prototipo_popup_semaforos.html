@@ -1,0 +1,396 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Semáforos con popup</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Roboto+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: maqueta de la sección de semáforos de Ajustes (6 grupos, fila Horquilla y fila Shock) con un botón ⓘ en cada
+   grupo que abre un popup con una animación corta de lo que mide ese semáforo. Tokens tomados de la app. */
+:root {
+  --bg: #070b0c; --panel: #11171a; --panel2: #151b1c; --borde: #232b2c; --borde2: #2e393a;
+  --txt: #f2f5f4; --dim: #8b9a98; --mute: #5e6b6a;
+  --cian: #4fe3c2; --oro: #ffbd00; --azul: #4a9eff; --rojo: #ff6b5e;
+  --line: #9fb0b3; --port: #0a1012;
+  --glow: rgba(79,227,194,.10); --sombra: 0 10px 40px rgba(0,0,0,.55); --scrim: rgba(3,6,7,.72);
+  --font-brand: "Chakra Petch", system-ui, sans-serif;
+  --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-mono: "Roboto Mono", ui-monospace, Menlo, Consolas, monospace;
+  color-scheme: dark;
+}
+@media (prefers-color-scheme: light) {
+  :root:not([data-theme="dark"]) {
+    --bg: #e8eeed; --panel: #ffffff; --panel2: #f3f7f6; --borde: #c6d3d1; --borde2: #a9bab8;
+    --txt: #0e1b19; --dim: #52676a; --mute: #8a9b9a;
+    --cian: #0b9a7e; --oro: #b57600; --azul: #1f6fd1; --rojo: #c8372d;
+    --line: #3f5559; --port: #dbe6e8; --glow: rgba(11,154,126,.10); --sombra: 0 10px 30px rgba(20,40,40,.2); --scrim: rgba(20,32,34,.55);
+    color-scheme: light;
+  }
+}
+:root[data-theme="light"] {
+  --bg: #e8eeed; --panel: #ffffff; --panel2: #f3f7f6; --borde: #c6d3d1; --borde2: #a9bab8;
+  --txt: #0e1b19; --dim: #52676a; --mute: #8a9b9a;
+  --cian: #0b9a7e; --oro: #b57600; --azul: #1f6fd1; --rojo: #c8372d;
+  --line: #3f5559; --port: #dbe6e8; --glow: rgba(11,154,126,.10); --sombra: 0 10px 30px rgba(20,40,40,.2); --scrim: rgba(20,32,34,.55);
+  color-scheme: light;
+}
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--txt); font-family: var(--font-body); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased;
+  padding-block: 24px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
+h1 { font-family: var(--font-brand); font-weight: 600; font-size: 28px; line-height: 1.1; margin: 0; text-wrap: balance; }
+.brand { font: 500 13px/1 var(--font-brand); letter-spacing: .08em; color: var(--cian); margin: 0 0 6px; }
+.sub { margin: 6px 0 0; color: var(--dim); font-size: 14px; max-width: 70ch; }
+.grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+@media (max-width: 760px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.gs { background: linear-gradient(180deg, var(--panel2), var(--panel)); border: 1px solid var(--borde); border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.gs-t { display: flex; align-items: center; gap: 10px; font: 600 12px/1.3 var(--font-body); letter-spacing: .04em; }
+.gs-t .ic { color: var(--cian); display: inline-flex; }
+.info-btn { margin-left: auto; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--borde2); background: transparent; color: var(--dim); cursor: pointer; font: 600 14px/1 var(--font-mono); display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.info-btn:hover { border-color: var(--oro); color: var(--oro); }
+.info-btn:focus-visible, .nm:focus-visible, .x:focus-visible, .seg button:focus-visible { outline: 2px solid var(--oro); outline-offset: 2px; }
+.row { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 12px; align-items: center; }
+.nm { background: none; border: 0; padding: 0; text-align: left; font: 600 10.5px/1.2 var(--font-body); letter-spacing: .06em; cursor: pointer; }
+.nm.c { color: var(--cian); } .nm.o { color: var(--oro); }
+.nm:hover { text-decoration: underline; }
+.msg { display: block; font-size: 11.5px; text-align: center; min-height: 16px; margin-bottom: 4px; }
+.sev { display: block; font: 400 9px/1 var(--font-mono); letter-spacing: .08em; color: var(--dim); text-align: center; margin-top: 4px; min-height: 10px; }
+.dial { width: 100%; height: 24px; display: block; }
+.dial .tk { fill: none; stroke: var(--mute); stroke-width: 1; }
+
+.ov { position: fixed; inset: 0; z-index: 20; background: var(--scrim); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.mod { width: min(760px, 100%); max-height: calc(100% - 8px); overflow: auto; background: linear-gradient(180deg, var(--panel2), var(--panel)); border: 1px solid var(--borde2); border-radius: 12px; box-shadow: var(--sombra); display: flex; flex-direction: column; }
+@media (max-width: 600px) { .ov { padding: 0; align-items: flex-end; } .mod { max-height: 94%; border-radius: 12px 12px 0 0; } }
+.mh { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--borde); position: sticky; top: 0; background: var(--panel); z-index: 1; }
+.mh .ic { color: var(--cian); display: inline-flex; }
+.mh h2 { margin: 0; font: 600 14px/1.3 var(--font-body); letter-spacing: .04em; }
+.x { margin-left: auto; width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--borde2); background: transparent; color: var(--txt); font-size: 18px; line-height: 1; cursor: pointer; flex: none; }
+.mb { padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 14px; }
+.ctl { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; font: 500 12px/1.2 var(--font-body); color: var(--dim); }
+.seg { display: inline-flex; }
+.seg button { font: 600 12px/1 var(--font-body); padding: 9px 12px; background: transparent; color: var(--dim); border: 1px solid var(--borde2); cursor: pointer; }
+.seg button:first-child { border-radius: 6px 0 0 6px; } .seg button:last-child { border-radius: 0 6px 6px 0; } .seg button + button { border-left: 0; }
+.seg button[aria-pressed="true"] { color: var(--cian); border-color: var(--cian); background: rgba(79,227,194,.08); }
+.stage { width: 100%; height: auto; display: block; background: var(--port); background: color-mix(in srgb, var(--port) 55%, transparent); border: 1px solid var(--borde); border-radius: 8px; }
+.stage .l { fill: none; stroke: var(--line); stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }
+.stage .t { fill: none; stroke: var(--mute); stroke-width: .8; }
+.stage .d { fill: none; stroke: var(--mute); stroke-width: .8; stroke-dasharray: 5 4; }
+.stage text { font-family: var(--font-mono); font-size: 11px; fill: var(--dim); }
+.stage text.b { fill: var(--txt); }
+.stage text { paint-order: stroke; stroke: var(--panel); stroke-width: 3px; stroke-linejoin: round; }
+.res { border: 1px solid var(--borde); border-radius: 8px; padding: 10px 12px; display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 8px 16px; align-items: center; }
+@media (max-width: 600px) { .res { grid-template-columns: minmax(0, 1fr); } }
+.chip { display: inline-block; font: 600 11px/1 var(--font-mono); letter-spacing: .06em; padding: 5px 8px; border-radius: 6px; border: 1px solid currentColor; margin-right: 8px; }
+.chip.ok { color: var(--cian); } .chip.warn { color: var(--oro); } .chip.bad { color: var(--rojo); }
+.txt { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 600px) { .txt { grid-template-columns: minmax(0, 1fr); } }
+.card { border: 1px solid var(--borde); border-radius: 8px; padding: 10px 12px; }
+.card h3 { margin: 0 0 4px; font: 500 11px/1.2 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--cian); }
+.card p { margin: 0; font-size: 13.5px; }
+.foot { font-size: 12px; color: var(--dim); margin: 0; }
+@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+</style>
+</head>
+<body>
+
+
+<div class="wrap">
+  <header>
+    <p class="brand">SENDFLOW BIKE · MAQUETA</p>
+    <h1>Semáforos con popup</h1>
+    <p class="sub">Así se vería la sección de semáforos con un botón ⓘ por grupo. Toca el ⓘ, o el nombre HORQUILLA o SHOCK de una fila, para ver una animación corta de qué mide ese semáforo. Los estados de las tarjetas son de ejemplo.</p>
+  </header>
+  <div class="grid" id="grid"></div>
+</div>
+
+<div class="ov" id="ov" hidden role="dialog" aria-modal="true" aria-labelledby="mT">
+  <div class="mod" id="mod">
+    <div class="mh"><span class="ic" id="mIc"></span><h2 id="mT"></h2><button class="x" id="mX" type="button" aria-label="Cerrar">×</button></div>
+    <div class="mb">
+      <div class="ctl">
+        <span class="seg" id="suspSeg" role="group" aria-label="Suspensión"><button type="button" data-s="H" aria-pressed="true">Horquilla</button><button type="button" data-s="S" aria-pressed="false">Shock</button></span>
+        <span id="stLab">Ejemplo</span><span class="seg" id="stateSeg" role="group" aria-label="Ejemplo"></span>
+      </div>
+      <svg class="stage" id="stage" viewBox="0 0 480 240" role="img" aria-label="Animación del semáforo"></svg>
+      <div class="res">
+        <svg class="dial" id="mDial" viewBox="0 0 260 24" role="img" aria-label="Barra del semáforo"></svg>
+        <div><span class="chip ok" id="mChip">EN PUNTO</span><span id="mMsg"></span></div>
+      </div>
+      <p class="foot">Barra del semáforo: el centro es la zona objetivo. A la derecha el texto pide cerrar o más soporte, a la izquierda abrir o menos soporte. Cuanto más lejos del centro, más fuerte la desviación.</p>
+      <div class="txt"><div class="card"><h3>Qué mide</h3><p id="mWhat"></p></div><div class="card"><h3>Si sale fuera de zona</h3><p id="mFix"></p></div></div>
+      <p class="foot" id="mFoot"></p>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  "use strict";
+  var $ = function(id){ return document.getElementById(id); }, NS = "http://www.w3.org/2000/svg";
+  var ICON = {
+    SAG: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 4v16M18 4v16"/><path d="M6 12h12"/></svg>',
+    TOPES: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M4 20h16"/></svg>',
+    HSC: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 6l5 5 5-5"/><path d="M7 13l5 5 5-5"/></svg>',
+    LSC: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9l5 5 5-5"/></svg>',
+    HSR: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M7 18l5-5 5 5"/><path d="M7 11l5-5 5 5"/></svg>',
+    LSR: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>'
+  };
+  var ORDER = ["SAG","TOPES","HSC","LSC","HSR","LSR"];
+  var TITLE = { SAG:"SAG EN REPOSO", TOPES:"TOPES", HSC:"COMPRESIÓN ALTA VELOCIDAD (HSC)", LSC:"COMPRESIÓN BAJA VELOCIDAD (LSC)", HSR:"REBOTE ALTA VELOCIDAD (HSR)", LSR:"REBOTE BAJA VELOCIDAD (LSR)" };
+  function sevTxt(d, ok){ if (ok) return ""; var s = Math.abs(d); return s > .55 ? "FUERTE" : s > .22 ? "MODERADO" : "LEVE"; }
+  function colorOf(d, ok){ return ok ? "var(--cian)" : (Math.abs(d) > .55 ? "var(--rojo)" : "var(--oro)"); }
+  function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
+  function ease(x){ x = clamp(x, 0, 1); return x*x*(3 - 2*x); }
+
+  /* ---- estados de ejemplo y evaluación, con la misma lógica de la app ---- */
+  var STATES = {
+    SAG: [["ok","En zona"],["soft","Muy blando"],["hard","Muy duro"]],
+    TOPES: [["ok","1 tope"],["bad","3 topes"]],
+    HSC: [["ok","En zona"],["close","Mucho uso del circuito rápido"],["open","Solo picos aislados"]],
+    LSC: [["ok","En zona"],["close","Usa demasiado recorrido"]],
+    HSR: [["ok","En zona"],["fast","Rebote muy rápido"],["slow","Rebote muy lento"]],
+    LSR: [["ok","En zona"],["fast","Rebote muy rápido"],["slow","Rebote muy lento"]]
+  };
+  function evalKey(k, S, st){
+    var r = { ok:true, dev:0, msg:"Zona objetivo correcta" };
+    if (k === "SAG"){
+      var obj = S === "S" ? .28 : .18, m = st === "ok" ? obj : st === "soft" ? obj + .07 : obj - .06, d = m - obj;
+      r.m = m; r.obj = obj; r.ok = Math.abs(d) < .02; r.dev = r.ok ? 0 : clamp(d*5, -1, 1);
+      r.msg = r.ok ? "Zona objetivo correcta" : d > 0 ? "→ Subir presión de aire (SAG por encima del objetivo)" : "← Bajar presión de aire (SAG por debajo del objetivo)";
+    } else if (k === "TOPES"){
+      var n = st === "ok" ? 1 : 3, tol = 1; r.n = n;
+      if (n <= tol){ r.msg = "Zona objetivo correcta (" + n + " tope aislado)"; }
+      else { r.ok = false; r.dev = Math.min(1, .35 + (n - tol)*.12); r.msg = "→ Aumentar soporte (" + n + " bottom-outs)"; }
+    } else if (k === "HSC"){
+      if (st === "close"){ r.ok = false; r.pct = 40/120*100; r.dev = Math.min(1, .3 + (r.pct - 24)/40); r.msg = "→ Cerrar 1 click HSC (" + (S === "S" ? "hundimiento severo repetido" : "mucho tiempo en el circuito rápido") + ")"; }
+      else if (st === "open"){ r.ok = false; r.pct = 2; r.dev = -.3; r.msg = "← Abrir 1 click HSC (picos aislados sin uso sostenido del circuito)"; }
+      else r.pct = 12;
+    } else if (k === "LSC"){
+      var ref = (S === "S" ? 28 : 18) + 27, avg = (st === "ok" ? 38 : 58) + (S === "S" ? 10 : 0);
+      r.ref = ref; r.avg = avg;
+      if (avg > ref){ r.ok = false; r.dev = Math.min(1, (avg - ref)/25); r.msg = "→ Cerrar 1 click LSC (las transferencias de peso lentas usan demasiado recorrido)"; }
+    } else {
+      var ratio = st === "ok" ? 1.1 : st === "fast" ? 1.9 : .55; r.ratio = ratio;
+      if (ratio > 1.6){ r.ok = false; r.dev = Math.min(1, (ratio - 1.6)*1.2); r.msg = "→ Cerrar rebote (vuelve más rápido de lo que se hundió)"; }
+      else if (ratio < .75){ r.ok = false; r.dev = -Math.min(1, (.75 - ratio)*1.5); r.msg = "← Abrir rebote (no llega a extenderse entre golpes)"; }
+    }
+    return r;
+  }
+
+  /* ---- barra de semáforo, como la de la app: 5 marcas, centro = zona objetivo ---- */
+  function dialHTML(dev, ok, w){
+    var m = 10, au = w - m*2, c = m + au/2, x = c + clamp(dev, -1, 1)*au/2, col = colorOf(dev, ok), h = "";
+    h += '<line x1="'+m+'" y1="12" x2="'+(w-m)+'" y2="12" class="tk"/>';
+    for (var i = 0; i < 5; i++) h += '<circle cx="'+(m + i/4*au)+'" cy="12" r="'+(i === 2 ? 3 : 2.2)+'" class="tk"/>';
+    h += '<line x1="'+c+'" y1="12" x2="'+x+'" y2="12" style="stroke:'+col+';stroke-opacity:.7;stroke-width:2.5"/>';
+    h += '<circle cx="'+x+'" cy="12" r="5" style="fill:'+col+';stroke:var(--bg);stroke-width:1.2"/>';
+    return h;
+  }
+
+  /* ---- tarjetas de la maqueta ---- */
+  var MOCK = {
+    SAG:   { H:["ok"], S:["soft"] },
+    TOPES: { H:["ok"], S:["bad"] },
+    HSC:   { H:["close"], S:["ok"] },
+    LSC:   { H:["ok"], S:["close"] },
+    HSR:   { H:["fast"], S:["ok"] },
+    LSR:   { H:["ok"], S:["slow"] }
+  };
+  var grid = $("grid");
+  ORDER.forEach(function(k){
+    var d = document.createElement("div"); d.className = "gs";
+    var rows = ["H","S"].map(function(S){
+      var r = evalKey(k, S, MOCK[k][S][0]), col = colorOf(r.dev, r.ok);
+      return '<div class="row"><button class="nm '+(S === "H" ? "c" : "o")+'" type="button" data-k="'+k+'" data-s="'+S+'">'+(S === "H" ? "HORQUILLA" : "SHOCK")+'</button>' +
+        '<div><span class="msg" style="color:'+(r.ok ? "var(--cian)" : col)+'">'+(r.ok ? "EN PUNTO" : r.msg)+'</span>' +
+        '<svg class="dial" viewBox="0 0 260 24" aria-hidden="true">'+dialHTML(r.dev, r.ok, 260)+'</svg><span class="sev">'+sevTxt(r.dev, r.ok)+'</span></div></div>';
+    }).join("");
+    d.innerHTML = '<div class="gs-t"><span class="ic">'+ICON[k]+'</span>'+TITLE[k]+'<button class="info-btn" type="button" data-k="'+k+'" data-s="H" aria-label="Ver qué mide: '+TITLE[k]+'">i</button></div>'+rows;
+    grid.appendChild(d);
+  });
+
+  /* ---- textos de cada popup ---- */
+  var TXT = {
+    SAG: { what:"El SAG en reposo se mide con el o-ring, con el piloto parado y quieto con el equipo puesto, y se carga a mano: no sale de la telemetría. El punto compara ese valor con el objetivo del perfil (18 % en horquilla y 28 % en shock en el perfil base) y está en zona a menos de 2 puntos.",
+      fix:"SAG por encima del objetivo, suspensión muy blanda: sube la presión de aire, o la precarga si es resorte espiral. Por debajo, muy dura: baja la presión. El manual propone pasos de 5 PSI." },
+    TOPES: { what:"Un tope es una compresión que llega a más del 97 % del recorrido. SendFlow cuenta los de la bajada, por suspensión. Cero, o los que acepta el perfil (0 o 1 según estilo y peso), es zona objetivo. Cada tope de más empuja el punto hacia el lado de pedir soporte.",
+      fix:"Pide aumentar soporte: el texto sugiere presión de aire o token. El manual propone primero 1 click de HSC, después un token y después presión. Tocar fondo de vez en cuando, en los golpes más grandes, es normal." },
+    HSC: { what:"Entre las muestras en que el vástago comprime (más de 5 mm/s), mide qué porcentaje supera el umbral de alta velocidad: 230 mm/s en el perfil base, corregido por peso, pista y estilo. Lo compara con el límite del perfil (24 % en el estilo prolijo).",
+      fix:"Si pasa del límite: «Cerrar 1 click HSC». Si casi no usa el circuito pero hubo picos fuertes: «Abrir 1 click HSC». Cuando supera el umbral, las laminillas del circuito rápido son las que trabajan." },
+    LSC: { what:"Toma las compresiones más lentas que el umbral de HSC (hacen falta al menos 5) y promedia hasta dónde llega cada una. Lo compara con el SAG objetivo más un margen del perfil (27 puntos en el estilo prolijo).",
+      fix:"Si el promedio pasa de esa referencia: «Cerrar 1 click LSC». Significa que los cambios de peso lentos usan demasiado recorrido." },
+    HSR: { what:"Compara la velocidad de rebote con la de compresión de la misma suspensión, en los movimientos rápidos (percentil 95 de cada una). El cociente debe quedar dentro de la ventana del perfil (de 0,75 a 1,60 en el estilo prolijo). Necesita al menos 20 muestras de cada una.",
+      fix:"Cociente sobre la ventana: «Cerrar rebote». Bajo la ventana: «Abrir rebote». Si es muy rápido la rueda salta. Si es muy lento, la suspensión se queda comprimida entre golpes (packing)." },
+    LSR: { what:"Compara la velocidad de rebote con la de compresión de la misma suspensión, en los movimientos típicos (mediana de cada una). El cociente debe quedar dentro de la ventana del perfil (de 0,75 a 1,60 en el estilo prolijo). Necesita al menos 20 muestras de cada una.",
+      fix:"Cociente sobre la ventana: «Cerrar rebote». Bajo la ventana: «Abrir rebote». El balance entre delantera y trasera es otro semáforo." }
+  };
+
+  /* ---- escenarios de animación ---- */
+  var stage = $("stage");
+  function T(x, y, s, cls, anchor){ return '<text x="'+x+'" y="'+y+'"'+(cls ? ' class="'+cls+'"' : '')+(anchor ? ' text-anchor="'+anchor+'"' : '')+'>'+s+'</text>'; }
+  function rndFn(seed){ return function(){ seed = (seed*9301 + 49297) % 233280; return seed/233280; }; }
+
+  function buildSag(S, st, r){
+    var x0 = 40, sc = 8; // 1 % = 8 px, hasta 50 %
+    var h = '<rect x="'+x0+'" y="100" width="400" height="30" rx="3" fill="var(--panel)" stroke="var(--line)"/>';
+    h += '<rect x="'+(x0 + (r.obj - .02)*100*sc)+'" y="100" width="'+(.04*100*sc)+'" height="30" fill="var(--cian)" fill-opacity=".25"/>';
+    for (var p = 0; p <= 50; p += 10) h += '<line x1="'+(x0 + p*sc)+'" y1="130" x2="'+(x0 + p*sc)+'" y2="138" class="t"/>' + T(x0 + p*sc, 152, p + " %", "", "middle");
+    h += T(x0 + r.obj*100*sc, 90, "objetivo " + Math.round(r.obj*100) + " % ± 2", "b", "middle");
+    h += T(x0, 40, "recorrido usado con el piloto parado", "");
+    h += '<g id="sgR"><rect x="-6" y="92" width="12" height="46" rx="5" fill="var(--panel)" style="stroke:var(--oro);stroke-width:2.2"/></g>';
+    h += '<text id="sgT" x="0" y="192" text-anchor="middle" class="b" style="font-size:14px">0 %</text>';
+    stage.innerHTML = h;
+    var ring = $("sgR"), tx = $("sgT");
+    return function(t){ var p = ease((t - .3)/1.4), v = r.m*100*p, x = x0 + v*sc; ring.setAttribute("transform", "translate("+x.toFixed(1)+" 0)"); tx.setAttribute("x", x.toFixed(1)); tx.textContent = Math.round(v) + " %"; return p; };
+  }
+
+  var PUL = { ok: [[1,38],[2.4,62],[3.8,84],[5.2,99.2],[6.4,50],[7.6,74],[8.8,70]], bad: [[1,38],[2.2,62],[3.4,84],[4.6,99.2],[5.7,48],[6.7,74],[7.8,98.4],[8.8,70],[9.7,100]] };
+  function buildTopes(S, st, r){
+    var pl = PUL[st], TT = 11, X = function(t){ return 40 + t*(400/TT); }, Y = function(v){ return 200 - v*1.7; };
+    function pos(t){ var m = 6; pl.forEach(function(p){ var d = (t - p[0])/.32, v = 6 + (p[1] - 6)*Math.exp(-d*d); if (v > m) m = v; }); return Math.min(100, m); }
+    var d = "", i;
+    for (var t = 0; t <= TT + .001; t += .05) d += (d ? "L" : "M") + X(t).toFixed(1) + " " + Y(pos(t)).toFixed(1);
+    var h = '<rect x="40" y="'+Y(100)+'" width="400" height="'+(3*1.7)+'" fill="var(--rojo)" fill-opacity=".3"/><line x1="40" y1="'+Y(97)+'" x2="440" y2="'+Y(97)+'" style="stroke:var(--rojo);stroke-width:1;stroke-dasharray:4 3"/>';
+    h += '<path d="M40 200H440M40 '+Y(50)+'H440" class="t"/>' + T(34, 204, "0", "", "end") + T(34, Y(50) + 4, "50", "", "end") + T(34, Y(100) + 4, "100", "", "end");
+    h += T(40, 24, "recorrido usado (%) en una bajada de ejemplo", "") + T(440, 24, "97 %", "", "end");
+    h += '<path d="'+d+'" fill="none" style="stroke:var(--cian);stroke-width:2.2" stroke-linejoin="round"/>';
+    pl.forEach(function(p, j){ if (p[1] > 97) h += '<circle id="tpM'+j+'" cx="'+X(p[0]).toFixed(1)+'" cy="'+Y(p[1]).toFixed(1)+'" r="6" fill="var(--rojo)" fill-opacity="0"/>'; });
+    h += '<line id="tpH" x1="40" y1="30" x2="40" y2="200" class="d"/><circle id="tpD" cx="40" cy="200" r="5" style="fill:var(--cian)"/>';
+    h += T(240, 226, "tiempo (s)", "", "middle") + T(440, 226, "topes: ", "b", "end").replace("</text>", '<tspan id="tpN">0</tspan></text>');
+    stage.innerHTML = h;
+    var hd = $("tpH"), dt = $("tpD"), nn = $("tpN");
+    return function(t){
+      var tt = clamp(t*1.6, 0, TT), v = pos(tt), n = 0;
+      pl.forEach(function(p, j){ if (p[1] > 97){ var seen = tt >= p[0]; if (seen) n++; $("tpM"+j).setAttribute("fill-opacity", seen ? ".9" : "0"); } });
+      var x = X(tt); hd.setAttribute("x1", x); hd.setAttribute("x2", x); dt.setAttribute("cx", x); dt.setAttribute("cy", Y(v)); dt.style.fill = v > 97 ? "var(--rojo)" : "var(--cian)"; nn.textContent = n;
+      return clamp(tt/TT, 0, 1);
+    };
+  }
+
+  function buildHsc(S, st, r){
+    var rnd = rndFn(st === "ok" ? 5 : st === "close" ? 9 : 3), N = 120, K = st === "ok" ? 14 : st === "close" ? 40 : 0, v = [], i, hit = {};
+    for (i = 0; i < N; i++) v.push(30 + rnd()*170);
+    while (Object.keys(hit).length < K){ var q = Math.floor(rnd()*N); if (!hit[q]){ hit[q] = 1; v[q] = 250 + rnd()*130; } }
+    if (st === "open") v[70] = 345;
+    var pre = [], above = 0, comp = 0;
+    for (i = 0; i < N; i++){ if (v[i] > 5){ comp++; if (v[i] > 230) above++; } pre.push(100*above/comp); }
+    var X = function(j){ return 40 + j*(330/(N - 1)); }, Y = function(s){ return 170 - s*.33; };
+    var d = ""; for (i = 0; i < N; i++) d += (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(v[i]).toFixed(1);
+    var h = '<line x1="40" y1="'+Y(230)+'" x2="370" y2="'+Y(230)+'" style="stroke:var(--oro);stroke-width:1.2;stroke-dasharray:5 4"/>' + T(44, Y(230) - 6, "umbral 230 mm/s", "");
+    h += '<path d="M40 170H370" class="t"/>' + T(34, 174, "0", "", "end") + T(34, Y(400) + 4, "400", "", "end") + T(40, 24, "velocidad del vástago al comprimir (mm/s)", "");
+    h += '<path d="'+d+'" fill="none" style="stroke:var(--cian);stroke-width:1.6" stroke-linejoin="round"/><line id="hH" x1="40" y1="34" x2="40" y2="170" class="d"/><circle id="hD" cx="40" cy="170" r="4.5" style="fill:var(--cian)"/>';
+    // valvula mini
+    h += '<g transform="translate(402 70)"><rect x="-26" y="0" width="30" height="60" fill="var(--panel)" stroke="var(--line)"/><rect x="-16" y="20" width="10" height="20" fill="var(--port)"/><g id="hS"><path class="l" d="M4 16V44M6.5 17V44M9 18V44" style="stroke-width:1.6"/></g></g>' + T(402, 148, "laminillas", "", "middle");
+    // barra de porcentaje
+    var bx = 40, bw = 400, sc = bw/50;
+    h += '<rect x="'+bx+'" y="196" width="'+bw+'" height="14" rx="3" fill="var(--panel)" stroke="var(--line)"/><rect id="hB" x="'+bx+'" y="196" width="0" height="14" rx="3" fill="var(--cian)" fill-opacity=".6"/>';
+    h += '<line x1="'+(bx + 24*sc)+'" y1="190" x2="'+(bx + 24*sc)+'" y2="216" style="stroke:var(--oro);stroke-width:1.6"/>' + T(bx + 24*sc, 230, "límite del perfil 24 %", "", "middle") + T(bx, 190, "sobre el umbral:", "") + '<text id="hP" x="'+(bx + 135)+'" y="190" class="b">0 %</text>';
+    stage.innerHTML = h;
+    var hh = $("hH"), hd = $("hD"), bb = $("hB"), pp = $("hP"), sh = $("hS");
+    return function(t){
+      var f = clamp(t/4.5, 0, 1), j = Math.min(N - 1, Math.floor(f*(N - 1))), x = X(j);
+      hh.setAttribute("x1", x); hh.setAttribute("x2", x); hd.setAttribute("cx", x); hd.setAttribute("cy", Y(v[j]));
+      var hot = v[j] > 230; hd.style.fill = hot ? "var(--oro)" : "var(--cian)";
+      sh.setAttribute("transform", "rotate(" + (hot ? 16 : 0) + " 4 44)");
+      bb.setAttribute("width", Math.min(bw, pre[j]*sc)); pp.textContent = Math.round(pre[j]) + " %";
+      return f;
+    };
+  }
+
+  function buildLsc(S, st, r){
+    var off = S === "S" ? 10 : 0, base = st === "ok" ? [30,42,36,48,33,40,45,32] : [52,64,58,66,50,60,62,54];
+    var dp = base.map(function(x){ return x + off; }), Y = function(p){ return 200 - p*1.7; }, h = "";
+    h += '<path d="M40 200H440" class="t"/>' + T(34, 204, "0", "", "end") + T(34, Y(100) + 4, "100 %", "", "end") + T(40, 24, "hasta dónde llega cada compresión lenta (%)", "");
+    h += '<line x1="40" y1="'+Y(r.ref)+'" x2="440" y2="'+Y(r.ref)+'" style="stroke:var(--oro);stroke-width:1.4;stroke-dasharray:5 4"/>' + T(440, Y(r.ref) - 6, "SAG objetivo + margen = " + r.ref + " %", "", "end");
+    dp.forEach(function(v, i){ h += '<rect id="lb'+i+'" x="'+(62 + i*46)+'" y="200" width="28" height="0" rx="2" fill="var(--cian)" fill-opacity=".55" stroke="var(--cian)"/>'; });
+    h += '<line id="lA" x1="40" y1="200" x2="440" y2="200" style="stroke:var(--cian);stroke-width:1.6"/><text id="lT" x="40" y="226" class="b">promedio: 0 %</text>';
+    stage.innerHTML = h;
+    var bars = dp.map(function(_, i){ return $("lb"+i); }), la = $("lA"), lt = $("lT");
+    return function(t){
+      var sum = 0, n = 0;
+      dp.forEach(function(v, i){ var g = ease((t - i*.4)/.4), hh = v*1.7*g; bars[i].setAttribute("y", 200 - hh); bars[i].setAttribute("height", hh); if (g >= 1){ sum += v; n++; } });
+      var avg = n ? sum/n : 0; la.setAttribute("y1", Y(avg)); la.setAttribute("y2", Y(avg)); la.style.opacity = n ? 1 : 0;
+      lt.textContent = "promedio: " + Math.round(avg) + " %" + (n ? (avg > r.ref ? "  (pasa la referencia)" : "  (dentro)") : "");
+      return clamp(t/(dp.length*.4 + .4), 0, 1);
+    };
+  }
+
+  function buildReb(k, S, st, r){
+    var ratio = r.ratio, h = "", cw = 90, base = 190, sc = 80;
+    h += T(40, 24, "velocidad pico de cada movimiento (" + (k === "HSR" ? "percentil 95" : "mediana") + ")", "");
+    h += '<path d="M40 '+base+'H250" class="t"/>';
+    h += '<rect id="rC" x="70" y="'+base+'" width="'+cw+'" height="0" rx="2" fill="var(--oro)" fill-opacity=".5" stroke="var(--oro)"/>' + T(115, 208, "compresión", "", "middle");
+    h += '<rect id="rR" x="170" y="'+base+'" width="'+cw+'" height="0" rx="2" fill="var(--azul)" fill-opacity=".5" stroke="var(--azul)"/>' + T(215, 208, "rebote", "", "middle");
+    var mx = 300, mw = 150, X = function(q){ return mx + q/2.2*mw; };
+    h += T(mx, 60, "rebote ÷ compresión", "") + '<rect x="'+mx+'" y="86" width="'+mw+'" height="18" rx="3" fill="var(--panel)" stroke="var(--line)"/>';
+    h += '<rect x="'+X(.75)+'" y="86" width="'+(X(1.6) - X(.75))+'" height="18" fill="var(--cian)" fill-opacity=".3"/>';
+    [0,1,2].forEach(function(q){ h += '<line x1="'+X(q)+'" y1="104" x2="'+X(q)+'" y2="110" class="t"/>' + T(X(q), 124, q, "", "middle"); });
+    h += T(X(1.18), 78, "ventana del perfil", "", "middle");
+    h += '<circle id="rM" cx="'+X(0)+'" cy="95" r="6" style="fill:var(--oro);stroke:var(--bg);stroke-width:1.5"/>' + '<text id="rV" x="'+mx+'" y="160" class="b" style="font-size:16px">1,0</text>';
+    stage.innerHTML = h;
+    var rc = $("rC"), rr = $("rR"), rm = $("rM"), rv = $("rV");
+    return function(t){
+      var tt = Math.min(t, 3.6), a = ease(tt/1.2), b = ease((tt - 1.2)/1.4);
+      rc.setAttribute("y", base - sc*a); rc.setAttribute("height", sc*a);
+      rr.setAttribute("y", base - sc*ratio*b); rr.setAttribute("height", sc*ratio*b);
+      var q = ratio*b; rm.setAttribute("cx", X(q)); rv.textContent = q.toFixed(2).replace(".", ",");
+      var col = q > 1.6 ? "var(--rojo)" : q < .75 && b > .99 ? "var(--oro)" : "var(--cian)"; rm.style.fill = b > .01 ? col : "var(--dim)";
+      return clamp(tt/2.6, 0, 1);
+    };
+  }
+
+  /* ---- popup ---- */
+  var cur = { k:null, S:"H", st:"ok", tick:null, t0:0, raf:0, opener:null, r:null };
+  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  function render(){
+    var k = cur.k, r = evalKey(k, cur.S, cur.st); cur.r = r;
+    cur.tick = k === "SAG" ? buildSag(cur.S, cur.st, r) : k === "TOPES" ? buildTopes(cur.S, cur.st, r) : k === "HSC" ? buildHsc(cur.S, cur.st, r) : k === "LSC" ? buildLsc(cur.S, cur.st, r) : buildReb(k, cur.S, cur.st, r);
+    $("mChip").textContent = "…"; cur.t0 = performance.now();
+    $("mMsg").textContent = ""; frame(cur.t0 + (reduce ? 20000 : 0));
+  }
+  function frame(now){
+    if (!cur.k) return;
+    var t = (now - cur.t0)/1000, f = cur.tick(t), r = cur.r, e = ease(f);
+    var dev = r.dev*e;
+    $("mDial").innerHTML = dialHTML(dev, r.ok || Math.abs(dev) < .02, 260);
+    var done = f >= .98 || reduce;
+    $("mChip").className = "chip " + (done ? (r.ok ? "ok" : Math.abs(r.dev) > .55 ? "bad" : "warn") : "ok");
+    $("mChip").textContent = done ? (r.ok ? "EN PUNTO" : sevTxt(r.dev, false)) : "…";
+    $("mMsg").textContent = done ? r.msg : "";
+    if (!reduce) cur.raf = requestAnimationFrame(frame);
+  }
+  function open(k, S, opener, st){
+    cur.k = k; cur.S = S || "H"; cur.st = st || "ok"; cur.opener = opener || null;
+    $("mIc").innerHTML = ICON[k]; $("mT").textContent = TITLE[k];
+    $("mWhat").textContent = TXT[k].what; $("mFix").textContent = TXT[k].fix;
+    $("mFoot").textContent = "Datos de ejemplo. Umbrales y ventanas del estilo prolijo del código: cambian con el peso, el estilo y el clima.";
+    $("stateSeg").innerHTML = STATES[k].map(function(s, i){ return '<button type="button" data-st="'+s[0]+'" aria-pressed="'+(s[0] === cur.st)+'">'+s[1]+'</button>'; }).join("");
+    syncSusp();
+    $("ov").hidden = false; document.body.style.overflow = "hidden";
+    render(); $("mX").focus();
+  }
+  function syncSusp(){ document.querySelectorAll("#suspSeg button").forEach(function(b){ b.setAttribute("aria-pressed", b.dataset.s === cur.S ? "true" : "false"); }); }
+  function close(){
+    cancelAnimationFrame(cur.raf); $("ov").hidden = true; document.body.style.overflow = ""; cur.k = null;
+    if (cur.opener) try { cur.opener.focus(); } catch (e) {}
+  }
+  grid.addEventListener("click", function(e){ var b = e.target.closest("button[data-k]"); if (b) open(b.dataset.k, b.dataset.s, b); });
+  $("mX").addEventListener("click", close);
+  $("ov").addEventListener("click", function(e){ if (e.target === $("ov")) close(); });
+  document.addEventListener("keydown", function(e){
+    if (!cur.k) return;
+    if (e.key === "Escape") close();
+    if (e.key === "Tab"){ var f = Array.prototype.slice.call($("mod").querySelectorAll("button")), i = f.indexOf(document.activeElement); if (e.shiftKey && i <= 0){ e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && i === f.length - 1){ e.preventDefault(); f[0].focus(); } }
+  });
+  $("suspSeg").addEventListener("click", function(e){ var b = e.target.closest("button"); if (!b) return; cur.S = b.dataset.s; syncSusp(); cancelAnimationFrame(cur.raf); render(); });
+  $("stateSeg").addEventListener("click", function(e){ var b = e.target.closest("button"); if (!b) return; cur.st = b.dataset.st; document.querySelectorAll("#stateSeg button").forEach(function(x){ x.setAttribute("aria-pressed", x === b ? "true" : "false"); }); cancelAnimationFrame(cur.raf); render(); });
+  var hp = (location.hash || "").replace("#", "").split("-");
+  if (TITLE[hp[0]]){ var okSt = STATES[hp[0]].some(function(x){ return x[0] === hp[1]; }); open(hp[0], hp[2] === "S" ? "S" : "H", null, okSt ? hp[1] : "ok"); }
+})();
+</script>
+
+</body>
+</html>

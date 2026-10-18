@@ -628,7 +628,7 @@ svg .arrow { fill: none; stroke: var(--flow); stroke-width: 1.8; stroke-linecap:
     HSC: { sub:"Compresión rápida", dir:-1, speed:170, hz:1.3, amp:7, v:520, shim:"top", ports:"A", bleedN:4, portN:9, thr:true,
       what:"Un golpe fuerte empuja el vástago muy rápido. El orificio de purga ya no da abasto, la presión sube y abre las laminillas de compresión. El aceite pasa por los puertos del pistón. La rigidez del paquete de laminillas define cuánto frena.",
       when:"Piedras, escalones, raíces, aterrizajes y cualquier impacto en que el vástago se mueve rápido.",
-      app:"Cuenta qué porcentaje del tiempo el vástago superó el umbral rápido (230 mm/s en el perfil base, corregido por peso, estado de pista y estilo). Si pasa del límite del perfil, sugiere «Cerrar 1 click HSC». Si casi no lo usa pero hubo picos fuertes, sugiere «Abrir 1 click HSC»." },
+      app:"Entre las muestras en que el vástago comprime (más de 5 mm/s), cuenta qué porcentaje superó el umbral rápido (230 mm/s en el perfil base, corregido por peso, estado de pista y estilo). Si pasa del límite del perfil, sugiere «Cerrar 1 click HSC». Si casi no lo usa pero hubo picos fuertes, sugiere «Abrir 1 click HSC»." },
     LSC: { sub:"Compresión lenta", dir:-1, speed:45, hz:.45, amp:5, v:80, shim:null, ports:null, bleedN:7, portN:0, thr:true, needle:true,
       what:"El vástago entra despacio y el aceite alcanza a pasar por el orificio de purga que regula la aguja. Las laminillas siguen cerradas. Cerrar clicks achica el orificio: más apoyo y menos hundimiento.",
       when:"Peso del piloto, frenadas, apoyo en curvas, compresiones de terreno suave y pedaleo.",
