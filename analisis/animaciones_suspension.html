@@ -95,7 +95,7 @@ figure { margin: 0; display: flex; flex-direction: column; gap: 6px; min-width: 
 figure svg { width: 100%; height: auto; max-width: 100%; display: block; }
 figcaption { font: 400 11px/1.3 var(--font-mono); letter-spacing: .04em; color: var(--mute); border-top: 1px solid var(--borde); padding-top: 6px; }
 .fig-ctx svg, .fig-shock svg { max-width: 460px; margin: 0 auto; }
-#compseg { align-self: flex-start; }
+.selrow { display: flex; flex-wrap: wrap; gap: 10px; }
 .sagbox.one { grid-template-columns: minmax(0, 320px); justify-content: center; }
 
 /* trazos y rellenos de los dibujos */
@@ -135,8 +135,9 @@ svg .arrow { fill: none; stroke: var(--flow); stroke-width: 1.8; stroke-linecap:
 .sagcap.ok b, .sagcap.ok .r { color: var(--ok); }
 .sagcap.bad b, .sagcap.bad .r { color: var(--bad); }
 .sagcap p { margin: 0; font-size: 13.5px; color: var(--dim); }
-.topbox, .airbox { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 16px; }
-@media (max-width: 720px) { .topbox, .airbox { grid-template-columns: minmax(0, 1fr); } }
+.topbox { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 16px; }
+.airbox { display: block; min-width: 0; }
+@media (max-width: 720px) { .topbox { grid-template-columns: minmax(0, 1fr); } }
 .figT1 svg { max-width: 220px; margin: 0 auto; }
 .figA1 svg { max-width: 330px; margin: 0 auto; }
 .ctl { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; font: 500 12px/1.2 var(--font-body); color: var(--dim); }
@@ -200,9 +201,15 @@ svg .arrow { fill: none; stroke: var(--flow); stroke-width: 1.8; stroke-linecap:
     </div>
   </header>
 
-  <div class="seg" id="compseg" role="group" aria-label="Suspensión">
-    <button type="button" data-c="fork" aria-pressed="true">Horquilla</button>
-    <button type="button" data-c="shock" aria-pressed="false">Shock</button>
+  <div class="selrow">
+    <div class="seg" id="compseg" role="group" aria-label="Suspensión">
+      <button type="button" data-c="fork" aria-pressed="true">Horquilla</button>
+      <button type="button" data-c="shock" aria-pressed="false">Shock</button>
+    </div>
+    <div class="seg" id="springseg" role="group" aria-label="Tipo de resorte">
+      <button type="button" data-s="aire" aria-pressed="true">Resorte de aire</button>
+      <button type="button" data-s="resorte" aria-pressed="false">Resorte espiral</button>
+    </div>
   </div>
 
   <div class="tabs" role="tablist" aria-label="Función">
@@ -212,7 +219,7 @@ svg .arrow { fill: none; stroke: var(--flow); stroke-width: 1.8; stroke-linecap:
     <button class="tab" role="tab" id="t-LSR" data-m="LSR" aria-selected="false">LSR</button>
     <button class="tab" role="tab" id="t-SAG" data-m="SAG" aria-selected="false">SAG</button>
     <button class="tab" role="tab" id="t-TOPES" data-m="TOPES" aria-selected="false">TOPES</button>
-    <button class="tab" role="tab" id="t-AIRE" data-m="AIRE" aria-selected="false">AIRE</button>
+    <button class="tab" role="tab" id="t-AIRE" data-m="AIRE" aria-selected="false">RESORTE</button>
     <button class="play" id="play" type="button">Pausar</button>
   </div>
 
@@ -242,8 +249,17 @@ svg .arrow { fill: none; stroke: var(--flow); stroke-width: 1.8; stroke-linecap:
           <rect class="steelf" x="256" y="130" width="36" height="20" rx="1"/>
           <rect x="262" y="130" width="5" height="20" fill="var(--port)"/><rect x="281" y="130" width="5" height="20" fill="var(--port)"/>
           <rect class="metalf" x="156" y="290" width="68" height="14" rx="3"/>
-          <rect class="metalf" x="142" y="304" width="96" height="12" rx="4"/>
+          <rect id="shCollar" class="metalf" x="142" y="304" width="96" height="12" rx="4"/>
           <g id="spG" fill="none" style="stroke:var(--line)" stroke-linecap="round"></g>
+          <g id="shAirS">
+            <rect class="tealf" x="118" y="298" width="144" height="198" rx="4"/>
+            <path class="spec" d="M126 306V490"/>
+            <rect id="shTok" class="steelt" x="124" y="304" width="132" height="0"/>
+            <g id="shDots"></g>
+            <rect class="metalf" x="112" y="292" width="156" height="12" rx="3"/>
+            <rect class="metalf" x="112" y="492" width="156" height="12" rx="3"/>
+            <rect class="metalf" x="262" y="326" width="14" height="14" rx="2"/>
+          </g>
           <circle cx="274" cy="140" r="27" fill="none" style="stroke:var(--oro);stroke-width:1.3;stroke-dasharray:4 3"/>
           <!-- parte móvil: pistón, vástago, asiento inferior y ojal -->
           <g id="lowG">
@@ -252,7 +268,8 @@ svg .arrow { fill: none; stroke: var(--flow); stroke-width: 1.8; stroke-linecap:
             <rect class="goldf part-on" id="shPiston" x="170" y="222" width="40" height="14" rx="1"/>
             <path class="l" d="M173 239H207M175 242H205"/>
             <circle cx="190" cy="229" r="26" fill="none" style="stroke:var(--oro);stroke-width:1.3;stroke-dasharray:4 3"/>
-            <rect class="metalf" x="138" y="474" width="104" height="12" rx="4"/>
+            <rect id="shSeat" class="metalf" x="138" y="474" width="104" height="12" rx="4"/>
+            <rect id="shAirP" class="goldf" x="122" y="474" width="136" height="12" rx="2"/>
             <rect class="metalf" x="172" y="512" width="36" height="20"/>
             <circle class="metalf" cx="190" cy="558" r="24"/><circle cx="190" cy="558" r="10" fill="var(--port)" stroke="var(--line)"/><circle class="steelf" cx="190" cy="558" r="6.5"/>
           </g>
@@ -264,13 +281,19 @@ svg .arrow { fill: none; stroke: var(--flow); stroke-width: 1.8; stroke-linecap:
             <line class="thin" x1="166" y1="40" x2="128" y2="40"/><text class="lab" x="124" y="43" text-anchor="end">ojal superior</text>
             <line class="thin" x1="160" y1="170" x2="128" y2="170"/><text class="lab" x="124" y="167" text-anchor="end">cuerpo</text><text class="lab" x="124" y="181" text-anchor="end">(aceite)</text>
             <line class="thin" x1="164" y1="229" x2="128" y2="229" style="stroke:var(--oro)"/><text class="lab" x="124" y="226" text-anchor="end" style="fill:var(--oro)">A  pistón</text><text class="lab" x="124" y="240" text-anchor="end" style="fill:var(--oro)">(rebote)</text>
-            <line class="thin" x1="142" y1="310" x2="128" y2="310"/><text class="lab" x="124" y="300" text-anchor="end">tuerca de</text><text class="lab" x="124" y="314" text-anchor="end">precarga</text>
-            <line class="thin" x1="148" y1="395" x2="128" y2="395"/><text class="lab" x="124" y="398" text-anchor="end">resorte</text>
-            <line class="thin" x1="186" y1="500" x2="128" y2="500"/><text class="lab" x="124" y="503" text-anchor="end">vástago</text>
+            <g id="shLabNut"><line class="thin" x1="142" y1="310" x2="128" y2="310"/><text class="lab" x="124" y="300" text-anchor="end">tuerca de</text><text class="lab" x="124" y="314" text-anchor="end">precarga</text></g>
+            <g id="shLabCoil"><line class="thin" x1="148" y1="395" x2="128" y2="395"/><text class="lab" x="124" y="398" text-anchor="end">resorte</text></g>
+            <g id="shLabAir">
+              <line class="thin" x1="118" y1="380" x2="104" y2="380"/><text class="lab" x="100" y="377" text-anchor="end">cámara</text><text class="lab" x="100" y="391" text-anchor="end">positiva</text>
+              <line class="thin" x1="122" y1="480" x2="104" y2="480"/><text class="lab" x="100" y="477" text-anchor="end">pistón</text><text class="lab" x="100" y="491" text-anchor="end">de aire</text>
+              <line id="shLabTok" class="thin" x1="118" y1="308" x2="104" y2="308"/>
+            </g>
+            <line class="thin" x1="186" y1="522" x2="128" y2="522"/><text class="lab" x="124" y="525" text-anchor="end">vástago</text>
             <line class="thin" x1="166" y1="558" x2="128" y2="558"/><text class="lab" x="124" y="561" text-anchor="end">ojal inferior</text>
           </g>
           <!-- etiquetas derecha -->
           <g>
+            <g id="shLabAirR"><line class="thin" x1="276" y1="333" x2="316" y2="333"/><text class="lab" x="320" y="336">válvula de aire</text></g>
             <line class="thin" x1="301" y1="140" x2="316" y2="140" style="stroke:var(--oro)"/><text class="lab" x="320" y="137" style="fill:var(--oro)">B  válvula de</text><text class="lab" x="320" y="151" style="fill:var(--oro)">compresión</text>
             <line class="thin" x1="252" y1="107" x2="316" y2="84"/><text class="lab" x="320" y="87">pasaje de aceite</text>
             <line class="thin" x1="296" y1="182" x2="316" y2="182"/><text class="lab" x="320" y="179">reserva</text><text class="lab" x="320" y="193">(piggyback)</text>
@@ -318,13 +341,21 @@ svg .arrow { fill: none; stroke: var(--flow); stroke-width: 1.8; stroke-linecap:
             <rect class="tealf" x="296" y="120" width="34" height="300"/>
             <path class="spec" d="M136 126V414M302 126V414"/>
             <path class="thin" d="M134 120V420M160 120V420M300 120V420M326 120V420"/>
-            <polyline fill="none" style="stroke:var(--steel-hi);stroke-opacity:.85" stroke-width="2" stroke-linejoin="round" points="304,150 322,160 304,170 322,180 304,190 322,200 304,210 322,220 304,230 322,240 304,250 322,260 304,270 322,280 304,290 322,300 304,310 322,320"/>
+            <polyline id="fkCoil" fill="none" style="stroke:var(--steel-hi);stroke-opacity:.85" stroke-width="2" stroke-linejoin="round" points="304,150 322,160 304,170 322,180 304,190 322,200 304,210 322,220 304,230 322,240 304,250 322,260 304,270 322,280 304,290 322,300 304,310 322,320"/>
             <rect class="metalf" x="214" y="16" width="32" height="60"/>
             <path class="l" d="M214 34H246M214 54H246" style="stroke-opacity:.6"/>
             <rect class="metalf" x="207" y="8" width="46" height="10" rx="3"/>
             <rect class="metalf" x="98" y="74" width="264" height="50" rx="15"/>
             <path class="spec" d="M112 84H348"/>
             <circle cx="112" cy="100" r="5" class="steelf"/><circle cx="348" cy="100" r="5" class="steelf"/>
+            <g id="fkValve"><rect class="steelf" x="309" y="48" width="8" height="10" rx="1"/><rect class="metalf" x="305" y="58" width="16" height="16" rx="2"/></g>
+          </g>
+          <!-- resorte de aire de la otra pata: el pistón queda fijo a la pata y el tubo baja sobre él -->
+          <g id="fkAirG">
+            <rect class="steelf" x="310" y="312" width="6" height="210"/>
+            <rect class="steelf" x="299" y="300" width="28" height="12" rx="2"/>
+            <rect id="fkTok" class="steelt" x="302" y="126" width="22" height="0"/>
+            <g id="fkDots"></g>
           </g>
           <!-- vástago y pistón (bajan con la corona) -->
           <g id="upG2">
@@ -351,7 +382,14 @@ svg .arrow { fill: none; stroke: var(--flow); stroke-width: 1.8; stroke-linecap:
           <!-- etiquetas derecha -->
           <g>
             <line class="thin" x1="362" y1="100" x2="376" y2="100"/><text class="lab" x="380" y="103">corona</text>
-            <line class="thin" x1="322" y1="220" x2="376" y2="220"/><text class="lab" x="380" y="217">resorte</text><text class="lab" x="380" y="231">(otra pata)</text>
+            <g id="fkLabCoil"><line class="thin" x1="322" y1="220" x2="376" y2="220"/><text class="lab" x="380" y="217">resorte</text><text class="lab" x="380" y="231">(otra pata)</text></g>
+            <g id="fkLabAir">
+              <line class="thin" x1="321" y1="54" x2="376" y2="54"/><text class="lab" x="380" y="57">válvula</text>
+              <line class="thin" x1="326" y1="190" x2="376" y2="190"/><text class="lab" x="380" y="187">cámara</text><text class="lab" x="380" y="201">positiva</text>
+              <line class="thin" x1="328" y1="306" x2="376" y2="306"/><text class="lab" x="380" y="303">pistón</text><text class="lab" x="380" y="317">de aire</text>
+              <line class="thin" x1="326" y1="370" x2="376" y2="370"/><text class="lab" x="380" y="367">cámara</text><text class="lab" x="380" y="381">negativa</text>
+            </g>
+            <g id="fkLabTok"><line class="thin" x1="326" y1="136" x2="376" y2="136"/><text class="lab" x="380" y="139">token</text></g>
             <line class="thin" x1="344" y1="440" x2="376" y2="440"/><text class="lab" x="380" y="437">pata</text><text class="lab" x="380" y="451">inferior</text>
             <line class="thin" x1="326" y1="529" x2="376" y2="529"/><text class="lab" x="380" y="526">eje de</text><text class="lab" x="380" y="540">rueda</text>
           </g>
@@ -531,29 +569,6 @@ svg .arrow { fill: none; stroke: var(--flow); stroke-width: 1.8; stroke-linecap:
     </div>
 
     <div class="airbox" id="airBox" hidden>
-      <figure class="figA1">
-        <svg viewBox="0 0 330 440" role="img" aria-label="Corte de un resorte de aire: tubo en transparencia con la válvula arriba, la cámara positiva con aire, los tokens que ocupan volumen, el pistón de aire sobre el vástago y la cámara negativa debajo. Con resorte espiral, en su lugar se ve un resorte que se acorta.">
-          <rect class="tealf" x="100" y="34" width="100" height="356"/>
-          <path class="spec" d="M108 40V384"/>
-          <rect id="aTok" class="steelt" x="104" y="34" width="92" height="0"/>
-          <g id="aGas"></g>
-          <path id="aCoilPath" fill="none" style="stroke:var(--line);display:none" stroke-width="3" stroke-linejoin="round"/>
-          <rect class="metalf" x="96" y="20" width="108" height="14" rx="3"/>
-          <rect class="metalf" x="142" y="6" width="16" height="14" rx="2"/>
-          <rect class="metalf" x="96" y="390" width="108" height="14" rx="3"/>
-          <rect id="aShaft" class="steelf" x="146" y="330" width="8" height="100"/>
-          <rect id="aPist" class="goldf part-on" x="104" y="330" width="92" height="14" rx="2"/>
-          <g>
-            <line class="thin" id="aLeadV" x1="158" y1="12" x2="226" y2="12"/><text class="lab" x="230" y="15" id="aLabV">válvula</text>
-            <line class="thin" x1="100" y1="110" x2="84" y2="110"/><text class="lab" x="80" y="113" text-anchor="end" id="aLabP">cámara</text><text class="lab" x="80" y="127" text-anchor="end" id="aLabP2">positiva</text>
-            <line class="thin" id="aLeadN" x1="200" y1="380" x2="226" y2="380"/><text class="lab" x="230" y="377" id="aLabN">cámara</text><text class="lab" x="230" y="391" id="aLabN2">negativa</text>
-            <line id="aLeadPist" class="thin" x1="100" y1="337" x2="84" y2="337" style="stroke:var(--oro)"/><text id="aLabPist" class="lab" x="80" y="340" text-anchor="end" style="fill:var(--oro)">pistón</text>
-            <line id="aLeadTok" class="thin" x1="200" y1="45" x2="226" y2="45"/><text id="aLabTok" class="lab" x="230" y="48">token</text>
-            <line class="thin" x1="154" y1="425" x2="226" y2="425"/><text class="lab" x="230" y="428">vástago</text>
-          </g>
-        </svg>
-        <figcaption id="aCap">Resorte de aire · esquema para horquilla o shock</figcaption>
-      </figure>
       <figure class="figA2">
         <svg viewBox="0 0 520 320" role="img" aria-label="Curva de fuerza del resorte contra el recorrido usado. La curva de aire sube cada vez más rápido. La línea horizontal es la carga del piloto parado: donde la corta la curva está el SAG.">
           <rect id="aBand" x="0" y="20" width="0" height="250" fill="var(--cian)" fill-opacity=".10"/>
@@ -574,7 +589,6 @@ svg .arrow { fill: none; stroke: var(--flow); stroke-width: 1.8; stroke-linecap:
           <text class="lab" x="76" y="40" style="fill:var(--cian)">aire</text><text class="lab" x="76" y="54" style="fill:var(--oro)">espiral</text>
         </svg>
         <div class="ctl">
-          <span class="grp">Resorte <span class="seg" id="tipoSeg"><button type="button" data-t="aire" aria-pressed="true">Aire</button><button type="button" data-t="resorte" aria-pressed="false">Espiral</button></span></span>
           <span class="grp" id="pCtl">Presión <button type="button" id="pMinus" aria-label="Bajar 5 PSI">−5</button><b id="pVal">80 psi</b><button type="button" id="pPlus" aria-label="Subir 5 PSI">+5</button></span>
           <span class="grp" id="tCtl">Tokens <button type="button" id="tMinus" aria-label="Quitar un token">−</button><b id="tVal">0</b><button type="button" id="tPlus" aria-label="Agregar un token">+</button></span>
           <span class="grp" id="rCtl" hidden>Precarga <button type="button" id="rMinus" aria-label="Menos precarga">−</button><b id="rVal">2 vueltas</b><button type="button" id="rPlus" aria-label="Más precarga">+</button></span>
@@ -635,13 +649,13 @@ svg .arrow { fill: none; stroke: var(--flow); stroke-width: 1.8; stroke-linecap:
       what:"Un tope (bottom-out) es una compresión que llega a más del 97 % del recorrido. Un golpe fuerte puede terminar el recorrido y la suspensión choca contra su final. SendFlow cuenta cuántos hubo en la bajada, por separado en la horquilla y en el shock.",
       when:"Aterrizajes largos, golpes grandes de frente y tramos rotos con la suspensión muy comprimida. Tocar fondo de vez en cuando en los golpes más grandes es normal, según el manual.",
       app:"Cero topes, o los que acepta tu perfil (0 o 1 según estilo y peso), es zona objetivo. Más que eso pide «Aumentar soporte» y el texto sugiere sumar presión de aire o un token. El manual de ajuste fino propone primero 1 click de HSC, después un token y después presión. No es lo mismo que el «tiempo en tope» del Panel, que mide el porcentaje de la bajada pasado del 97 %." },
-    AIRE: { sub:"Presión, tokens y curva de fuerza", dir:-1, speed:0, hz:.3, amp:0, v:0, shim:null, ports:null, bleedN:0, portN:0, thr:false,
-      what:"El resorte de aire es aire encerrado en una cámara sellada. Al comprimirse baja el volumen y sube la presión, así que la fuerza crece cada vez más rápido: una curva progresiva. La presión define el SAG. Los tokens ocupan volumen y endurecen el final del recorrido sin cambiar mucho el inicio.",
+    AIRE: { title:"RESORTE", sub:"Presión, tokens y curva de fuerza", dir:-1, speed:0, hz:.3, amp:0, v:0, shim:null, ports:null, bleedN:0, portN:0, thr:false,
+      what:"El resorte guarda la energía del golpe y empuja la suspensión de vuelta. En aire es aire sellado: al comprimirse sube la presión y la fuerza crece cada vez más rápido (curva progresiva). En espiral crece en línea recta. La presión, o la precarga en espiral, define el SAG. Los tokens ocupan volumen y endurecen el final del recorrido, solo en aire.",
       when:"Es lo primero que se ajusta, porque condiciona todo lo demás. Presión para el SAG, en pasos de 5 PSI según el manual. Tokens para tener soporte al final del recorrido. Con más presión hace falta más rebote cerrado (+5 a 10 PSI, +1 a 2 clicks de rebote).",
       app:"En SAG en reposo compara el SAG medido con el objetivo y pide cambiar la presión de aire. Si el tipo de resorte de la suspensión es «resorte» (espiral), pide precarga. En topes sugiere sumar presión de aire o token. La curva de acá es ilustrativa, no una medición." }
   };
 
-  var comp = "fork";
+  var comp = "fork", spring = "aire";
   var SHOCK_WHAT = {
     HSC: "Un golpe fuerte empuja el vástago hacia el cuerpo y desplaza aceite hacia la reserva. A esa velocidad el orificio de purga no da abasto: la presión abre las laminillas de la válvula de compresión y el aceite pasa por los puertos.",
     LSC: "El vástago entra despacio y el aceite pasa a la reserva por el orificio de purga que regula la aguja. Las laminillas siguen cerradas. Cerrar clicks achica el orificio: más apoyo y menos hundimiento.",
@@ -649,7 +663,7 @@ svg .arrow { fill: none; stroke: var(--flow); stroke-width: 1.8; stroke-linecap:
     LSR: "El shock vuelve despacio a su posición. El aceite pasa por el orificio de purga del pistón, controlado por la aguja de rebote. Las laminillas no se abren.",
     SAG: "El SAG del shock es cuánto se hunde con el piloto en posición de ataque, antes de rodar. Se mide en el vástago con el o-ring y se lee como porcentaje del recorrido.",
     TOPES: "Un tope es una compresión que llega a más del 97 % del recorrido del shock. SendFlow los cuenta por bajada. Tocar fondo de vez en cuando en los golpes más grandes es normal.",
-    AIRE: "El resorte de aire del shock funciona igual que el de la horquilla: aire sellado que sube de presión al comprimirse. La presión define el SAG y los tokens endurecen el final del recorrido."
+    AIRE: "En el shock el resorte de aire es una cámara alrededor del vástago, debajo del cuerpo. Al comprimir, el pistón de aire sube y el aire se comprime. La presión define el SAG y los tokens endurecen el final del recorrido. En espiral, un resorte de acero cumple esa función."
   };
   var P = {
     bC1: [[24,130],[130,130],[192,130],[202,120],[226,104]],
@@ -696,7 +710,7 @@ svg .arrow { fill: none; stroke: var(--flow); stroke-width: 1.8; stroke-linecap:
   function mark(ids, on){ ids.forEach(function(id){ var e=$(id); if(e) e.classList.toggle("on", on); }); }
   function applyMode(){
     var M = MODES[mode];
-    $("mTitle").textContent = mode; $("mSub").textContent = M.sub;
+    $("mTitle").textContent = M.title || mode; $("mSub").textContent = M.sub;
     $("iWhat").textContent = M.what; $("iWhen").textContent = M.when; $("iApp").textContent = M.app;
     ["bore","needle","pA1","pA2","pB1","pB2","shT1p","shT2p","shB1p","shB2p","fkPiston","holeP"].forEach(function(id){ var e=$(id); e.classList.remove("on","part-on"); });
     mark(["bore","needle","holeP"], M.needle || mode==="HSC" || mode==="HSR");
@@ -710,7 +724,7 @@ svg .arrow { fill: none; stroke: var(--flow); stroke-width: 1.8; stroke-linecap:
     var isSag = mode === "SAG";
     $("sheet").style.setProperty("--flow", isSag ? "var(--cian)" : (M.dir<0 ? "var(--flow-c)" : "var(--flow-r)"));
     var shock = comp === "shock", isTop = mode === "TOPES", isAir = mode === "AIRE", special = isSag || isTop || isAir, useB = shock && M.dir < 0 && !special;
-    $("leftcol").hidden = isTop || isAir || (isSag && !shock);
+    $("leftcol").hidden = isTop || (isSag && !shock);
     document.querySelector(".fig-detail").hidden = special || useB;
     document.querySelector(".fig-detailB").hidden = !useB;
     $("h1").textContent = shock ? "Animaciones del shock" : "Animaciones de la horquilla";
@@ -730,7 +744,9 @@ svg .arrow { fill: none; stroke: var(--flow); stroke-width: 1.8; stroke-linecap:
     $("shPiston").classList.add("part-on");
     $("ctxArrowPath").setAttribute("d", M.dir<0 ? "M34 44V84M28 76L34 84L40 76" : "M34 84V44M28 52L34 44L40 52");
     $("ctxArrowTxt").textContent = M.dir<0 ? "comprime" : "extiende";
+    if (isAir) view = "ctx";
     applyView();
+    applySpring();
     $("gaugeSvg").hidden = special;
     $("legend").hidden = special;
     $("sagBox").hidden = !isSag;
@@ -772,12 +788,12 @@ svg .arrow { fill: none; stroke: var(--flow); stroke-width: 1.8; stroke-linecap:
     $("shB1").setAttribute("transform", "rotate(" + (M.shim==="bot" ? -ang : 0) + " 136 233)");
     $("shB2").setAttribute("transform", "rotate(" + (M.shim==="bot" ?  ang : 0) + " 184 233)");
     $("needleG").setAttribute("transform", "translate(0 " + (M.needle ? (6*Math.sin(tt*1.1)).toFixed(1) : 0) + ")");
-    var up = (M.amp*1.4*(.5 + .5*Math.sin(tt*M.hz*6.28))).toFixed(1);
+    var xa = .5 - .5*Math.cos(tt*2*Math.PI/9), up = (mode === "AIRE" ? xa*70 : M.amp*1.4*(.5 + .5*Math.sin(tt*M.hz*6.28))).toFixed(1);
     $("upG").setAttribute("transform", "translate(0 " + up + ")");
     $("upG2").setAttribute("transform", "translate(0 " + up + ")");
     $("shaftG").setAttribute("transform", "translate(0 " + (M.amp*Math.sin(tt*M.hz*6.28)).toFixed(1) + ")");
     // shock: sube el vástago, se acorta el resorte, el pistón flotante sigue al aceite
-    var sw = .5 + .5*Math.sin(tt*M.hz*6.28), lowU = M.amp*2*sw;
+    var sw = .5 + .5*Math.sin(tt*M.hz*6.28), lowU = mode === "AIRE" ? xa*70 : M.amp*2*sw;
     $("lowG").setAttribute("transform", "translate(0 " + (-lowU).toFixed(1) + ")");
     $("spG").setAttribute("transform", "translate(0 316) scale(1 " + (((474 - lowU) - 316)/158).toFixed(3) + ") translate(0 -316)");
     $("shIfp").setAttribute("transform", "translate(0 " + (sw*9).toFixed(1) + ")");
@@ -787,7 +803,8 @@ svg .arrow { fill: none; stroke: var(--flow); stroke-width: 1.8; stroke-linecap:
     $("bNeedleG").setAttribute("transform", "translate(0 " + (M.needle ? (6*Math.sin(tt*1.1)).toFixed(1) : 0) + ")");
     if (mode === "SAG") updateSag(tt);
     if (mode === "TOPES") updateTop(tt);
-    if (mode === "AIRE") updateAir(tt);
+    updateSpring(+up, lowU, mode === "AIRE" ? Math.min(1, curveF(xa)/6) : .45);
+    if (mode === "AIRE") updateAir(xa);
     var v = M.v*(1 + .08*Math.sin(tt*M.hz*6.28));
     $("gDot").setAttribute("cx", (20 + 360*v/800).toFixed(1));
   }
@@ -935,83 +952,75 @@ svg .arrow { fill: none; stroke: var(--flow); stroke-width: 1.8; stroke-linecap:
     $("tcN").textContent = n; $("tcChip").textContent = r.chip; $("tcChip").className = "chip " + r.cls; $("tcMsg").textContent = r.msg;
   }
 
-  // ---- AIRE: curva de fuerza ilustrativa (aire sellado con n = 1,25) contra un resorte espiral lineal ----
-  var AIR = { tipo:"aire", P:80, tok:0, pre:2 }, R_TOK = [.81, .88, .95], K_AIR = .7536, N_AIR = 1.25;
+  // ---- RESORTE: curva de fuerza ilustrativa (aire sellado con n = 1,25) contra un espiral lineal ----
+  var AIR = { P:80, tok:0, pre:2 }, R_TOK = [.81, .88, .95], K_AIR = .7536, N_AIR = 1.25;
   function airF(x, P, r){ return Math.min(6, K_AIR*(P/80)/Math.pow(1 - r*x, N_AIR)); }
   function coilF(x, pre){ return Math.min(6, (.28 + .06*pre) + 2.4*x); }
   function sagAir(P, r){ return Math.max(0, (1 - Math.pow(K_AIR*(P/80), 1/N_AIR))/r); }
   function sagCoil(pre){ return Math.max(0, (1 - (.28 + .06*pre))/2.4); }
-  function curveF(x){ return AIR.tipo === "aire" ? airF(x, AIR.P, R_TOK[AIR.tok]) : coilF(x, AIR.pre); }
+  function curveF(x){ return spring === "aire" ? airF(x, AIR.P, R_TOK[AIR.tok]) : coilF(x, AIR.pre); }
   var aX = function(x){ return 54 + x*440; }, aY = function(f){ return 270 - f*41.67; };
   (function(){
     var g = "", tk = "";
     for (var f = 0; f <= 6; f += 2){ g += "M54 "+aY(f)+"H494"; tk += '<text x="48" y="'+(aY(f)+3.5)+'" text-anchor="end">'+f+'×</text>'; }
     [0,25,50,75,100].forEach(function(p){ tk += '<text x="'+aX(p/100)+'" y="288" text-anchor="middle">'+p+' %</text>'; });
     $("aGrid").setAttribute("d", g); $("aTicks").innerHTML = tk;
-    var gas = "";
-    for (var i = 0; i < 64; i++) gas += '<circle class="ap" r="2.1" fill="var(--cian)"/>';
-    for (var j = 0; j < 22; j++) gas += '<circle class="an" r="2.1" fill="var(--dim)"/>';
-    $("aGas").innerHTML = gas;
-  })();
-  var gasPos = [], gasNeg = [];
-  (function(){
-    var seed = 7, rnd = function(){ seed = (seed*9301 + 49297) % 233280; return seed/233280; };
-    document.querySelectorAll("#aGas .ap").forEach(function(c){ gasPos.push({el:c, u:rnd(), v:rnd()}); });
-    document.querySelectorAll("#aGas .an").forEach(function(c){ gasNeg.push({el:c, u:rnd(), v:rnd()}); });
   })();
   function drawAir(){
-    var shockObj = comp === "shock" ? .28 : .18, aire = AIR.tipo === "aire";
-    var da = "", dc = "";
+    var obj = comp === "shock" ? .28 : .18, aire = spring === "aire", da = "", dc = "";
     for (var i = 0; i <= 60; i++){
       var x = i/60;
       da += (i ? "L" : "M") + aX(x).toFixed(1) + " " + aY(airF(x, AIR.P, R_TOK[AIR.tok])).toFixed(1);
       dc += (i ? "L" : "M") + aX(x).toFixed(1) + " " + aY(coilF(x, AIR.pre)).toFixed(1);
     }
     $("aCurveA").setAttribute("d", da); $("aCurveC").setAttribute("d", dc);
-    $("aCurveA").style.opacity = aire ? 1 : .3; $("aCurveC").style.opacity = aire ? .3 : 1;
-    $("aCurveC").style.strokeDasharray = aire ? "5 4" : "none";
+    $("aCurveA").style.opacity = aire ? 1 : .25; $("aCurveC").style.opacity = aire ? .25 : 1;
     var sag = aire ? sagAir(AIR.P, R_TOK[AIR.tok]) : sagCoil(AIR.pre);
     $("aSagL").setAttribute("x1", aX(sag)); $("aSagL").setAttribute("x2", aX(sag));
     $("aSagC").setAttribute("cx", aX(sag)); $("aSagT").setAttribute("x", aX(sag) + 9);
     $("aSagT").textContent = "SAG " + Math.round(sag*100) + " %";
-    $("aBand").setAttribute("x", aX(shockObj - .02)); $("aBand").setAttribute("width", 440*.04);
+    $("aBand").setAttribute("x", aX(obj - .02)); $("aBand").setAttribute("width", 440*.04);
     $("a97").setAttribute("x1", aX(.97)); $("a97").setAttribute("x2", aX(.97)); $("a97T").setAttribute("x", aX(.97));
-    var desv = sag - shockObj, ok = Math.abs(desv) < .02;
-    $("sagVal").textContent = Math.round(sag*100) + " %"; $("sagObj").textContent = Math.round(shockObj*100) + " %";
+    var desv = sag - obj, ok = Math.abs(desv) < .02;
+    $("sagVal").textContent = Math.round(sag*100) + " %"; $("sagObj").textContent = Math.round(obj*100) + " %";
     $("sagChip").textContent = ok ? "EN ZONA" : "FUERA"; $("sagChip").className = "chip " + (ok ? "ok" : "warn");
     var accion = aire ? (desv > 0 ? "Subir presión de aire" : "Bajar presión de aire")
                       : (desv > 0 ? "Aumentar precarga de resorte" : "Disminuir precarga de resorte");
     $("sagMsg").textContent = ok ? "Zona objetivo correcta" : accion + " (SAG " + (desv > 0 ? "por encima" : "por debajo") + " del objetivo)";
-    var f97 = curveF(.97);
-    $("f97").textContent = "×" + f97.toFixed(1).replace(".", ",");
+    $("f97").textContent = "×" + curveF(.97).toFixed(1).replace(".", ",");
     $("pVal").textContent = AIR.P + " psi"; $("tVal").textContent = AIR.tok; $("rVal").textContent = AIR.pre + (AIR.pre === 1 ? " vuelta" : " vueltas");
     $("pCtl").hidden = !aire; $("tCtl").hidden = !aire; $("rCtl").hidden = aire;
-    $("aTok").setAttribute("height", aire ? AIR.tok*22 : 0);
-    $("aLabV").style.display = aire ? "" : "none"; $("aLeadV").style.display = aire ? "" : "none"; $("aLeadN").style.display = aire ? "" : "none";
-    $("aCap").textContent = aire ? "Resorte de aire · esquema para horquilla o shock" : "Resorte espiral · esquema para horquilla o shock";
-    $("aGas").style.display = aire ? "" : "none";
-    $("aCoilPath").style.display = aire ? "none" : "";
-    $("aLabP").textContent = aire ? "cámara" : "resorte"; $("aLabP2").textContent = aire ? "positiva" : "espiral";
-    $("aLabN").style.display = aire ? "" : "none"; $("aLabN2").style.display = aire ? "" : "none";
-    $("aLabTok").style.display = aire && AIR.tok > 0 ? "" : "none"; $("aLeadTok").style.display = aire && AIR.tok > 0 ? "" : "none";
-    document.querySelectorAll("#tipoSeg button").forEach(function(b){ b.setAttribute("aria-pressed", b.dataset.t === AIR.tipo ? "true" : "false"); });
+    applySpring();
   }
-  function updateAir(tt){
-    var x = .5 - .5*Math.cos(tt*2*Math.PI/9), yP = 330 - 240*x, aire = AIR.tipo === "aire";
-    $("aPist").setAttribute("y", yP.toFixed(1)); $("aShaft").setAttribute("y", yP.toFixed(1)); $("aShaft").setAttribute("height", (430 - yP).toFixed(1));
-    $("aLeadPist").setAttribute("y1", (yP + 7).toFixed(1)); $("aLeadPist").setAttribute("y2", (yP + 7).toFixed(1)); $("aLabPist").setAttribute("y", (yP + 10).toFixed(1));
-    var f = curveF(x), top = 34 + (aire ? AIR.tok*22 : 0);
-    if (aire){
-      var hi = Math.min(1, f/6);
-      gasPos.forEach(function(g){ g.el.setAttribute("cx", (108 + g.u*84).toFixed(1)); g.el.setAttribute("cy", (top + 6 + g.v*(yP - 6 - (top + 6))).toFixed(1)); g.el.setAttribute("fill-opacity", (.35 + .65*hi).toFixed(2)); });
-      gasNeg.forEach(function(g){ g.el.setAttribute("cx", (108 + g.u*84).toFixed(1)); g.el.setAttribute("cy", (yP + 20 + g.v*(384 - (yP + 20))).toFixed(1)); g.el.setAttribute("fill-opacity", (.25 + .35*(1 - hi)).toFixed(2)); });
-    } else {
-      var d = "M" + 150 + " 40", n = 14, y0 = 40, h = yP - 6 - y0;
-      for (var i = 1; i <= n; i++) d += "L" + (i % 2 ? 188 : 112) + " " + (y0 + h*i/n).toFixed(1);
-      $("aCoilPath").setAttribute("d", d);
-    }
-    $("aDot").setAttribute("cx", aX(x).toFixed(1)); $("aDot").setAttribute("cy", aY(f).toFixed(1));
-    $("aLabPist").textContent = "pistón";
+  function updateAir(xa){ var f = curveF(xa); $("aDot").setAttribute("cx", aX(xa).toFixed(1)); $("aDot").setAttribute("cy", aY(f).toFixed(1)); }
+  // aire dentro de las siluetas: la horquilla (otra pata) y el shock (cámara bajo el cuerpo)
+  var fkP = [], fkN = [], shP = [], shN = [];
+  (function(){
+    var seed = 11, rnd = function(){ seed = (seed*9301 + 49297) % 233280; return seed/233280; };
+    function mk(gid, n, cls, arr){ var h = ""; for (var i = 0; i < n; i++) h += '<circle r="1.9" class="'+cls+'"/>'; var g = $(gid); g.insertAdjacentHTML("beforeend", h); g.querySelectorAll("."+cls).forEach(function(el){ arr.push({el:el, u:rnd(), v:rnd()}); }); }
+    var gf = $("fkDots"), gs = $("shDots");
+    gf.innerHTML = ""; gs.innerHTML = "";
+    mk("fkDots", 30, "fp", fkP); mk("fkDots", 10, "fn", fkN); mk("shDots", 40, "sp", shP); mk("shDots", 6, "sn", shN);
+    fkP.concat(shP).forEach(function(g){ g.el.setAttribute("fill", "var(--cian)"); });
+    fkN.concat(shN).forEach(function(g){ g.el.setAttribute("fill", "var(--dim)"); });
+  })();
+  function updateSpring(upF, lowU, hi){
+    if (spring !== "aire") return;
+    var tokH = AIR.tok*14, tp = 128 + upF + tokH, bp = 296, pOp = (.35 + .65*hi).toFixed(2), nOp = (.2 + .4*(1 - hi)).toFixed(2);
+    fkP.forEach(function(g){ g.el.setAttribute("cx", (305 + g.u*20).toFixed(1)); g.el.setAttribute("cy", (tp + 4 + g.v*(bp - 4 - (tp + 4))).toFixed(1)); g.el.setAttribute("fill-opacity", pOp); });
+    fkN.forEach(function(g){ g.el.setAttribute("cx", (305 + g.u*20).toFixed(1)); g.el.setAttribute("cy", (320 + g.v*(412 + upF - 320)).toFixed(1)); g.el.setAttribute("fill-opacity", nOp); });
+    $("fkTok").setAttribute("y", (126 + upF).toFixed(1)); $("fkTok").setAttribute("height", tokH);
+    var st = 310 + tokH, sb = 470 - lowU;
+    shP.forEach(function(g){ var x = g.u < .5 ? 128 + g.u*2*52 : 202 + (g.u - .5)*2*52; g.el.setAttribute("cx", x.toFixed(1)); g.el.setAttribute("cy", (st + 4 + g.v*(sb - 4 - (st + 4))).toFixed(1)); g.el.setAttribute("fill-opacity", pOp); });
+    shN.forEach(function(g){ var x = g.u < .5 ? 128 + g.u*2*52 : 202 + (g.u - .5)*2*52; g.el.setAttribute("cx", x.toFixed(1)); g.el.setAttribute("cy", (488 - lowU + g.v*(490 - (488 - lowU))).toFixed(1)); g.el.setAttribute("fill-opacity", nOp); });
+    $("shTok").setAttribute("height", tokH);
+  }
+  function applySpring(){
+    var air = spring === "aire", tok = air && AIR.tok > 0;
+    [["fkCoil", !air], ["fkAirG", air], ["fkValve", air], ["fkLabCoil", !air], ["fkLabAir", air], ["fkLabTok", tok],
+     ["spG", !air], ["shCollar", !air], ["shSeat", !air], ["shLabNut", !air], ["shLabCoil", !air],
+     ["shAirS", air], ["shAirP", air], ["shLabAir", air], ["shLabAirR", air], ["shLabTok", tok]].forEach(function(p){ $(p[0]).style.display = p[1] ? "" : "none"; });
+    document.querySelectorAll("#springseg button").forEach(function(b){ b.setAttribute("aria-pressed", b.dataset.s === spring ? "true" : "false"); });
   }
   function bump(key, d, lo, hi){ AIR[key] = Math.max(lo, Math.min(hi, AIR[key] + d)); drawAir(); }
   $("pMinus").addEventListener("click", function(){ bump("P", -5, 60, 100); });
@@ -1020,7 +1029,7 @@ svg .arrow { fill: none; stroke: var(--flow); stroke-width: 1.8; stroke-linecap:
   $("tPlus").addEventListener("click", function(){ bump("tok", 1, 0, 2); });
   $("rMinus").addEventListener("click", function(){ bump("pre", -1, 0, 5); });
   $("rPlus").addEventListener("click", function(){ bump("pre", 1, 0, 5); });
-  document.querySelectorAll("#tipoSeg button").forEach(function(b){ b.addEventListener("click", function(){ AIR.tipo = b.dataset.t; drawAir(); }); });
+  document.querySelectorAll("#springseg button").forEach(function(b){ b.addEventListener("click", function(){ spring = b.dataset.s; drawAir(); }); });
 
   applyMode();
   requestAnimationFrame(loop);
