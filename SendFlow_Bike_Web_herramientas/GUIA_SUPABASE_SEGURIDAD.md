@@ -1,7 +1,32 @@
 # Qué cambiar en Supabase (revisión del 19/10/2026)
 
 Proyecto: `SendFlow Bike` (`oksqbxptdzdcqrvyxrpa`). Fuente: asesor de seguridad de Supabase (Database → Advisors) + lectura de las funciones.
-**No se aplicó nada de esto**: son cambios en producción y los decide Eric. Cada bloque dice qué riesgo cubre y cómo probar que no rompió nada.
+**Estado (19/10/2026): se aplicaron, con autorización de Eric, la sección B (cierre de `catalogo_agregar`/`catalogo_borrar` a anónimos y de las 23 funciones auxiliares del nivel A, más el `search_path` de las 10 funciones).**
+No se aplicaron: los paneles de la sección A, el nivel B ni las funciones Edge (ver más abajo). Cada bloque dice qué riesgo cubre y cómo probar que no rompió nada.
+
+### Lo aplicado, para poder deshacerlo
+Migraciones: `seguridad_cerrar_funciones_internas_20261019` y `seguridad_search_path_fijo_20261019`.
+Permisos antes del cambio: `catalogo_agregar` y `catalogo_borrar` ejecutables por `anon` y `authenticated`; las 23 auxiliares ejecutables por `authenticated` (no por `anon`).
+```sql
+-- deshacer el cierre
+grant execute on function public.catalogo_agregar(text, text), public.catalogo_borrar(text, text) to anon, authenticated;
+grant execute on function
+  public.coach_analisis_json(public.coach_analisis, boolean), public.coach_bajada_json(public.coach_bajadas),
+  public.coach_comentario_json(public.coach_comentarios), public.coach_envio_json(public.coach_envios),
+  public.coach_fecha_json(public.coach_fechas_piloto), public.coach_piloto_json(public.coach_pilotos),
+  public.coach_plan_json(public.planes, boolean), public.coach_tarea_json(public.tareas_plan),
+  public.coach_usuario_piloto_de(public.coach_analisis), public.perfiles_bici_json(public.bicis_piloto, uuid),
+  public.perfiles_puede(uuid, public.bicis_piloto, text), public.perfiles_bici_exigir(uuid, text),
+  public.coach_uid(), public.coach_es_entrenador(uuid), public.coach_exigir_entrenador(),
+  public.coach_analisis_visible(uuid), public.coach_bajada_visible(uuid), public.coach_plan_visible(uuid),
+  public.coach_puede_compartir_con(uuid), public.coach_puede_ver_analisis(uuid), public.coach_puede_ver_archivo(uuid),
+  public.coach_piloto_usuario(uuid, text), public.coach_vinculo_activo(uuid, uuid)
+to authenticated;
+-- deshacer el search_path (si hiciera falta): alter function public.<nombre>(<args>) reset search_path;
+```
+Resultado verificado: el asesor pasó de 5 tipos de aviso a 4 (`function_search_path_mutable` desapareció; los avisos de funciones de `authenticated` bajaron de 147 a 124 y los de `anon` de 7 a 5).
+Prueba con la cuenta de prueba en la web real: el inicio, el perfil, mis bicis, la nube y el listado de entrenadores respondieron 200; guardar y borrar una bici funcionó; llamar a `coach_uid` ahora da 403 (permiso denegado); `catalogo_agregar` sin sesión da 401.
+
 
 ## A) En el panel (sin SQL)
 
