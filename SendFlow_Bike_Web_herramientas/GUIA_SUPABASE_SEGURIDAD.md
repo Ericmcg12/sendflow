@@ -41,6 +41,54 @@ revoke execute on function public.coach_vinculo_activo(uuid, uuid) from anon, au
 Probar después: entrar al sitio, abrir Perfil → Mis bicis → agregar una bici nueva (usa `catalogo_agregar`), y desde Coach invitar a un alumno y aceptar una invitación.
 Para deshacer: `grant execute on function ... to anon, authenticated;` con las mismas firmas.
 
+
+## B2) Clasificación de las 147 funciones que el asesor marca (revisión posterior)
+
+Se cruzaron los nombres contra (1) el código de las tres apps (Bike web, Coach web, app del Sender), (2) las políticas de RLS (incluido `storage.objects`) y (3) vistas, valores por defecto, restricciones e índices.
+
+- **Se deben dejar como están (110):**
+  - 104 son llamadas por el código del sitio (`.rpc("...")`): es el diseño del sistema, el asesor las marca por regla general.
+  - 6 las usan políticas de RLS y se evalúan con el rol `authenticated`: `cuenta_aprobada`, `tiene_acceso`, `tiene_permiso`, `tiene_vinculo`, `app_puede_subir_archivo_bajada`, `app_espacio_carpeta_ok`.
+    **Si se les quita el permiso a `authenticated`, se rompen las bajadas, los archivos y el acceso a casi todas las tablas.** No tocarlas.
+- Ninguna vista, valor por defecto, restricción ni índice usa las 37 funciones restantes.
+
+### Nivel A — auxiliares internas (no las llama ningún cliente; se pueden cerrar con bajo riesgo)
+Las demás funciones `SECURITY DEFINER` las llaman por dentro con permisos del dueño, así que seguir funcionando no depende de que el usuario tenga `EXECUTE`.
+```sql
+revoke execute on function
+  public.coach_analisis_json(public.coach_analisis, boolean),
+  public.coach_bajada_json(public.coach_bajadas),
+  public.coach_comentario_json(public.coach_comentarios),
+  public.coach_envio_json(public.coach_envios),
+  public.coach_fecha_json(public.coach_fechas_piloto),
+  public.coach_piloto_json(public.coach_pilotos),
+  public.coach_plan_json(public.planes, boolean),
+  public.coach_tarea_json(public.tareas_plan),
+  public.coach_usuario_piloto_de(public.coach_analisis),
+  public.perfiles_bici_json(public.bicis_piloto, uuid),
+  public.perfiles_puede(uuid, public.bicis_piloto, text),
+  public.perfiles_bici_exigir(uuid, text),
+  public.coach_uid(),
+  public.coach_es_entrenador(uuid),
+  public.coach_exigir_entrenador(),
+  public.coach_analisis_visible(uuid),
+  public.coach_bajada_visible(uuid),
+  public.coach_plan_visible(uuid),
+  public.coach_puede_compartir_con(uuid),
+  public.coach_puede_ver_analisis(uuid),
+  public.coach_puede_ver_archivo(uuid),
+  public.coach_piloto_usuario(uuid, text),
+  public.coach_vinculo_activo(uuid, uuid)
+from anon, authenticated, public;
+```
+(Se omiten acá `catalogo_agregar`/`catalogo_borrar`: ver el bloque de la sección B.) Después de aplicarlo, probar: entrar al sitio, abrir un análisis, el perfil, mis bicis; en Coach, abrir un alumno, un plan y comentarios. Para deshacer: el mismo comando con `grant execute ... to authenticated`.
+
+### Nivel B — verificar antes de cerrar (pueden usarlas la app del Sender, las funciones Edge o el panel de administración)
+`app_bajada_piloto_espacio`, `app_bajada_piloto_registrar`, `app_ficha_guardar`, `app_modo`, `ciclo_admin_purgar`, `ciclo_cola_estado`, `ciclo_cuenta_cerrar`, `ciclo_vinculo_terminar`, `coach_plan_mio`, `coach_ronda`, `perfiles_propuesto_crear`, `espacio_hay_lugar`, `es_admin`.
+No aparecen como llamada literal en el código del repositorio, pero pueden construirse el nombre a mano, o llamarse desde la app del Sender o una función Edge cuyo código no está en el repo.
+Antes de cerrarlas hay que revisar el log de la API de Supabase (Logs → API) de los últimos días buscando `/rpc/<nombre>`, o probar cada pantalla (cerrar cuenta, vincular, subir bajada desde el Sender).
+`ciclo_admin_purgar` y `ciclo_cuenta_cerrar` son las más sensibles (borran datos): conviene confirmar que verifican administrador o dueño de la cuenta dentro de la función antes de decidir.
+
 ### Funciones sin `search_path` fijo (advisor `function_search_path_mutable`, WARN, 10 funciones)
 Evita que un objeto de otro esquema "tape" a uno de `public`. Es un ajuste seguro:
 ```sql
