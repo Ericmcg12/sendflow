@@ -173,6 +173,10 @@ svg .hitT { font-family: var(--font-mono); font-size: 14px; font-weight: 700; fi
 .sev { display: block; font: 400 9px/1 var(--font-mono); letter-spacing: .08em; color: var(--dim); text-align: center; margin-top: 4px; min-height: 10px; }
 .dial { width: 100%; height: 24px; display: block; }
 .dial .tk { fill: none; stroke: var(--mute); stroke-width: 1; }
+.prof { display: flex; flex-wrap: wrap; gap: 10px 22px; align-items: center; border: 1px solid var(--borde); border-radius: 12px; padding: 12px 16px; background: var(--panel); }
+.prof .t { font: 500 11px/1.2 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--cian); }
+.prof .g { display: inline-flex; align-items: center; gap: 8px; font: 500 12px/1 var(--font-body); color: var(--dim); }
+.prof .seg button { padding: 8px 12px; }
 .barnote { display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 8px 16px; align-items: center; border: 1px solid var(--borde); border-radius: 8px; padding: 10px 12px; }
 @media (max-width: 700px) { .barnote { grid-template-columns: minmax(0, 1fr); } }
 .ind { margin-top: 8px !important; }
@@ -251,6 +255,11 @@ svg .hitT { font-family: var(--font-mono); font-size: 14px; font-weight: 700; fi
     </div>
   </header>
 
+  <div class="prof" id="prof">
+    <span class="t">Perfil de ejemplo (piloto + bici)</span>
+    <span class="g">Horquilla <span class="seg" data-p="H" role="group" aria-label="Resorte de la horquilla"><button type="button" data-v="aire" aria-pressed="true">Aire</button><button type="button" data-v="resorte" aria-pressed="false">Espiral</button></span></span>
+    <span class="g">Shock <span class="seg" data-p="S" role="group" aria-label="Resorte del shock"><button type="button" data-v="aire" aria-pressed="false">Aire</button><button type="button" data-v="resorte" aria-pressed="true">Espiral</button></span></span>
+  </div>
   <div class="grid" id="grid"></div>
 
   <div class="selrow">
@@ -955,7 +964,7 @@ svg .hitT { font-family: var(--font-mono); font-size: 14px; font-weight: 700; fi
     document.querySelectorAll("#compseg button").forEach(function(b){ b.setAttribute("aria-pressed", b.dataset.c === comp ? "true" : "false"); });
   }
   document.querySelectorAll("#viewseg button").forEach(function(b){ b.addEventListener("click", function(){ view = b.dataset.v; applyView(); }); });
-  document.querySelectorAll("#compseg button").forEach(function(b){ b.addEventListener("click", function(){ comp = b.dataset.c; buildSag(); applyMode(); }); });
+  document.querySelectorAll("#compseg button").forEach(function(b){ b.addEventListener("click", function(){ comp = b.dataset.c; if (popup) spring = PERFIL[comp === "shock" ? "S" : "H"]; buildSag(); applyMode(); if (popup) popupText(); }); });
   // spiral del resorte del shock
   (function(){
     var h = "";
@@ -1169,13 +1178,15 @@ svg .hitT { font-family: var(--font-mono); font-size: 14px; font-weight: 700; fi
   };
   var ORDER = ["SAG","TOPES","HSC","LSC","HSR","LSR"];
   var TITLE = { SAG:"SAG EN REPOSO", TOPES:"TOPES", HSC:"COMPRESIÓN ALTA VELOCIDAD (HSC)", LSC:"COMPRESIÓN BAJA VELOCIDAD (LSC)", HSR:"REBOTE ALTA VELOCIDAD (HSR)", LSR:"REBOTE BAJA VELOCIDAD (LSR)" };
+  /* El perfil (piloto + bici) define qué suspensiones hay y de qué tipo de resorte. Acá es un ejemplo. */
+  var PERFIL = { H:"aire", S:"resorte" };
   var MOCK = {
-    SAG:   { H:{t:"ok"}, S:{t:"psi", d:"up", v:.4, m:.4, msg:"SAG por encima del objetivo", sub:"de aire"} },
-    TOPES: { H:{t:"ok"}, S:{t:"psi", d:"up", v:.59, m:.59, msg:"3 bottom-outs, más de los que acepta el perfil", sub:"o agregar token"} },
-    HSC:   { H:{t:"knob", d:"cw", v:.45, m:.45, msg:"Mucho tiempo en el circuito rápido"}, S:{t:"ok"} },
-    LSC:   { H:{t:"ok"}, S:{t:"knob", d:"cw", v:.3, m:.3, msg:"Los cambios de peso lentos usan demasiado recorrido"} },
-    HSR:   { H:{t:"knob", d:"cw", v:.35, m:.35, msg:"El rebote es más rápido que la compresión"}, S:{t:"ok"} },
-    LSR:   { H:{t:"ok"}, S:{t:"knob", d:"ccw", v:-.4, m:.4, msg:"El rebote es más lento que la compresión"} }
+    SAG:   { H:{v:.4,  msg:"SAG por encima del objetivo"}, S:{v:0} },
+    TOPES: { H:{v:0}, S:{v:.59, msg:"3 bottom-outs, más de los que acepta el perfil"} },
+    HSC:   { H:{v:.45, msg:"Mucho tiempo en el circuito rápido"}, S:{v:0} },
+    LSC:   { H:{v:0}, S:{v:.65, msg:"Los cambios de peso lentos usan demasiado recorrido"} },
+    HSR:   { H:{v:.35, msg:"El rebote es más rápido que la compresión"}, S:{v:0} },
+    LSR:   { H:{v:0}, S:{v:-.4, msg:"El rebote es más lento que la compresión"} }
   };
   var PLAIN = {
     SAG: "El SAG es cuánto se hunde la suspensión solo con tu peso, parado sobre la bici y con el equipo puesto. Se mide con el anillo (o-ring) que queda marcado en el tubo. Si el SAG es alto, el vástago entra demasiado en la cámara y queda poco recorrido útil: hay que subir la presión de aire. Si es muy bajo, la suspensión está dura: hay que bajarla.",
@@ -1185,32 +1196,51 @@ svg .hitT { font-family: var(--font-mono); font-size: 14px; font-weight: 700; fi
     HSR: "Después de un golpe, el resorte devuelve la suspensión rápido a su lugar y el aceite pasa en sentido contrario. Abre las laminillas de rebote, del otro lado del pistón. Si vuelve muy rápido, la rueda salta. Si vuelve muy lento, no llega a recuperarse antes del próximo golpe.",
     LSR: "Cuando la suspensión vuelve despacio a su lugar, el aceite pasa por un agujerito que regula la aguja de rebote. Las laminillas no se abren. Es el ajuste del rebote de todos los días: con más clicks cerrados, la suspensión vuelve más lenta."
   };
+  function plainFor(k, S){
+    var sp = PERFIL[S];
+    if (k === "SAG") return sp === "aire"
+      ? PLAIN.SAG
+      : "El SAG es cuánto se hunde la suspensión solo con tu peso, parado sobre la bici y con el equipo puesto. Se mide con el anillo (o-ring) que queda marcado. Si el SAG es alto, el resorte se comprime demasiado y queda poco recorrido útil: hay que aumentar la precarga. Si es muy bajo, hay que aflojarla. La precarga ajusta fino: si no alcanza, hay que cambiar el resorte por uno más duro o más blando.";
+    if (k === "TOPES") return "Un tope es cuando la suspensión llega al final de su recorrido y no tiene más para dar. Uno de vez en cuando, en un golpe muy grande, es normal. Si pasa seguido: " + (sp === "aire"
+      ? "si el SAG está alto, se corrige subiendo la presión de aire. Si el SAG ya está bien y sigue haciendo tope, hay que agregar un token."
+      : "si el SAG está fuera de zona, se corrige primero con la precarga. Si el SAG ya está bien y sigue haciendo tope, hay que cambiar el resorte por uno de más lbs: subir la precarga no sirve porque cambia el SAG.");
+    return PLAIN[k];
+  }
   function pol(cx, cy, r, deg){ var q = deg*Math.PI/180; return [cx + r*Math.cos(q), cy + r*Math.sin(q)]; }
   function f1(n){ return n.toFixed(1); }
-  /* perilla: horario cierra, antihorario abre. dir: cw | ccw | ok */
-  function knobSVG(dir, mag, label, sub, col){
-    var cx = 24, cy = 24, R = 19, c = col || (dir === "ok" ? "var(--cian)" : (mag > .55 ? "var(--bad)" : "var(--oro)"));
+  /* perilla: horario cierra (o suma precarga), antihorario abre. clicks: 1 o 2; fijo para precarga */
+  function knobSVG(dir, clicks, label, sub, col){
+    var cx = 24, cy = 24, R = 19, c = col || (clicks > 1 ? "var(--bad)" : "var(--oro)");
     var h = '<circle cx="'+cx+'" cy="'+cy+'" r="12" fill="var(--panel)" stroke="var(--line)" stroke-width="1.4"/>';
     for (var i = 0; i < 12; i++){ var p1 = pol(cx, cy, 14.8, i*30 - 90), p2 = pol(cx, cy, 17.2, i*30 - 90); h += '<line x1="'+f1(p1[0])+'" y1="'+f1(p1[1])+'" x2="'+f1(p2[0])+'" y2="'+f1(p2[1])+'" class="tk"/>'; }
-    if (dir !== "ok"){
-      var sg = dir === "cw" ? 1 : -1, th = 50 + 150*mag, a0 = -90, a1 = a0 + sg*th, s0 = pol(cx, cy, R, a0), s1 = pol(cx, cy, R, a1);
-      h += '<path d="M'+f1(s0[0])+' '+f1(s0[1])+' A'+R+' '+R+' 0 '+(th > 180 ? 1 : 0)+' '+(dir === "cw" ? 1 : 0)+' '+f1(s1[0])+' '+f1(s1[1])+'" fill="none" stroke="'+c+'" stroke-width="2.6" stroke-linecap="round"/>';
-      var t = (a1 + sg*90)*Math.PI/180, r = a1*Math.PI/180, tip = [s1[0] + 7*Math.cos(t), s1[1] + 7*Math.sin(t)], b1 = [s1[0] + 4.6*Math.cos(r), s1[1] + 4.6*Math.sin(r)], b2 = [s1[0] - 4.6*Math.cos(r), s1[1] - 4.6*Math.sin(r)];
-      h += '<polygon points="'+f1(tip[0])+','+f1(tip[1])+' '+f1(b1[0])+','+f1(b1[1])+' '+f1(b2[0])+','+f1(b2[1])+'" fill="'+c+'"/>';
-    }
+    var sg = dir === "cw" ? 1 : -1, th = clicks > 1 ? 130 : 70, a0 = -90, a1 = a0 + sg*th, s0 = pol(cx, cy, R, a0), s1 = pol(cx, cy, R, a1);
+    h += '<path d="M'+f1(s0[0])+' '+f1(s0[1])+' A'+R+' '+R+' 0 0 '+(dir === "cw" ? 1 : 0)+' '+f1(s1[0])+' '+f1(s1[1])+'" fill="none" stroke="'+c+'" stroke-width="2.6" stroke-linecap="round"/>';
+    var t = (a1 + sg*90)*Math.PI/180, r = a1*Math.PI/180, tip = [s1[0] + 7*Math.cos(t), s1[1] + 7*Math.sin(t)], b1 = [s1[0] + 4.6*Math.cos(r), s1[1] + 4.6*Math.sin(r)], b2 = [s1[0] - 4.6*Math.cos(r), s1[1] - 4.6*Math.sin(r)];
+    h += '<polygon points="'+f1(tip[0])+','+f1(tip[1])+' '+f1(b1[0])+','+f1(b1[1])+' '+f1(b2[0])+','+f1(b2[1])+'" fill="'+c+'"/>';
     h += '<text x="54" y="21" style="font-size:11px;font-weight:600;fill:'+c+'">'+label+'</text><text x="54" y="35" style="font-size:9.5px;fill:var(--dim)">'+sub+'</text>';
     return h;
   }
-  /* manómetro con flecha: subir o bajar presión. dir: up | down | ok */
-  function psiSVG(dir, mag, label, sub, col){
-    var cx = 24, cy = 36, c = col || (dir === "ok" ? "var(--cian)" : (mag > .55 ? "var(--bad)" : "var(--oro)"));
+  /* manómetro con flecha: subir o bajar presión */
+  function psiSVG(dir, label, sub, col){
+    var cx = 24, cy = 36, c = col || "var(--oro)";
     var h = '<path d="M4 36 A20 20 0 0 1 44 36" fill="none" stroke="var(--line)" stroke-width="1.4"/>';
     for (var i = 0; i <= 6; i++){ var a = 180 + i*30, p1 = pol(cx, cy, 15, a), p2 = pol(cx, cy, 18, a); h += '<line x1="'+f1(p1[0])+'" y1="'+f1(p1[1])+'" x2="'+f1(p2[0])+'" y2="'+f1(p2[1])+'" class="tk"/>'; }
     h += '<text x="24" y="33" text-anchor="middle" style="font-size:9px;fill:var(--dim)">psi</text>';
-    if (dir === "up") h += '<path d="M54 40V12M47 19L54 11L61 19" fill="none" stroke="'+c+'" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>';
-    if (dir === "down") h += '<path d="M54 12V40M47 33L54 41L61 33" fill="none" stroke="'+c+'" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>';
-    h += '<text x="'+(dir === "ok" ? 54 : 70)+'" y="21" style="font-size:11px;font-weight:600;fill:'+c+'">'+label+'</text><text x="'+(dir === "ok" ? 54 : 70)+'" y="35" style="font-size:9.5px;fill:var(--dim)">'+sub+'</text>';
-    return h;
+    h += dir === "up" ? '<path d="M54 40V12M47 19L54 11L61 19" fill="none" stroke="'+c+'" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>' : '<path d="M54 12V40M47 33L54 41L61 33" fill="none" stroke="'+c+'" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>';
+    return h + '<text x="70" y="21" style="font-size:11px;font-weight:600;fill:'+c+'">'+label+'</text><text x="70" y="35" style="font-size:9.5px;fill:var(--dim)">'+sub+'</text>';
+  }
+  /* token: bloque que ocupa volumen en la cámara de aire */
+  function tokSVG(label, sub, col){
+    var c = col || "var(--oro)";
+    return '<rect x="8" y="8" width="32" height="32" rx="4" fill="none" stroke="var(--line)" stroke-width="1.4"/><rect x="14" y="14" width="20" height="14" rx="2" fill="none" stroke="'+c+'" stroke-width="2"/><path d="M24 31V37M21 34H27" stroke="'+c+'" stroke-width="2.4" stroke-linecap="round"/>' +
+      '<text x="54" y="21" style="font-size:11px;font-weight:600;fill:'+c+'">'+label+'</text><text x="54" y="35" style="font-size:9.5px;fill:var(--dim)">'+sub+'</text>';
+  }
+  /* resorte espiral más duro: más lbs */
+  function lbsSVG(label, sub, col){
+    var c = col || "var(--oro)", pts = "";
+    for (var i = 0; i <= 8; i++) pts += (i ? " " : "") + (i % 2 ? 36 : 12) + "," + (6 + i*4.5);
+    return '<polyline points="'+pts+'" fill="none" stroke="'+c+'" stroke-width="2.4" stroke-linejoin="round"/><path d="M24 2V6M24 42V46" stroke="var(--line)" stroke-width="1.4"/>' +
+      '<text x="54" y="21" style="font-size:11px;font-weight:600;fill:'+c+'">'+label+'</text><text x="54" y="35" style="font-size:9.5px;fill:var(--dim)">'+sub+'</text>';
   }
   function barSVG(dev){
     var w = 260, m = 10, au = w - m*2, c = m + au/2, x = c + Math.max(-1, Math.min(1, dev))*au/2, ok = Math.abs(dev) < .02;
@@ -1218,44 +1248,82 @@ svg .hitT { font-family: var(--font-mono); font-size: 14px; font-weight: 700; fi
     for (var i = 0; i < 5; i++) h += '<circle cx="'+(m + i/4*au)+'" cy="12" r="'+(i === 2 ? 3 : 2.2)+'" class="tk"/>';
     return h + '<line x1="'+c+'" y1="12" x2="'+x+'" y2="12" style="stroke:'+col+';stroke-opacity:.7;stroke-width:2.5"/><circle cx="'+x+'" cy="12" r="5" style="fill:'+col+';stroke:var(--bg);stroke-width:1.2"/>';
   }
-  function indSVG(k, m){
-    var psi = (k === "SAG" || k === "TOPES");
-    if (m.t === "ok") return "";
-    if (m.t === "psi") return psiSVG(m.d, m.m, m.d === "up" ? "SUBIR PRESIÓN" : "BAJAR PRESIÓN", m.sub);
-    return knobSVG(m.d, m.m, m.d === "cw" ? "CERRAR" : "ABRIR", m.d === "cw" ? "sentido horario" : "sentido antihorario");
+  /* devolución de la fila, según la medición y el resorte del perfil */
+  function indSVG(k, S){
+    var v = (MOCK[k][S] || {}).v || 0; if (Math.abs(v) < .02) return "";
+    var sp = PERFIL[S], clicks = Math.abs(v) > .55 ? 2 : 1, col = clicks > 1 ? "var(--bad)" : "var(--oro)";
+    function sagAction(vs, sub){
+      if (sp === "aire") return psiSVG(vs > 0 ? "up" : "down", vs > 0 ? "SUBIR PRESIÓN" : "BAJAR PRESIÓN", sub || "de aire", col);
+      return knobSVG(vs > 0 ? "cw" : "ccw", 1, vs > 0 ? "MÁS PRECARGA" : "MENOS PRECARGA", sub || (vs > 0 ? "sentido horario" : "sentido antihorario"), col);
+    }
+    if (k === "SAG") return sagAction(v);
+    if (k === "TOPES"){
+      var sv = (MOCK.SAG[S] || {}).v || 0;
+      if (Math.abs(sv) >= .02) return sagAction(sv, "primero corregir el SAG");
+      return sp === "aire" ? tokSVG("AGREGAR TOKEN", "el SAG está bien", col) : lbsSVG("RESORTE MÁS DURO", "más lbs, no la precarga", col);
+    }
+    var n = clicks === 1 ? "1 CLICK" : "2 CLICKS";
+    return knobSVG(v > 0 ? "cw" : "ccw", clicks, (v > 0 ? "CERRAR " : "ABRIR ") + n, v > 0 ? "sentido horario" : "sentido antihorario", col);
   }
-  var FIX = {
-    SAG:   [["psi","up","SUBIR PRESIÓN","de aire","El aire empuja más: el vástago queda más afuera de la cámara y hay más recorrido útil."], ["psi","down","BAJAR PRESIÓN","de aire","La suspensión se hunde más con tu peso."]],
-    TOPES: [["psi","up","SUBIR PRESIÓN","de aire","Es lo mismo que corrige un SAG alto: la suspensión llega menos al fondo."], ["tok","","+ TOKEN","","Un token ocupa volumen en la cámara de aire y endurece el final del recorrido sin cambiar mucho el inicio."]],
-    HSC:   [["knob","cw","CERRAR","sentido horario","El circuito rápido frena más: los golpes fuertes encuentran más resistencia."], ["knob","ccw","ABRIR","sentido antihorario","El circuito rápido frena menos."]],
-    LSC:   [["knob","cw","CERRAR","sentido horario","Más apoyo: la suspensión se hunde menos al pedalear, en curvas y frenadas."], ["knob","ccw","ABRIR","sentido antihorario","Más suave: sigue mejor el terreno."]],
-    HSR:   [["knob","cw","CERRAR","sentido horario","Después de un golpe fuerte la suspensión vuelve más lento."], ["knob","ccw","ABRIR","sentido antihorario","Vuelve más rápido."]],
-    LSR:   [["knob","cw","CERRAR","sentido horario","Vuelve más lento en los movimientos suaves."], ["knob","ccw","ABRIR","sentido antihorario","Vuelve más rápido."]]
-  };
-  function fixHTML(k){
-    return FIX[k].map(function(f){
-      var svg = f[0] === "tok" ? '<b>'+f[2]+'</b>' : '<svg class="ind" viewBox="0 0 190 48" aria-hidden="true">'+(f[0] === "psi" ? psiSVG(f[1], .5, f[2], f[3], "var(--oro)") : knobSVG(f[1], .4, f[2], f[3], "var(--oro)"))+'</svg>';
+  function fixItems(k, S){
+    var sp = PERFIL[S];
+    if (k === "SAG") return sp === "aire"
+      ? [["psi","up","SUBIR PRESIÓN","de aire","El aire empuja más: el vástago queda más afuera de la cámara y hay más recorrido útil."], ["psi","down","BAJAR PRESIÓN","de aire","La suspensión se hunde más con tu peso."]]
+      : [["knob","cw","MÁS PRECARGA","sentido horario","El resorte arranca más comprimido: la suspensión se hunde menos con tu peso."], ["knob","ccw","MENOS PRECARGA","sentido antihorario","La suspensión se hunde más con tu peso."], ["tok","","LA PRECARGA AJUSTA FINO","","Si no alcanza, hay que cambiar el resorte por uno más duro o más blando."]];
+    if (k === "TOPES") return sp === "aire"
+      ? [["psi","up","SUBIR PRESIÓN","de aire","Si el SAG está alto: es lo que corrige el SAG y evita el tope."], ["tokb","","AGREGAR TOKEN","el SAG está bien","Si el SAG está en zona y sigue haciendo tope: el token endurece el final del recorrido sin cambiar el SAG."]]
+      : [["knob","cw","MÁS PRECARGA","sentido horario","Si el SAG está fuera de zona: se corrige primero con la precarga."], ["lbs","","RESORTE MÁS DURO","más lbs, no la precarga","Si el SAG está en zona y sigue haciendo tope: cambiar por un resorte de más lbs. Subir la precarga no sirve, cambia el SAG."]];
+    var close = { HSC:"El circuito rápido frena más: los golpes fuertes encuentran más resistencia.", LSC:"Más apoyo: la suspensión se hunde menos al pedalear, en curvas y frenadas.", HSR:"Después de un golpe fuerte la suspensión vuelve más lento.", LSR:"Vuelve más lento en los movimientos suaves." };
+    var open = { HSC:"El circuito rápido frena menos.", LSC:"Más suave: sigue mejor el terreno.", HSR:"Vuelve más rápido.", LSR:"Vuelve más rápido." };
+    return [["knob","cw","CERRAR 1 CLICK","sentido horario",close[k]], ["knob","ccw","ABRIR 1 CLICK","sentido antihorario",open[k]]];
+  }
+  function fixHTML(k, S){
+    return fixItems(k, S).map(function(f){
+      var g = f[0], svg;
+      if (g === "tok") svg = '<b>'+f[2]+'</b>';
+      else svg = '<svg class="ind" viewBox="0 0 190 48" aria-hidden="true">' + (g === "psi" ? psiSVG(f[1], f[2], f[3], "var(--oro)") : g === "knob" ? knobSVG(f[1], 1, f[2], f[3], "var(--oro)") : g === "tokb" ? tokSVG(f[2], f[3], "var(--oro)") : lbsSVG(f[2], f[3], "var(--oro)")) + '</svg>';
       return '<div class="fx">'+svg+'<p>'+f[4]+'</p></div>';
     }).join("");
   }
   var grid = $("grid");
-  ORDER.forEach(function(k){
-    var d = document.createElement("div"); d.className = "gs";
-    var rows = ["H","S"].map(function(S){
-      var m = MOCK[k][S], ok = m.t === "ok", col = (m.m || 0) > .55 ? "var(--bad)" : "var(--oro)";
-      var sv = ok ? "" : ((m.m || 0) > .55 ? "FUERTE" : (m.m || 0) > .22 ? "MODERADO" : "LEVE");
-      return '<div class="row"><button class="nm '+(S === "H" ? "c" : "o")+'" type="button" data-k="'+k+'" data-s="'+S+'">'+(S === "H" ? "HORQUILLA" : "SHOCK")+'</button>' +
-        '<div><span class="msg" style="color:'+(ok ? "var(--cian)" : col)+'">'+(ok ? "EN PUNTO" : m.msg)+'</span><svg class="dial" viewBox="0 0 260 24" aria-hidden="true">'+barSVG(m.v || 0)+'</svg><span class="sev">'+sv+'</span>'+(ok ? "" : '<svg class="ind" viewBox="0 0 190 48" aria-hidden="true">'+indSVG(k, m)+'</svg>')+'</div></div>';
-    }).join("");
-    d.innerHTML = '<div class="gs-t"><span class="ic">'+ICON[k]+'</span>'+TITLE[k]+'<button class="info-btn" type="button" data-k="'+k+'" data-s="H" aria-label="Ver cómo funciona: '+TITLE[k]+'">i</button></div>'+rows;
-    grid.appendChild(d);
+  function buildGrid(){
+    grid.innerHTML = "";
+    ORDER.forEach(function(k){
+      var d = document.createElement("div"); d.className = "gs";
+      var rows = ["H","S"].map(function(S){
+        var m = MOCK[k][S], v = m.v || 0, ok = Math.abs(v) < .02, col = Math.abs(v) > .55 ? "var(--bad)" : "var(--oro)";
+        var sv = ok ? "" : (Math.abs(v) > .55 ? "FUERTE" : Math.abs(v) > .22 ? "MODERADO" : "LEVE"), ind = indSVG(k, S);
+        return '<div class="row"><button class="nm '+(S === "H" ? "c" : "o")+'" type="button" data-k="'+k+'" data-s="'+S+'">'+(S === "H" ? "HORQUILLA" : "SHOCK")+'</button>' +
+          '<div><span class="msg" style="color:'+(ok ? "var(--cian)" : col)+'">'+(ok ? "EN PUNTO" : m.msg)+'</span><svg class="dial" viewBox="0 0 260 24" aria-hidden="true">'+barSVG(v)+'</svg><span class="sev">'+sv+'</span>'+(ind ? '<svg class="ind" viewBox="0 0 190 48" aria-hidden="true">'+ind+'</svg>' : "")+'</div></div>';
+      }).join("");
+      d.innerHTML = '<div class="gs-t"><span class="ic">'+ICON[k]+'</span>'+TITLE[k]+'<button class="info-btn" type="button" data-k="'+k+'" data-s="H" aria-label="Ver cómo funciona: '+TITLE[k]+'">i</button></div>'+rows;
+      grid.appendChild(d);
+    });
+  }
+  buildGrid();
+  var popK = null;
+  function popupText(){
+    var S = comp === "shock" ? "S" : "H";
+    $("plainTxt").textContent = plainFor(popK, S); $("fixBox").innerHTML = fixHTML(popK, S); $("barEx").innerHTML = barSVG(.45);
+    $("barTxt").textContent = "En el semáforo, el centro es el valor recomendado. Cuanto más lejos del centro está el punto, más fuera de zona está la medición. Abajo ves qué hacer para volver al centro.";
+    $("fxNote").hidden = !/^(HSC|LSC|HSR|LSR)$/.test(popK);
+    $("fxNote").textContent = "Se cambia de a un click, desde la posición cerrada hacia la abierta. Si la medición está muy lejos del centro, hacia los extremos de la barra, se cambian dos.";
+  }
+  document.querySelectorAll("#prof .seg").forEach(function(g){
+    g.addEventListener("click", function(e){
+      var b = e.target.closest("button"); if (!b) return;
+      PERFIL[g.dataset.p] = b.dataset.v;
+      g.querySelectorAll("button").forEach(function(x){ x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+      buildGrid();
+      if (popup){ spring = PERFIL[comp === "shock" ? "S" : "H"]; applyMode(); popupText(); }
+    });
   });
   var opener = null;
   $("pCtl").appendChild($("compseg"));
   function openPopup(k, S, from){
-    mode = k; comp = S === "S" ? "shock" : "fork"; spring = "aire"; popup = true; view = "ctx"; phase = 0; opener = from || null;
+    mode = k; comp = S === "S" ? "shock" : "fork"; spring = PERFIL[S === "S" ? "S" : "H"]; popK = k; popup = true; view = "ctx"; phase = 0; opener = from || null;
     $("pIc").innerHTML = ICON[k]; $("pT").textContent = TITLE[k];
-    $("plainTxt").textContent = PLAIN[k]; $("fixBox").innerHTML = fixHTML(k); $("barEx").innerHTML = barSVG(.45); $("barTxt").textContent = "En el semáforo, el centro es el valor recomendado. Cuanto más lejos del centro está el punto, más fuera de zona está la medición. Abajo ves qué hacer para volver al centro."; $("fxNote").hidden = !/^(HSC|LSC|HSR|LSR)$/.test(k); $("techTxt").textContent = MODES[k].app; $("topCount").hidden = k !== "TOPES";
+    $("techTxt").textContent = MODES[k].app; $("topCount").hidden = k !== "TOPES"; popupText();
     buildSag(); applyMode();
     $("ov").hidden = false; document.body.style.overflow = "hidden"; $("pX").focus();
   }
