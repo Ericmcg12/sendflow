@@ -7,9 +7,10 @@ import os, shutil, sys
 
 destino = sys.argv[1]
 aqui = os.path.join(os.path.dirname(os.path.abspath(__file__)), "piezas")
-for f in ("semaforos-iconos.js", "semaforos-popup.js", "semaforo-anim.js", "sag-calculadora.js", "presion-neumaticos.js", "resorte-coil.js"):
+for f in ("semaforos-iconos.js", "semaforos-popup.js", "semaforo-anim.js", "calculos-bici.js"):
     shutil.copy(os.path.join(aqui, f), os.path.join(destino, "js", f))
 shutil.copy(os.path.join(aqui, "semaforo-anim.css"), os.path.join(destino, "css", "semaforo-anim.css"))
+shutil.copy(os.path.join(aqui, "calculos-bici.css"), os.path.join(destino, "css", "calculos-bici.css"))
 shutil.copy(os.path.join(aqui, "semaforo-anim.html"), os.path.join(destino, "semaforo-anim.html"))
 
 ruta_css = os.path.join(destino, "css", "modo-web.css")
@@ -29,15 +30,28 @@ if "semaforos-popup.js" not in html:
     nuevo = '\n<script src="./js/semaforos-iconos.js"></script>\n<script src="./js/semaforos-popup.js"></script>'
     html = html[:ultimo + len("</script>")] + nuevo + html[ultimo + len("</script>"):]
     open(ruta_html, "w", encoding="utf-8").write(html)
-if "sag-calculadora.js" not in html:
-    html = html.replace('<script src="./js/semaforos-popup.js"></script>', '<script src="./js/semaforos-popup.js"></script>\n<script src="./js/sag-calculadora.js"></script>')
-    open(ruta_html, "w", encoding="utf-8").write(html)
-if "presion-neumaticos.js" not in html:
-    html = html.replace('<script src="./js/sag-calculadora.js"></script>', '<script src="./js/sag-calculadora.js"></script>\n<script src="./js/presion-neumaticos.js"></script>')
-    open(ruta_html, "w", encoding="utf-8").write(html)
-if "resorte-coil.js" not in html:
-    html = html.replace('<script src="./js/presion-neumaticos.js"></script>', '<script src="./js/presion-neumaticos.js"></script>\n<script src="./js/resorte-coil.js"></script>')
-    open(ruta_html, "w", encoding="utf-8").write(html)
+for _viejo in ("sag-calculadora", "presion-neumaticos", "resorte-coil"):   # versiones anteriores, ya unificadas en calculos-bici.js
+    _r = os.path.join(destino, "js", _viejo + ".js")
+    if os.path.exists(_r): os.remove(_r)
+    html = html.replace('\n<script src="./js/' + _viejo + '.js"></script>', "")
+if "calculos-bici.js" not in html:
+    html = html.replace('<script src="./js/semaforos-popup.js"></script>', '<script src="./js/semaforos-popup.js"></script>\n<script src="./js/calculos-bici.js"></script>')
+if "calculos-bici.css" not in html:
+    html = html.replace("</head>", '<link rel="stylesheet" href="./css/calculos-bici.css">\n</head>', 1)
+open(ruta_html, "w", encoding="utf-8").write(html)
+
+# sitio (carpeta de arriba): el mismo módulo y su css en el perfil de bici (/perfil)
+_sitio = os.path.dirname(os.path.abspath(destino))
+if os.path.isdir(os.path.join(_sitio, "js")) and os.path.exists(os.path.join(_sitio, "js", "editor-bici.js")):
+    shutil.copy(os.path.join(aqui, "calculos-bici.js"), os.path.join(_sitio, "js", "calculos-bici.js"))
+    shutil.copy(os.path.join(aqui, "calculos-bici.css"), os.path.join(_sitio, "css", "calculos-bici.css"))
+    _rs = os.path.join(_sitio, "index.html")
+    _h = open(_rs, encoding="utf-8").read()
+    if "calculos-bici.js" not in _h:
+        assert '<script src="/js/editor-bici.js"></script>' in _h, "index.html del sitio cambió: no está editor-bici.js"
+        _h = _h.replace('<script src="/js/editor-bici.js"></script>', '<script src="/js/editor-bici.js"></script>\n<script src="/js/calculos-bici.js"></script>')
+        _h = _h.replace('<link rel="stylesheet" href="/css/sitio.css">', '<link rel="stylesheet" href="/css/sitio.css">\n<link rel="stylesheet" href="/css/calculos-bici.css">', 1)
+        open(_rs, "w", encoding="utf-8").write(_h)
 def parchar_app(destino):
     ruta = os.path.join(destino, "js", "app.js")
     js = open(ruta, encoding="utf-8").read()
