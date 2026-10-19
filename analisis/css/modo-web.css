@@ -243,4 +243,6 @@ html.sf-con-profe [data-accion="enviar-coach"] { display: inline-flex !important
 .sfc-dos .sfc-ancho { grid-column: 1 / -1; }
 .sfc-l select { font-size: 15px; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--borde-2, #2e393a); background: var(--bg-abs, #070b0c); color: var(--texto, #f2f5f4); min-width: 0; }
 .sfc-aviso { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--texto-dim, #8b9a98); text-align: justify; hyphens: auto; }
+.sfc-res { margin-bottom: 10px; }
+.sfc-fila { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 6px 0; border-top: 1px solid var(--borde, #232b2c); font-size: 13.5px; }
 /* fin semáforos con popup */
