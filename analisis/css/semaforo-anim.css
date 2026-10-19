@@ -191,3 +191,5 @@ body { padding: 0 !important; }
 .equilbox { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 10px; align-items: center; }
 .equilbox svg { width: 100%; max-width: 760px; height: auto; display: block; }
 .equilbox .seg { align-self: flex-start; }
+.eqtxt { margin: 0; font-size: 14px; line-height: 1.5; color: var(--txt); text-align: center; max-width: 760px; }
+.eqtxt.dim { color: var(--dim, #8b9a98); font-size: 12.5px; font-weight: 400; }
