@@ -12679,7 +12679,7 @@ document.addEventListener("DOMContentLoaded", animarEntradaBienvenida);   // Sen
 // SendFlow Bike Web (lo agrega construir_web.py, no está en la app): acceso de solo lectura para "Enviar al profe".
 window.__sfAnalisis = { get estado() { return estado; }, muestrasAColumnas: muestrasAColumnas, comprimirGzip: comprimirGzip, leerBajadaDB: leerBajadaDB,
   // perfiles desde la cuenta (perfiles-web.js)
-  abrirModalPerfil: abrirModalPerfil, leerPerfilCompleto: leerPerfilCompleto, listarPerfilesDB: listarPerfilesDB,
+  abrirModalPerfil: abrirModalPerfil, leerPerfilCompleto: leerPerfilCompleto, listarPerfilesDB: listarPerfilesDB, generarTablaLeverageDefault: generarTablaLeverageDefault,
   guardarPerfilEnDB: guardarPerfilEnDB, eliminarPerfilDB: eliminarPerfilDB, renderizarListaPerfiles: renderizarListaPerfiles };
 
 })();

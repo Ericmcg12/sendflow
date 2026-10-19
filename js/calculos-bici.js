@@ -2,7 +2,8 @@
    Un botón «Calcular» junto al campo correspondiente abre una ventana; «Usar» escribe el valor en el campo.
    Sirve en tres lugares con el mismo código (cada uno con su «adaptador»):
      - perfil de bici del sitio (/perfil, editor-bici.js: los campos no tienen id, se buscan por su grupo y su etiqueta);
-     - perfil de la app de análisis (ids pf…), y Recorte / Bajada (ids rc… y bt…).
+     - Recorte de /analisis (ids rc…): ahí los datos de la bici salen del perfil elegido.
+   El leverage se usa siempre: la curva de la bici o, si no cargó una, la genérica.
    Son puntos de partida: no son especificaciones del fabricante ni toman nada de una bajada ya analizada. */
 (function () {
   "use strict";
@@ -67,8 +68,8 @@
   var F_ESTILO = { xc: 1.05, trail: 1, enduro: 0.97, dh: 0.95 }, F_CARCASA = { liviana: 1.08, trail: 1, enduro: 0.95, dh: 0.9 };
   var F_SISTEMA = { tubeless: 1, camara: 1.12 }, F_TERRENO = { liso: 1.05, mixto: 1, roto: 1.03, mojado: 0.94 }, F_INSERTO = { si: 0.94, no: 1 };
   var pPres = null;
-  function psi(rueda, carga, ancho, ins) {
-    var p = C0 * REPARTO[rueda] * carga / Math.pow(ancho, EXP_ANCHO) * F_ESTILO[$("pnEstilo").value] * F_CARCASA[$("pnCarcasa").value] * F_SISTEMA[$("pnSistema").value] * F_TERRENO[$("pnTerreno").value] * F_INSERTO[ins];
+  function psi(rueda, carga, ancho, ins, carcasa) {
+    var p = C0 * REPARTO[rueda] * carga / Math.pow(ancho, EXP_ANCHO) * F_ESTILO[$("pnEstilo").value] * F_CARCASA[carcasa] * F_SISTEMA[$("pnSistema").value] * F_TERRENO[$("pnTerreno").value] * F_INSERTO[ins];
     return Math.max(MIN_PSI, Math.min(MAX_PSI, p));
   }
   function presCalc() {
@@ -76,7 +77,7 @@
     var out = $("pnOut"), b = $("pnUsar"); b.disabled = true; b.removeAttribute("data-d"); b.removeAttribute("data-t");
     if (!(carga > 20 && carga < 250)) { out.textContent = "Poné el peso del piloto y de la bici."; return; }
     if (!(aD >= 1.5 && aD <= 3.5) || !(aT >= 1.5 && aT <= 3.5)) { out.textContent = "Poné el ancho de las cubiertas en pulgadas (por ejemplo 2.4)."; return; }
-    var d = psi("D", carga, aD, $("pnInsD").value), t = psi("T", carga, aT, $("pnInsT").value);
+    var d = psi("D", carga, aD, $("pnInsD").value, $("pnCarcD").value), t = psi("T", carga, aT, $("pnInsT").value, $("pnCarcT").value);
     out.innerHTML = "Delantera: <b>" + d.toFixed(0) + " psi</b> · Trasera: <b>" + t.toFixed(0) + " psi</b>";
     b.disabled = false; b.setAttribute("data-d", String(Math.round(d))); b.setAttribute("data-t", String(Math.round(t)));
   }
@@ -90,7 +91,8 @@
         '<label class="sfc-l"><span>Estilo</span><select id="pnEstilo">' + opt([["xc", "XC / Maratón"], ["trail", "Trail"], ["enduro", "Enduro"], ["dh", "Descenso / bikepark"]]) + "</select></label>" +
         '<label class="sfc-l"><span>Ancho delantera (pulg.)</span><input id="pnAnchoD" type="text" inputmode="decimal" autocomplete="off"></label>' +
         '<label class="sfc-l"><span>Ancho trasera (pulg.)</span><input id="pnAnchoT" type="text" inputmode="decimal" autocomplete="off"></label>' +
-        '<label class="sfc-l"><span>Carcasa</span><select id="pnCarcasa">' + opt([["liviana", "XC / liviana"], ["trail", "Trail"], ["enduro", "Enduro / reforzada"], ["dh", "Descenso / doble capa"]]) + "</select></label>" +
+        '<label class="sfc-l"><span>Carcasa delantera</span><select id="pnCarcD">' + opt([["liviana", "XC / liviana"], ["trail", "Trail"], ["enduro", "Enduro / reforzada"], ["dh", "Descenso / doble capa"]]) + "</select></label>" +
+        '<label class="sfc-l"><span>Carcasa trasera</span><select id="pnCarcT">' + opt([["liviana", "XC / liviana"], ["trail", "Trail"], ["enduro", "Enduro / reforzada"], ["dh", "Descenso / doble capa"]]) + "</select></label>" +
         '<label class="sfc-l"><span>Sistema</span><select id="pnSistema">' + opt([["tubeless", "Tubeless"], ["camara", "Con cámara"]]) + "</select></label>" +
         '<label class="sfc-l"><span>Inserto delantero</span><select id="pnInsD">' + opt([["no", "No"], ["si", "Sí"]]) + "</select></label>" +
         '<label class="sfc-l"><span>Inserto trasero</span><select id="pnInsT">' + opt([["no", "No"], ["si", "Sí"]]) + "</select></label>" +
@@ -104,7 +106,7 @@
     $("pnPiloto").value = cur.get("pesoPiloto") || ""; $("pnBici").value = cur.get("pesoBici") || "";
     $("pnAnchoD").value = cur.get("anchoD") || ""; $("pnAnchoT").value = cur.get("anchoT") || "";
     $("pnInsD").value = cur.get("insD") === "si" ? "si" : "no"; $("pnInsT").value = cur.get("insT") === "si" ? "si" : "no";
-    $("pnEstilo").value = "trail"; $("pnCarcasa").value = "trail"; $("pnTerreno").value = "mixto"; $("pnSistema").value = "tubeless";
+    $("pnEstilo").value = "trail"; $("pnCarcD").value = F_CARCASA[cur.get("carcasaD")] ? cur.get("carcasaD") : "trail"; $("pnCarcT").value = F_CARCASA[cur.get("carcasaT")] ? cur.get("carcasaT") : "trail"; $("pnTerreno").value = "mixto"; $("pnSistema").value = "tubeless";
     presCalc(); abrirPanel(pPres, desde); $("pnPiloto").focus();
   }
 
@@ -122,14 +124,13 @@
     }
     return u.rueda;
   }
-  // Leverage en el punto del SAG: pendiente de la curva del perfil (si el formulario la tiene) o promedio recorrido de rueda / carrera.
-  function leverageEn(posMm, stroke, rueda) {
-    var t = cur.lev && cur.lev();
-    if (t && t.length >= 2) {
-      var a = Math.max(0, posMm - 1), b = Math.min(stroke, posMm + 1);
-      if (b > a) { var lr = (ruedaEn(t, b) - ruedaEn(t, a)) / (b - a); if (isFinite(lr) && lr > 1 && lr < 5) return lr; }
-    }
-    return rueda / stroke;
+  // Leverage en el punto del SAG: pendiente de la curva de leverage de la bici (la de su perfil; si no cargó una, la genérica de la app).
+  function leverageEn(posMm, stroke) {
+    var c = cur.lev(); if (!c || !c.t || c.t.length < 2) return null;
+    var a = Math.max(0, posMm - 1), b = Math.min(stroke, posMm + 1);
+    if (!(b > a)) return null;
+    var lr = (ruedaEn(c.t, b) - ruedaEn(c.t, a)) / (b - a);
+    return isFinite(lr) && lr > 1 && lr < 5 ? { lr: lr, propia: !!c.propia } : null;
   }
   function coilCalc() {
     var out = $("rcOut"), res = $("rcRes"); res.innerHTML = "";
@@ -139,9 +140,10 @@
     if (!(reparto >= 0.5 && reparto <= 0.75)) { out.textContent = "El peso en la rueda trasera suele estar entre 58 y 68 %."; return; }
     if (!(rueda > 50 && rueda < 300) || !(stroke > 20 && stroke < 100) || !(rueda / stroke > 1.5 && rueda / stroke < 4)) { out.textContent = "Poné el recorrido de la rueda y la carrera del shock en mm (el leverage tiene que dar entre 1,5 y 4)."; return; }
     if (!(sag >= 0.2 && sag <= 0.4)) { out.textContent = "El SAG objetivo suele estar entre 25 y 35 %."; return; }
-    var cargaLb = (total - SIN_SUSPENDIDA_KG) * reparto * KG_A_LB, strokePulg = stroke * MM_A_PULG, lr = leverageEn(sag * stroke, stroke, rueda);
-    var k = cargaLb * lr / (strokePulg * sag);
-    out.innerHTML = "Resorte necesario: <b>" + k.toFixed(0) + " lb/in</b> (" + (k * N_MM_POR_LBIN).toFixed(1).replace(".", ",") + " N/mm) · leverage en el SAG: " + lr.toFixed(2).replace(".", ",");
+    var cargaLb = (total - SIN_SUSPENDIDA_KG) * reparto * KG_A_LB, strokePulg = stroke * MM_A_PULG, lev = leverageEn(sag * stroke, stroke);
+    if (!lev) { out.textContent = "No se pudo calcular el leverage: revisá el recorrido de la rueda y la carrera del shock."; return; }
+    var lr = lev.lr, k = cargaLb * lr / (strokePulg * sag);
+    out.innerHTML = "Resorte necesario: <b>" + k.toFixed(0) + " lb/in</b> (" + (k * N_MM_POR_LBIN).toFixed(1).replace(".", ",") + " N/mm) · leverage en el SAG: " + lr.toFixed(2).replace(".", ",") + (lev.propia ? " (curva de tu perfil)" : " (curva genérica: cargá la de tu bici en el perfil)");
     var lista = tasasComerciales(), i0 = 0, d0 = 1e9, html = "";
     lista.forEach(function (v, i) { var d = Math.abs(v - k); if (d < d0) { d0 = d; i0 = i; } });
     [i0 - 1, i0, i0 + 1].forEach(function (i) {
@@ -192,15 +194,27 @@
     inp.value = v; inp.dispatchEvent(new Event("input", { bubbles: true })); inp.dispatchEvent(new Event("change", { bubbles: true }));
   }
 
-  // App de análisis: ids con prefijo pf (perfil), rc (Recorte) o bt (Bajada).
-  function adaptadorApp(p) {
-    var ID = { sagH: p + "SagMedidoH", sagS: p + "SagMedidoS", recH: p + "RecH", sensS: p + "SensS", recS: p + "RecS", presD: p + "PresD", presT: p + "PresT", durezaS: p + "DurezaResorteS",
-      pesoPiloto: p === "pf" ? "pfPesoPiloto" : p + "Peso", pesoBici: "pfPesoBici", anchoD: "pfAnchoCubiertaD", anchoT: "pfAnchoCubiertaT", insD: "pfInsertoD", insT: "pfInsertoT" };
+  // App de análisis (web): Recorte (ids rc…). Peso de la bici, cubiertas, inserto y carcasa son datos del perfil de la bici elegida
+  // (estado.perfilActivoDatos); lo que está en el formulario de Recorte tiene prioridad.
+  function adaptadorRecorte() {
+    var ID = { sagH: "rcSagMedidoH", sagS: "rcSagMedidoS", recH: "rcRecH", sensS: "rcSensS", recS: "rcRecS", presD: "rcPresD", presT: "rcPresT", durezaS: "rcDurezaResorteS", pesoPiloto: "rcPeso" };
+    var PERFIL = { pesoBici: "pesoBici", anchoD: "anchoCubiertaD", anchoT: "anchoCubiertaT", insD: "insertoD", insT: "insertoT", carcasaD: "carcasaD", carcasaT: "carcasaT" };
+    function datos() { try { return (window.__sfAnalisis.estado.perfilActivoDatos) || {}; } catch (e) { return {}; } }
     return {
-      get: function (k) { var e = ID[k] && $(ID[k]); return e ? e.value : ""; },
+      get: function (k) {
+        if (ID[k]) { var e = $(ID[k]); return e ? e.value : ""; }
+        var v = datos()[PERFIL[k]]; return v == null ? "" : String(v);
+      },
       set: function (k, v) { escribir(ID[k] && $(ID[k]), v); },
       ancla: function (k) { return ID[k] ? $(ID[k]) : null; },
-      lev: function () { try { var e = window.__sfAnalisis && window.__sfAnalisis.estado; return e && e.leverageTablasPorPrefijo && e.leverageTablasPorPrefijo[p === "pf" || p === "rc" || p === "bt" ? p : "pf"]; } catch (x) { return null; } }
+      lev: function () {
+        try {
+          var A = window.__sfAnalisis, t = A.estado.leverageTablasPorPrefijo && A.estado.leverageTablasPorPrefijo.rc;
+          if (t && t.length >= 2) return { t: t, propia: true };
+          var s = num($("rcSensS").value), r = num($("rcRecS").value);
+          return s > 0 && r > 0 ? { t: A.generarTablaLeverageDefault(s, r, 12), propia: false } : null;
+        } catch (e) { return null; }
+      }
     };
   }
 
@@ -220,16 +234,16 @@
   }
   var SITIO = { sagH: ["Horquilla", "SAG medido"], sagS: ["Shock", "SAG medido"], recH: ["Horquilla", "Recorrido (mm)"], sensS: ["Shock", "Recorrido del shock"], recS: ["Shock", "Recorrido real de rueda"],
     durezaS: ["Shock", "Dureza del resorte"], presD: ["Delantera", "Presión (psi)"], presT: ["Trasera", "Presión (psi)"], anchoD: ["Delantera", "Ancho de cubierta"], anchoT: ["Trasera", "Ancho de cubierta"],
-    insD: ["Delantera", "Inserto"], insT: ["Trasera", "Inserto"], pesoBici: ["Bici", "Peso de la bici"] };
+    insD: ["Delantera", "Inserto"], insT: ["Trasera", "Inserto"], pesoBici: ["Bici", "Peso de la bici"], carcasaD: ["Delantera", "Carcasa"], carcasaT: ["Trasera", "Carcasa"] };
   var adaptadorSitio = {
     get: function (k) { if (k === "pesoPiloto") { var e = $("pf-peso"); return e ? e.value : ""; } var c = SITIO[k] && campoSitio(SITIO[k][0], SITIO[k][1]); return c ? c.value : ""; },
     set: function (k, v) { escribir(SITIO[k] && campoSitio(SITIO[k][0], SITIO[k][1]), v); },
     ancla: function (k) { return SITIO[k] ? campoSitio(SITIO[k][0], SITIO[k][1]) : null; },
-    lev: function () { return null; }   // la curva del editor es privada de editor-bici.js: se usa el leverage promedio
+    lev: function () { return window.SFEditorBici && window.SFEditorBici.leverage ? window.SFEditorBici.leverage() : null; }   // curva del formulario (o la genérica)
   };
 
   function iniciar() {
-    if ($("pfSagMedidoH")) { ["pf", "rc", "bt"].forEach(function (p) { if ($(p + "SagMedidoH")) montar(adaptadorApp(p)); }); }
+    if ($("rcSagMedidoH")) montar(adaptadorRecorte());
     var raiz = $("pf-editor");
     if (raiz) {
       var pend = false;
