@@ -29,10 +29,10 @@
       what:"Un tope (bottom-out) es una compresión que llega a más del 97 % del recorrido. Un golpe fuerte puede terminar el recorrido y la suspensión choca contra su final. SendFlow cuenta cuántos hubo en la bajada, por separado en la horquilla y en el shock.",
       when:"Aterrizajes largos, golpes grandes de frente y tramos rotos con la suspensión muy comprimida. Tocar fondo de vez en cuando en los golpes más grandes es normal, según el manual.",
       app:"Cero topes, o los que acepta tu perfil (0 o 1 según estilo y peso), es zona objetivo. Más que eso pide «Aumentar soporte» y el texto sugiere sumar presión de aire o un token. El manual de ajuste fino propone primero 1 click de HSC, después un token y después presión. No es lo mismo que el «tiempo en tope» del Panel, que mide el porcentaje de la bajada pasado del 97 %." },
-    EQUIL: { title:"EQUILIBRIO", sub:"Rebote de la delantera y de la trasera", dir:1, speed:0, hz:.3, amp:0, v:0, shim:null, ports:null, bleedN:0, portN:0, thr:false,
-      what:"Después de un golpe, las dos ruedas tienen que volver a su lugar al mismo ritmo. Si la trasera vuelve más rápido que la delantera, la bici rebota y salta de atrás. Si vuelve más lento, no llega a recuperarse entre golpes seguidos y se va hundiendo.",
+    EQUIL: { title:"EQUILIBRIO", sub:"Recorrido y rebote de la delantera y de la trasera", dir:1, speed:0, hz:.3, amp:0, v:0, shim:null, ports:null, bleedN:0, portN:0, thr:false,
+      what:"Mide si la bici trabaja pareja de punta a punta. Primero, cuánto recorrido usa cada suspensión en marcha: la trasera tiene que usar unos 10 puntos más que la delantera. Después, cuánto tarda cada una en recuperarse de un golpe: la trasera nunca debería tardar más que la delantera. Si tarda más se queda hundida (pack down) y llega sin recorrido al próximo golpe.",
       when:"Tramos rotos, saltos y golpes seguidos. Se mide en la bajada, con las dos suspensiones juntas.",
-      app:"Compara la velocidad de rebote rápida (percentil 95) de cada rueda: la horquilla proyectada a vertical y la trasera por la leverage, sin contar el tiempo en el aire. La zona objetivo es trasera ÷ delantera entre 0,85 y 1,15. Fuera de esa zona pide abrir o cerrar el rebote del shock, de a un click o de a dos si está lejos." },
+      app:"No usa los clics. 1) Recorrido en marcha: promedio del recorrido usado (en %) fuera de los saltos; la diferencia trasera menos delantera tiene que estar entre 8 y 12 puntos. Fuera de esa franja pide corregir el SAG del extremo que se salió de su rango (presión o precarga). 2) Fase de rebote: en cada golpe, tiempo que tarda cada suspensión en recuperar el 80 % desde el punto más hundido; se emparejan golpes de las dos (la trasera llega unos instantes después) y se compara. Si la trasera tarda más que la delantera por más de la tolerancia (15 ms o el 12 %), es pack down trasero y pide abrir el rebote del shock. Si recupera mucho antes, pide cerrarlo." },
     AIRE: { title:"RESORTE", sub:"Presión, tokens y curva de fuerza", dir:-1, speed:0, hz:.3, amp:0, v:0, shim:null, ports:null, bleedN:0, portN:0, thr:false,
       what:"El resorte guarda la energía del golpe y empuja la suspensión de vuelta. En aire es aire sellado: al comprimirse sube la presión y la fuerza crece cada vez más rápido (curva progresiva). En espiral crece en línea recta. La presión, o la precarga en espiral, define el SAG. Los tokens ocupan volumen y endurecen el final del recorrido, solo en aire.",
       when:"Es lo primero que se ajusta, porque condiciona todo lo demás. Presión para el SAG, en pasos de 5 PSI según el manual. Tokens para tener soporte al final del recorrido. Con más presión hace falta más rebote cerrado (+5 a 10 PSI, +1 a 2 clicks de rebote).",
@@ -442,7 +442,7 @@
     LSR: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>'
   };
   var ORDER = ["SAG","TOPES","HSC","LSC","HSR","LSR"];
-  var TITLE = { EQUIL:"BALANCE DE REBOTE ADELANTE / ATRÁS", SAG:"SAG EN REPOSO", TOPES:"TOPES", HSC:"COMPRESIÓN ALTA VELOCIDAD (HSC)", LSC:"COMPRESIÓN BAJA VELOCIDAD (LSC)", HSR:"REBOTE ALTA VELOCIDAD (HSR)", LSR:"REBOTE BAJA VELOCIDAD (LSR)" };
+  var TITLE = { EQUIL:"EQUILIBRIO ADELANTE / ATRÁS", SAG:"SAG EN REPOSO", TOPES:"TOPES", HSC:"COMPRESIÓN ALTA VELOCIDAD (HSC)", LSC:"COMPRESIÓN BAJA VELOCIDAD (LSC)", HSR:"REBOTE ALTA VELOCIDAD (HSR)", LSR:"REBOTE BAJA VELOCIDAD (LSR)" };
   /* El perfil (piloto + bici) define qué suspensiones hay y de qué tipo de resorte. Acá es un ejemplo. */
   var PERFIL = { H:"aire", S:"resorte" };
   var PLAIN = {
@@ -451,7 +451,7 @@
     HSC: "Cuando la rueda pega fuerte en una piedra, una raíz o un salto, el vástago entra muy rápido y el aceite no alcanza a pasar por el agujerito. Entonces empuja unas láminas finitas, las laminillas, que se abren como una puerta y dejan pasar el aceite. Así se frena el golpe sin que la suspensión se hunda de golpe.",
     LSC: "Cuando te apoyás en una curva, frenás o pedaleás, la suspensión se mueve despacio. Ahí el aceite pasa solo por un agujerito que regula la aguja. Cerrar clicks achica el agujero: la suspensión se hunde menos y te da más apoyo.",
     HSR: "Después de un golpe, el resorte devuelve la suspensión rápido a su lugar y el aceite pasa en sentido contrario. Abre las laminillas de rebote, del otro lado del pistón. Si vuelve muy rápido, la rueda salta. Si vuelve muy lento, no llega a recuperarse antes del próximo golpe.",
-    EQUIL: "Después de un golpe, las dos ruedas tienen que volver a su lugar al mismo ritmo. Si la de atrás vuelve más rápido que la de adelante, la bici rebota y salta de atrás. Si vuelve más lento, no llega a recuperarse entre golpes seguidos y se va hundiendo. Por eso se ajusta el rebote del shock hasta igualarlo con el de la horquilla.",
+    EQUIL: "Este semáforo mira si la bici trabaja pareja entre la rueda de adelante y la de atrás. Primero compara cuánto recorrido usa cada una mientras bajás: la trasera tiene que usar unos 10 puntos más que la delantera. Si la diferencia es otra, se corrige el SAG (presión de aire o precarga). Después compara cuánto tarda cada suspensión en recuperarse de un golpe: la de atrás nunca debería tardar más que la de adelante. Si tarda más, queda hundida y llega sin recorrido al próximo golpe: se abre el rebote del shock.",
     LSR: "Cuando la suspensión vuelve despacio a su lugar, el aceite pasa por un agujerito que regula la aguja de rebote. Las laminillas no se abren. Es el ajuste del rebote de todos los días: con más clicks cerrados, la suspensión vuelve más lenta."
   };
   function plainFor(k, S){
@@ -473,7 +473,7 @@
     if (k === "TOPES") return sp === "aire"
       ? [["psi","up","SUBIR PRESIÓN","de aire","Si el SAG está alto: es lo que corrige el SAG y evita el tope."], ["tokb","","AGREGAR TOKEN","el SAG está bien","Si el SAG está en zona y sigue haciendo tope: el token endurece el final del recorrido sin cambiar el SAG."]]
       : [["knob","cw","MÁS PRECARGA","sentido horario","Si el SAG está fuera de zona: se corrige primero con la precarga."], ["lbs","","RESORTE MÁS DURO","más lbs, no la precarga","Si el SAG está en zona y sigue haciendo tope: cambiar por un resorte de más lbs. Subir la precarga no sirve, cambia el SAG."]];
-    if (k === "EQUIL") return [["knob","cw","CERRAR REBOTE","sentido horario","La trasera vuelve más lento y se iguala a la delantera."], ["knob","ccw","ABRIR REBOTE","sentido antihorario","La trasera vuelve más rápido y se iguala a la delantera."]];
+    if (k === "EQUIL") return [["knob","ccw","ABRIR REBOTE","rebote del shock","Pack down trasero: el shock se recupera más rápido y llega con recorrido al próximo golpe."], ["knob","cw","CERRAR REBOTE","rebote del shock","Si la trasera recupera mucho antes que la delantera, la bici rebota de atrás."], ["psi","up","SUBIR PRESIÓN","o más precarga","Si la trasera usa demasiado recorrido comparada con la delantera: más soporte atrás."], ["psi","down","BAJAR PRESIÓN","o menos precarga","Si usa muy poco recorrido comparada con la delantera."]];
     var close = { HSC:"El circuito rápido frena más: los golpes fuertes encuentran más resistencia.", LSC:"Más apoyo: la suspensión se hunde menos al pedalear, en curvas y frenadas.", HSR:"Después de un golpe fuerte la suspensión vuelve más lento.", LSR:"Vuelve más lento en los movimientos suaves." };
     var open = { HSC:"El circuito rápido frena menos.", LSC:"Más suave: sigue mejor el terreno.", HSR:"Vuelve más rápido.", LSR:"Vuelve más rápido." };
     return [["knob","cw","CERRAR 1 CLICK","sentido horario",close[k]], ["knob","ccw","ABRIR 1 CLICK","sentido antihorario",open[k]]];
@@ -555,7 +555,7 @@
     $("eqMsg").textContent = EQ.esc === "ok" ? "Ya ajustado: las dos suspensiones recuperan al mismo ritmo y la bici sigue pareja."
       : rt > 1.15 ? "Tu bajada: el shock vuelve más rápido que la horquilla. Se ve cómo la trasera rebota y levanta la bici de atrás."
       : rt < .85 ? "Tu bajada: el shock vuelve más lento que la horquilla. Con obstáculos seguidos no alcanza a recuperarse y se hunde cada vez más."
-      : "Tu bajada: las dos suspensiones vuelven casi al mismo ritmo.";
+      : "Tu bajada: las dos suspensiones se recuperan parejo. Si el semáforo está fuera de zona, el desequilibrio es de recorrido (SAG): mirá la indicación de abajo.";
   }
   function eqTube(a, b, w){
     return '<line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'" stroke="var(--line)" stroke-width="'+(w + 5)+'" stroke-linecap="round"/>' +
