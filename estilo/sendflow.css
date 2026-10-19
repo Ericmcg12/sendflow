@@ -1,0 +1,65 @@
+/* ==========================================================================
+   Estilo SendFlow compartido (sendflow.bike, /analisis, /coach, /taller)
+   Tomado de SendFlow Coach: oscuro, cian de marca, oro para lo activo,
+   fondo con grilla y halos, entradas escalonadas, onda al tocar, brillo en
+   tarjetas. Todo el movimiento respeta prefers-reduced-motion.
+   ========================================================================== */
+:root{
+  --bg:#070b0c; --panel:#11171a; --panel-2:#151b1c; --panel-3:#1b2426;
+  --borde:#232b2c; --borde-2:#2e393a;
+  --ink:#f2f5f4; --ink-dim:#8b9a98; --ink-mute:#5e6b6a;
+  --cian:#4fe3c2; --cian-2:#2bb89a; --cian-glow:rgba(79,227,194,.35);
+  --oro:#ffbd00; --oro-dim:rgba(255,189,0,.5);
+  --rojo:#e0483f; --azul:#4a9eff; --violeta:#a35bf0;
+  --on-cian:#04211c;
+  --mono:'Roboto Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --sans:'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --display:-apple-system, 'Segoe UI', system-ui, Roboto, Arial, sans-serif;
+  --r-sm:2px; --r-md:4px; --r-lg:8px;
+  --sombra:0 10px 40px rgba(0,0,0,.45);
+  --ease:cubic-bezier(.2,.8,.2,1);
+}
+
+/* ---------- Fondo animado ---------- */
+.sf-fondo{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.sf-fondo .grilla{position:absolute;inset:-50%;background-image:
+  linear-gradient(rgba(79,227,194,.045) 1px, transparent 1px),
+  linear-gradient(90deg, rgba(79,227,194,.045) 1px, transparent 1px);
+  background-size:48px 48px;transform:perspective(600px) rotateX(55deg) translateY(-10%);
+  animation:sf-grilla 24s linear infinite;mask-image:radial-gradient(ellipse at 50% 30%, #000 10%, transparent 65%);}
+@keyframes sf-grilla{to{background-position:0 48px, 48px 0;}}
+.sf-fondo .halo{position:absolute;width:60vmax;height:60vmax;border-radius:50%;filter:blur(90px);opacity:.18;}
+.sf-fondo .halo.h1{background:var(--cian);top:-25vmax;left:-15vmax;animation:sf-flotar 18s ease-in-out infinite alternate;}
+.sf-fondo .halo.h2{background:var(--azul);bottom:-30vmax;right:-20vmax;opacity:.12;animation:sf-flotar 22s ease-in-out infinite alternate-reverse;}
+@keyframes sf-flotar{to{transform:translate(6vmax,4vmax) scale(1.1);}}
+
+/* ---------- Onda al tocar + entradas ---------- */
+.sf-onda{position:absolute;border-radius:50%;transform:scale(0);background:rgba(255,255,255,.35);pointer-events:none;animation:sf-onda .6s var(--ease) forwards;}
+@keyframes sf-onda{to{transform:scale(4);opacity:0;}}
+.entra{opacity:0;transform:translateY(14px);}
+@keyframes sf-brillo{to{background-position:-200% 0;}}
+
+/* ---------- Botones ---------- */
+.sf-btn{position:relative;overflow:hidden;display:inline-flex;align-items:center;justify-content:center;gap:8px;height:42px;padding:0 18px;
+  border-radius:var(--r-sm);border:1px solid var(--borde-2);background:var(--panel-2);color:var(--ink);cursor:pointer;
+  font:600 11.5px/1 var(--mono);letter-spacing:.1em;text-transform:uppercase;text-decoration:none;white-space:nowrap;
+  transition:border-color .2s,color .2s,background .2s,transform .15s;}
+.sf-btn:hover{border-color:var(--oro-dim);color:var(--oro);}
+.sf-btn:active{transform:scale(.97);}
+.sf-btn.primario{background:linear-gradient(135deg,var(--cian),var(--cian-2));color:var(--on-cian);border-color:transparent;box-shadow:0 6px 24px var(--cian-glow);}
+.sf-btn.primario:hover{color:var(--on-cian);filter:brightness(1.08);box-shadow:0 8px 30px rgba(79,227,194,.5);}
+.sf-btn[disabled]{opacity:.5;pointer-events:none;}
+
+/* ---------- Tarjetas ---------- */
+.sf-tarjeta{position:relative;background:linear-gradient(180deg,rgba(21,27,28,.92),rgba(17,23,26,.92));border:1px solid var(--borde);
+  border-radius:var(--r-lg);padding:20px;transition:border-color .25s,transform .25s var(--ease),box-shadow .25s;}
+.sf-tarjeta.click{cursor:pointer;text-decoration:none;color:var(--ink);}
+.sf-tarjeta.click:hover{border-color:var(--borde-2);transform:translateY(-3px);box-shadow:var(--sombra);}
+.sf-tarjeta.click::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:0;transition:opacity .3s;
+  background:radial-gradient(400px circle at var(--mx,50%) var(--my,50%),rgba(79,227,194,.10),transparent 40%);}
+.sf-tarjeta.click:hover::after{opacity:1;}
+
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation:none !important;transition:none !important;}
+  .entra{opacity:1;transform:none;}
+}

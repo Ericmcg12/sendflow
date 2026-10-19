@@ -1,0 +1,552 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Animación del semáforo</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500;700&display=swap">
+<link rel="stylesheet" href="./css/semaforo-anim.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="gGlass" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" style="stop-color:var(--glass);stop-opacity:.05"/><stop offset=".22" style="stop-color:var(--glass);stop-opacity:.30"/>
+      <stop offset=".5" style="stop-color:var(--glass);stop-opacity:.10"/><stop offset=".8" style="stop-color:var(--glass);stop-opacity:.22"/>
+      <stop offset="1" style="stop-color:var(--glass);stop-opacity:.05"/>
+    </linearGradient>
+    <linearGradient id="gTeal" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" style="stop-color:var(--cian);stop-opacity:.10"/><stop offset=".25" style="stop-color:var(--cian);stop-opacity:.42"/>
+      <stop offset=".5" style="stop-color:var(--cian);stop-opacity:.16"/><stop offset=".78" style="stop-color:var(--cian);stop-opacity:.30"/>
+      <stop offset="1" style="stop-color:var(--cian);stop-opacity:.10"/>
+    </linearGradient>
+    <linearGradient id="gMetal" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" style="stop-color:var(--crown-a)"/><stop offset=".35" style="stop-color:var(--crown-b)"/><stop offset=".7" style="stop-color:var(--crown-a)"/><stop offset="1" style="stop-color:var(--crown-b)"/>
+    </linearGradient>
+    <linearGradient id="gSteel" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" style="stop-color:var(--steel-lo)"/><stop offset=".4" style="stop-color:var(--steel-hi)"/><stop offset="1" style="stop-color:var(--steel-lo)"/>
+    </linearGradient>
+    <linearGradient id="gSteelT" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" style="stop-color:var(--steel-lo);stop-opacity:.45"/><stop offset=".4" style="stop-color:var(--steel-hi);stop-opacity:.55"/><stop offset="1" style="stop-color:var(--steel-lo);stop-opacity:.45"/>
+    </linearGradient>
+    <linearGradient id="gGold" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#7a5a00"/><stop offset=".4" stop-color="#ffd24d"/><stop offset="1" stop-color="#7a5a00"/>
+    </linearGradient>
+    <pattern id="gasDots" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="var(--panel)"/><circle cx="2" cy="2" r="1" fill="var(--dim)"/><circle cx="6" cy="6" r="1" fill="var(--dim)"/></pattern>
+    <linearGradient id="gOilV" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" style="stop-color:var(--oil);stop-opacity:.04"/><stop offset="1" style="stop-color:var(--oil);stop-opacity:.12"/>
+    </linearGradient>
+  </defs>
+</svg>
+
+<div class="wrap">
+  <header>
+    <svg viewBox="0 0 200 120" role="img" aria-label="SendFlow"><path d="M10,100 L40,60 L60,85 L85,28 L110,80 L130,55 L160,95 L190,100" fill="none" stroke="#4fe3c2" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/><circle cx="85" cy="28" r="9" fill="#ffffff"/></svg>
+    <div>
+      <p class="brand">SENDFLOW BIKE</p>
+      <h1 id="h1">Semáforos con popup</h1>
+      <p class="sub" id="subtitle">Así se vería la sección de semáforos. Toca el ⓘ de un grupo, o el nombre HORQUILLA o SHOCK de una fila, y se abre la animación de lo que pasa por dentro. Los estados de las tarjetas son de ejemplo.</p>
+    </div>
+  </header>
+
+  <div class="prof" id="prof">
+    <span class="t">Perfil de ejemplo (piloto + bici)</span>
+    <span class="g">Horquilla <span class="seg" data-p="H" role="group" aria-label="Resorte de la horquilla"><button type="button" data-v="aire" aria-pressed="true">Aire</button><button type="button" data-v="resorte" aria-pressed="false">Espiral</button></span></span>
+    <span class="g">Shock <span class="seg" data-p="S" role="group" aria-label="Resorte del shock"><button type="button" data-v="aire" aria-pressed="false">Aire</button><button type="button" data-v="resorte" aria-pressed="true">Espiral</button></span></span>
+  </div>
+  <div class="grid" id="grid"></div>
+
+  <div class="selrow">
+    <div class="seg" id="compseg" role="group" aria-label="Suspensión">
+      <button type="button" data-c="fork" aria-pressed="true">Horquilla</button>
+      <button type="button" data-c="shock" aria-pressed="false">Shock</button>
+    </div>
+    <div class="seg" id="springseg" role="group" aria-label="Tipo de resorte">
+      <button type="button" data-s="aire" aria-pressed="true">Resorte de aire</button>
+      <button type="button" data-s="resorte" aria-pressed="false">Resorte espiral</button>
+    </div>
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="Función">
+    <button class="tab" role="tab" id="t-HSC" data-m="HSC" aria-selected="true">HSC</button>
+    <button class="tab" role="tab" id="t-LSC" data-m="LSC" aria-selected="false">LSC</button>
+    <button class="tab" role="tab" id="t-HSR" data-m="HSR" aria-selected="false">HSR</button>
+    <button class="tab" role="tab" id="t-LSR" data-m="LSR" aria-selected="false">LSR</button>
+    <button class="tab" role="tab" id="t-SAG" data-m="SAG" aria-selected="false">SAG</button>
+    <button class="tab" role="tab" id="t-TOPES" data-m="TOPES" aria-selected="false">TOPES</button>
+    <button class="tab" role="tab" id="t-AIRE" data-m="AIRE" aria-selected="false">RESORTE</button>
+    <button class="play" id="play" type="button">Pausar</button>
+  </div>
+
+  <svg viewBox="0 0 400 66" role="img" id="gaugeSvg" class="gauge" aria-label="Escala de velocidad del vástago con el valor de ejemplo de la zona elegida">
+    <line class="l" x1="20" y1="30" x2="380" y2="30"/>
+    <g class="labd" id="gTicks"></g>
+    <line id="gThr" class="dash" x1="20" y1="14" x2="20" y2="38" style="stroke:var(--oro)"/>
+    <text id="gThrT" class="lab" x="20" y="10" style="fill:var(--oro)"></text>
+    <circle id="gDot" class="p" cx="20" cy="30" r="5"/>
+    <text id="gVal" class="lab" x="20" y="60"></text>
+  </svg>
+</div>
+
+<div class="ov" id="ov" hidden role="dialog" aria-modal="true" aria-labelledby="pT">
+  <div class="mod" id="mod">
+    <div class="mh"><span class="ic" id="pIc"></span><h2 id="pT"></h2><button class="x" id="pX" type="button" aria-label="Cerrar">×</button></div>
+    <div class="mb">
+      <div class="ctl" id="pCtl"></div>
+  <div class="sheet" id="sheet">
+    <div class="modehead"><b id="mTitle">HSC</b><span id="mSub">Compresión rápida</span></div>
+
+    <div class="leftcol" id="leftcol">
+      <div class="seg" id="viewseg" role="group" aria-label="Vista">
+        <button type="button" data-v="ctx" aria-pressed="true">En la horquilla</button>
+        <button type="button" data-v="fork" aria-pressed="false">Explosionada</button>
+      </div>
+
+      <figure class="fig-shockair" hidden>
+        <svg viewBox="0 0 460 600" role="img" aria-label="Shock de aire con piggyback, visto de frente, con la carcasa de aire y la reserva en transparencia. Arriba está el ojal del vástago móvil, que entra en la carcasa de aire grande. Debajo del pistón queda la cámara positiva y arriba la cámara negativa. La reserva del piggyback va junto a la carcasa, a la altura de la cámara positiva, con la válvula de compresión marcada con la letra B. El pistón del amortiguador está marcado con la letra A.">
+          <ellipse cx="190" cy="592" rx="120" ry="6" fill="#000" opacity=".18"/>
+          <!-- parte fija: carcasa de aire, reserva y ojal inferior -->
+          <rect class="tealf" x="110" y="262" width="160" height="250" rx="6"/>
+          <path class="spec" d="M120 272V506"/>
+          <rect id="saTok" class="steelt" x="116" y="512" width="148" height="0"/>
+          <g id="saDots"></g>
+          <rect class="metalf" x="104" y="254" width="172" height="12" rx="3"/>
+          <rect class="metalf" x="104" y="512" width="172" height="12" rx="3"/>
+          <rect class="metalf" x="270" y="272" width="14" height="14" rx="2"/>
+          <rect class="tealf" x="292" y="332" width="48" height="170" rx="8"/>
+          <rect x="296" y="338" width="40" height="52" fill="url(#gasDots)"/>
+          <rect x="296" y="400" width="40" height="52" fill="url(#gOilV)"/>
+          <g id="saIfp"><rect class="steelf" x="296" y="391" width="40" height="9" rx="2"/></g>
+          <rect class="steelf" x="296" y="458" width="40" height="20" rx="1"/>
+          <rect x="302" y="458" width="5" height="20" fill="var(--port)"/><rect x="325" y="458" width="5" height="20" fill="var(--port)"/>
+          <rect class="tealf" x="270" y="486" width="22" height="14"/>
+          <circle cx="316" cy="468" r="27" fill="none" style="stroke:var(--oro);stroke-width:1.3;stroke-dasharray:4 3"/>
+          <rect class="metalf" x="172" y="524" width="36" height="20"/>
+          <circle class="metalf" cx="190" cy="566" r="24"/><circle cx="190" cy="566" r="10" fill="var(--port)" stroke="var(--line)"/><circle class="steelf" cx="190" cy="566" r="6.5"/>
+          <g id="saHitG" style="display:none"><circle cx="190" cy="476" r="36" fill="none" class="hit"/><text x="190" y="428" class="hitT" text-anchor="middle">TOPE</text></g>
+          <!-- parte móvil: ojal, vástago y pistones; baja al comprimir -->
+          <g id="saTop">
+            <rect class="metalf" x="172" y="58" width="36" height="22"/>
+            <circle class="metalf" cx="190" cy="40" r="24"/><circle cx="190" cy="40" r="10" fill="var(--port)" stroke="var(--line)"/><circle class="steelf" cx="190" cy="40" r="6.5"/>
+            <rect class="tealf" x="166" y="76" width="48" height="262"/>
+            <path class="spec" d="M172 84V330"/>
+            <rect class="goldf part-on" x="172" y="316" width="36" height="12" rx="1"/>
+            <rect class="steelf" x="116" y="338" width="148" height="12" rx="2"/>
+            <circle cx="190" cy="322" r="24" fill="none" style="stroke:var(--oro);stroke-width:1.3;stroke-dasharray:4 3"/>
+            <line class="thin" x1="166" y1="322" x2="102" y2="322" style="stroke:var(--oro)"/><text class="lab" x="98" y="319" text-anchor="end" style="fill:var(--oro)">A  pistón</text><text class="lab" x="98" y="333" text-anchor="end" style="fill:var(--oro)">(rebote)</text>
+            <line class="thin" x1="116" y1="346" x2="102" y2="346"/><text class="lab" x="98" y="357" text-anchor="end">pistón de aire</text>
+          </g>
+          <!-- flecha de movimiento -->
+          <g class="arrow"><path id="saArrowPath" d="M34 100V140M28 132L34 140L40 132"/></g>
+          <text class="labd" x="6" y="92" id="saArrowTxt">comprime</text>
+          <!-- etiquetas izquierda -->
+          <g>
+            <line class="thin" x1="166" y1="40" x2="128" y2="40"/><text class="lab" x="124" y="43" text-anchor="end">ojal superior</text>
+            <line class="thin" x1="166" y1="170" x2="128" y2="170"/><text class="lab" x="124" y="167" text-anchor="end">vástago</text><text class="lab" x="124" y="181" text-anchor="end">(se mueve)</text>
+            <line class="thin" x1="116" y1="296" x2="102" y2="296"/><text class="lab" x="98" y="293" text-anchor="end">cámara</text><text class="lab" x="98" y="307" text-anchor="end">negativa</text>
+            <line class="thin" x1="116" y1="430" x2="102" y2="430"/><text class="lab" x="98" y="427" text-anchor="end">cámara</text><text class="lab" x="98" y="441" text-anchor="end">positiva</text>
+            <line class="thin" x1="166" y1="566" x2="128" y2="566"/><text class="lab" x="124" y="569" text-anchor="end">ojal inferior</text>
+          </g>
+          <!-- etiquetas derecha -->
+          <g>
+            <line class="thin" x1="284" y1="279" x2="346" y2="279"/><text class="lab" x="350" y="282">válvula de aire</text>
+            <line class="thin" x1="270" y1="308" x2="346" y2="308"/><text class="lab" x="350" y="311">carcasa de aire</text>
+            <line class="thin" x1="340" y1="358" x2="346" y2="358"/><text class="lab" x="350" y="355">nitrógeno</text>
+            <line class="thin" x1="340" y1="396" x2="346" y2="396"/><text class="lab" x="350" y="393">pistón flotante</text>
+            <line class="thin" x1="343" y1="428" x2="346" y2="428"/><text class="lab" x="350" y="425">reserva</text><text class="lab" x="350" y="439">(piggyback)</text>
+            <line class="thin" x1="343" y1="468" x2="346" y2="468" style="stroke:var(--oro)"/><text class="lab" x="350" y="465" style="fill:var(--oro)">B  válvula de</text><text class="lab" x="350" y="479" style="fill:var(--oro)">compresión</text>
+            <line class="thin" x1="281" y1="500" x2="346" y2="512"/><text class="lab" x="350" y="515">pasaje de aceite</text>
+          </g>
+        </svg>
+        <figcaption>Shock de aire por dentro · carcasa y reserva en transparencia</figcaption>
+      </figure>
+
+      <figure class="fig-shock" hidden>
+        <svg viewBox="0 0 460 600" role="img" aria-label="Shock de espiral con reserva visto de frente, con cuerpo y reserva en transparencia. La reserva va junto al cuerpo y se une a él por arriba, del lado del ojal superior, con un pasaje de aceite. La válvula de compresión, marcada con la letra B, está dentro de la reserva. Dentro del cuerpo está el pistón, marcado con la letra A. El resorte va debajo del cuerpo, rodeando el vástago.">
+          <ellipse cx="190" cy="592" rx="120" ry="6" fill="#000" opacity=".18"/>
+          <!-- parte fija: ojal superior, cuerpo, reserva -->
+          <rect class="metalf" x="172" y="58" width="36" height="22"/>
+          <circle class="metalf" cx="190" cy="40" r="24"/><circle cx="190" cy="40" r="10" fill="var(--port)" stroke="var(--line)"/><circle class="steelf" cx="190" cy="40" r="6.5"/>
+          <rect class="tealf" x="160" y="76" width="60" height="214" rx="6"/>
+          <rect x="164" y="98" width="52" height="188" fill="url(#gOilV)"/>
+          <path class="spec" d="M168 84V284"/>
+          <rect class="tealf" x="252" y="96" width="44" height="176" rx="8"/>
+          <rect x="256" y="102" width="36" height="110" fill="url(#gOilV)"/>
+          <rect x="256" y="224" width="36" height="42" fill="url(#gasDots)"/>
+          <g id="shIfp"><rect class="steelf" x="256" y="212" width="36" height="9" rx="2"/></g>
+          <rect class="tealf" x="220" y="102" width="32" height="14"/>
+          <rect class="steelf" x="256" y="130" width="36" height="20" rx="1"/>
+          <rect x="262" y="130" width="5" height="20" fill="var(--port)"/><rect x="281" y="130" width="5" height="20" fill="var(--port)"/>
+          <rect class="metalf" x="156" y="290" width="68" height="14" rx="3"/>
+          <rect id="shCollar" class="metalf" x="142" y="304" width="96" height="12" rx="4"/>
+          <g id="spG" fill="none" style="stroke:var(--line)" stroke-linecap="round"></g>
+          <circle cx="274" cy="140" r="27" fill="none" style="stroke:var(--oro);stroke-width:1.3;stroke-dasharray:4 3"/>
+          <g id="shHitG" style="display:none"><circle cx="190" cy="318" r="34" fill="none" class="hit"/><text x="190" y="276" class="hitT" text-anchor="middle">TOPE</text></g>
+          <!-- parte móvil: pistón, vástago, asiento inferior y ojal -->
+          <g id="lowG">
+            <rect class="steelf" x="186" y="228" width="8" height="284"/>
+            <path class="l" d="M173 220H207M175 217H205"/>
+            <rect class="goldf part-on" id="shPiston" x="170" y="222" width="40" height="14" rx="1"/>
+            <path class="l" d="M173 239H207M175 242H205"/>
+            <circle cx="190" cy="229" r="26" fill="none" style="stroke:var(--oro);stroke-width:1.3;stroke-dasharray:4 3"/>
+            <rect id="shSeat" class="metalf" x="138" y="474" width="104" height="12" rx="4"/>
+            <rect class="metalf" x="172" y="512" width="36" height="20"/>
+            <circle class="metalf" cx="190" cy="558" r="24"/><circle cx="190" cy="558" r="10" fill="var(--port)" stroke="var(--line)"/><circle class="steelf" cx="190" cy="558" r="6.5"/>
+          </g>
+          <!-- flecha de movimiento -->
+          <g class="arrow"><path id="shArrowPath" d="M34 140V100M28 108L34 100L40 108"/></g>
+          <text class="labd" x="6" y="92" id="shArrowTxt">comprime</text>
+          <!-- etiquetas izquierda -->
+          <g>
+            <line class="thin" x1="166" y1="40" x2="128" y2="40"/><text class="lab" x="124" y="43" text-anchor="end">ojal superior</text>
+            <line class="thin" x1="160" y1="170" x2="128" y2="170"/><text class="lab" x="124" y="167" text-anchor="end">cuerpo</text><text class="lab" x="124" y="181" text-anchor="end">(aceite)</text>
+            <line class="thin" x1="164" y1="229" x2="128" y2="229" style="stroke:var(--oro)"/><text class="lab" x="124" y="226" text-anchor="end" style="fill:var(--oro)">A  pistón</text><text class="lab" x="124" y="240" text-anchor="end" style="fill:var(--oro)">(rebote)</text>
+            <g id="shLabNut"><line class="thin" x1="142" y1="310" x2="128" y2="310"/><text class="lab" x="124" y="300" text-anchor="end">tuerca de</text><text class="lab" x="124" y="314" text-anchor="end">precarga</text></g>
+            <g id="shLabCoil"><line class="thin" x1="148" y1="395" x2="128" y2="395"/><text class="lab" x="124" y="398" text-anchor="end">resorte</text></g>
+            <line class="thin" x1="186" y1="522" x2="128" y2="522"/><text class="lab" x="124" y="525" text-anchor="end">vástago</text>
+            <line class="thin" x1="166" y1="558" x2="128" y2="558"/><text class="lab" x="124" y="561" text-anchor="end">ojal inferior</text>
+          </g>
+          <!-- etiquetas derecha -->
+          <g>
+            <line class="thin" x1="301" y1="140" x2="316" y2="140" style="stroke:var(--oro)"/><text class="lab" x="320" y="137" style="fill:var(--oro)">B  válvula de</text><text class="lab" x="320" y="151" style="fill:var(--oro)">compresión</text>
+            <line class="thin" x1="252" y1="107" x2="316" y2="84"/><text class="lab" x="320" y="87">pasaje de aceite</text>
+            <line class="thin" x1="296" y1="182" x2="316" y2="182"/><text class="lab" x="320" y="179">reserva</text><text class="lab" x="320" y="193">(piggyback)</text>
+            <line class="thin" x1="296" y1="217" x2="316" y2="217"/><text class="lab" x="320" y="214">pistón</text><text class="lab" x="320" y="228">flotante</text>
+            <line class="thin" x1="296" y1="248" x2="316" y2="248"/><text class="lab" x="320" y="258">nitrógeno</text>
+          </g>
+        </svg>
+        <figcaption>El shock por dentro · cuerpo y reserva en transparencia</figcaption>
+      </figure>
+
+      <figure class="fig-ctx">
+        <svg viewBox="0 0 460 600" role="img" aria-label="Horquilla de frente con patas y tubos en transparencia. Dentro de la pata izquierda se ve el cartucho del amortiguador, el vástago que baja desde la corona y el pistón, marcado con la letra A. La otra pata lleva el resorte.">
+          <defs>
+            <clipPath id="clipLegL"><path d="M116 332H178V516Q178 556 147 556Q116 556 116 516Z"/></clipPath>
+          </defs>
+          <!-- sombra de apoyo -->
+          <ellipse cx="230" cy="582" rx="150" ry="8" fill="#000" opacity=".18"/>
+          <!-- patas inferiores: vidrio -->
+          <path class="glassf" d="M116 332H178V516Q178 556 147 556Q116 556 116 516Z"/>
+          <path class="glassf" d="M282 332H344V516Q344 556 313 556Q282 556 282 516Z"/>
+          <path class="glassf" d="M178 404V368Q230 338 282 368V404Q230 376 178 404Z"/>
+          <path class="glassf" d="M116 436H102Q98 436 98 440V474Q98 478 102 478H116Z"/>
+          <!-- aceite en la pata izquierda -->
+          <g clip-path="url(#clipLegL)">
+            <rect x="110" y="456" width="74" height="106" fill="url(#gOilV)"/>
+            <path d="M116 456Q131 450 147 456T178 456" fill="none" style="stroke:var(--oil);stroke-opacity:.55" stroke-width="1.2"/>
+          </g>
+          <path class="spec" d="M123 350V510M289 350V510"/>
+          <!-- buje y eje -->
+          <rect class="steelf" x="178" y="518" width="104" height="22" rx="4"/>
+          <circle class="steelf" cx="147" cy="529" r="12"/><circle class="steelf" cx="313" cy="529" r="12"/>
+          <circle cx="147" cy="529" r="4.5" fill="var(--port)" stroke="var(--line)"/><circle cx="313" cy="529" r="4.5" fill="var(--port)" stroke="var(--line)"/>
+          <!-- cartucho (fijo a la pata) -->
+          <rect class="steelt" x="134" y="360" width="26" height="168"/>
+          <path class="l" d="M134 360H160" style="stroke-width:2.6"/>
+          <path d="M138 410H156M138 440H156M138 470H156" class="thin" stroke-dasharray="3 3"/>
+          <rect class="steelf" x="130" y="506" width="34" height="22" rx="2"/>
+          <circle cx="139" cy="517" r="2.2" fill="var(--port)"/><circle cx="155" cy="517" r="2.2" fill="var(--port)"/>
+          <!-- retenes (fijos a la pata) -->
+          <rect class="metalf" x="114" y="326" width="66" height="12" rx="3"/>
+          <rect class="metalf" x="280" y="326" width="66" height="12" rx="3"/>
+          <!-- parte que baja al comprimir -->
+          <g id="upG">
+            <rect class="tealf" x="130" y="120" width="34" height="300"/>
+            <rect class="tealf" x="296" y="120" width="34" height="300"/>
+            <path class="spec" d="M136 126V414M302 126V414"/>
+            <path class="thin" d="M134 120V420M160 120V420M300 120V420M326 120V420"/>
+            <polyline id="fkCoil" fill="none" style="stroke:var(--steel-hi);stroke-opacity:.85" stroke-width="2" stroke-linejoin="round" points="304,150 322,160 304,170 322,180 304,190 322,200 304,210 322,220 304,230 322,240 304,250 322,260 304,270 322,280 304,290 322,300 304,310 322,320"/>
+            <rect class="metalf" x="214" y="16" width="32" height="60"/>
+            <path class="l" d="M214 34H246M214 54H246" style="stroke-opacity:.6"/>
+            <rect class="metalf" x="207" y="8" width="46" height="10" rx="3"/>
+            <rect class="metalf" x="98" y="74" width="264" height="50" rx="15"/>
+            <path class="spec" d="M112 84H348"/>
+            <circle cx="112" cy="100" r="5" class="steelf"/><circle cx="348" cy="100" r="5" class="steelf"/>
+            <g id="fkValve"><rect class="steelf" x="309" y="48" width="8" height="10" rx="1"/><rect class="metalf" x="305" y="58" width="16" height="16" rx="2"/></g>
+          </g>
+          <!-- resorte de aire de la otra pata: el pistón queda fijo a la pata y el tubo baja sobre él -->
+          <g id="fkAirG">
+            <rect class="steelf" x="310" y="312" width="6" height="210"/>
+            <rect class="steelf" x="299" y="300" width="28" height="12" rx="2"/>
+            <rect id="fkTok" class="steelt" x="302" y="126" width="22" height="0"/>
+            <g id="fkDots"></g>
+          </g>
+          <g id="fkHitG" style="display:none"><circle cx="147" cy="500" r="26" fill="none" class="hit"/><text x="147" y="462" class="hitT" text-anchor="middle">TOPE</text></g>
+          <!-- vástago y pistón (bajan con la corona) -->
+          <g id="upG2">
+            <rect class="steelf" x="144" y="124" width="6" height="250"/>
+            <path d="M138 369H156M138 372H156" class="l" style="stroke-opacity:.9"/>
+            <rect class="goldf part-on" id="ctxPiston" x="136" y="374" width="22" height="14" rx="1"/>
+            <path d="M138 391H156M139 394H155" class="l" style="stroke-opacity:.9"/>
+            <circle cx="147" cy="381" r="27" fill="none" style="stroke:var(--oro);stroke-width:1.3;stroke-dasharray:4 3"/>
+          </g>
+          <!-- flecha de movimiento -->
+          <g class="arrow"><path id="ctxArrowPath" d="M34 44V84M28 76L34 84L40 76"/></g>
+          <text class="labd" x="6" y="34" id="ctxArrowTxt">comprime</text>
+          <!-- etiquetas izquierda -->
+          <g>
+            <line class="thin" x1="147" y1="190" x2="106" y2="190"/><text class="lab" x="102" y="193" text-anchor="end">vástago</text>
+            <line class="thin" x1="130" y1="250" x2="106" y2="250"/><text class="lab" x="102" y="247" text-anchor="end">tubo</text><text class="lab" x="102" y="261" text-anchor="end">superior</text>
+            <line class="thin" x1="120" y1="381" x2="106" y2="381" style="stroke:var(--oro)"/><text class="lab" x="102" y="378" text-anchor="end" style="fill:var(--oro)">A  pistón</text><text class="lab" x="102" y="392" text-anchor="end" style="fill:var(--oro)">+ laminillas</text>
+            <line class="thin" x1="134" y1="420" x2="106" y2="420" style="display:none"/>
+            <line class="thin" x1="134" y1="494" x2="106" y2="494" style="display:none"/>
+          </g>
+          <g>
+            <line class="thin" x1="150" y1="540" x2="150" y2="540" style="display:none"/>
+          </g>
+          <!-- etiquetas derecha -->
+          <g>
+            <line class="thin" x1="362" y1="100" x2="376" y2="100"/><text class="lab" x="380" y="103">corona</text>
+            <g id="fkLabCoil"><line class="thin" x1="322" y1="220" x2="376" y2="220"/><text class="lab" x="380" y="217">resorte</text><text class="lab" x="380" y="231">(otra pata)</text></g>
+            <g id="fkLabAir">
+              <line class="thin" x1="321" y1="54" x2="376" y2="54"/><text class="lab" x="380" y="57">válvula</text>
+              <line class="thin" x1="326" y1="190" x2="376" y2="190"/><text class="lab" x="380" y="187">cámara</text><text class="lab" x="380" y="201">positiva</text>
+              <line class="thin" x1="328" y1="306" x2="376" y2="306"/><text class="lab" x="380" y="303">pistón</text><text class="lab" x="380" y="317">de aire</text>
+              <line class="thin" x1="326" y1="370" x2="376" y2="370"/><text class="lab" x="380" y="367">cámara</text><text class="lab" x="380" y="381">negativa</text>
+            </g>
+            <g id="fkLabTok"><line class="thin" x1="326" y1="136" x2="376" y2="136"/><text class="lab" x="380" y="139">token</text></g>
+            <line class="thin" x1="344" y1="440" x2="376" y2="440"/><text class="lab" x="380" y="437">pata</text><text class="lab" x="380" y="451">inferior</text>
+            <line class="thin" x1="326" y1="529" x2="376" y2="529"/><text class="lab" x="380" y="526">eje de</text><text class="lab" x="380" y="540">rueda</text>
+          </g>
+          <!-- etiquetas inferior izquierda: cartucho y válvula -->
+          <g>
+            <line class="thin" x1="134" y1="410" x2="64" y2="410"/><text class="lab" x="60" y="413" text-anchor="end">cartucho</text>
+            <line class="thin" x1="130" y1="517" x2="64" y2="517"/><text class="lab" x="60" y="514" text-anchor="end">válvula</text><text class="lab" x="60" y="528" text-anchor="end">de base</text>
+          </g>
+        </svg>
+        <figcaption>La horquilla por dentro · patas y tubos en transparencia</figcaption>
+      </figure>
+
+      <figure class="fig-fork">
+        <svg viewBox="0 0 250 560" role="img" aria-label="Vista explosionada de una horquilla en corte lateral: tapa con ajustes, tubo superior, vástago con pistón, cartucho, válvula de base y pata inferior, alineados sobre un eje.">
+          <line class="dash" x1="90" y1="4" x2="90" y2="556"/>
+          <rect class="metalf" x="80" y="4" width="20" height="9"/>
+          <rect class="metalf" x="62" y="14" width="56" height="18" rx="3"/>
+          <rect class="tealf" x="55" y="46" width="70" height="130"/>
+          <path class="spec" d="M64 52V170"/>
+          <g id="shaftG">
+            <rect class="steelf" x="84" y="190" width="12" height="72"/>
+            <rect class="goldf" id="fkPiston" x="66" y="262" width="48" height="18" rx="1"/>
+            <path class="l" id="fkShimT" d="M68 259.5H80M100 259.5H112M68 257.5H79M101 257.5H112"/>
+            <path class="l" id="fkShimB" d="M72 282.5H84M96 282.5H108M73 284.5H83M97 284.5H107"/>
+          </g>
+          <rect class="steelt" x="64" y="300" width="52" height="140"/>
+          <path class="thin" d="M74 330H106M74 352H106M74 374H106M74 396H106M74 418H106" stroke-dasharray="3 3"/>
+          <rect class="steelf" x="70" y="452" width="40" height="22" rx="2"/>
+          <circle class="l" cx="80" cy="463" r="3"/><circle class="l" cx="100" cy="463" r="3"/>
+          <path class="glassf" d="M48 492H132V540Q132 548 124 548H56Q48 548 48 540Z"/>
+          <circle class="steelf" cx="90" cy="528" r="9"/><circle cx="90" cy="528" r="3" fill="var(--port)"/>
+          <path class="dash" d="M90 32V46M90 176V190M90 284V300M90 440V452M90 474V492"/>
+          <g>
+            <line class="thin" x1="118" y1="23" x2="146" y2="23"/><text class="lab" x="150" y="26">tapa + ajustes</text>
+            <line class="thin" x1="125" y1="110" x2="146" y2="110"/><text class="lab" x="150" y="113">tubo superior</text>
+            <line class="thin" x1="114" y1="271" x2="146" y2="271"/><text class="lab" x="150" y="268">vástago</text><text class="lab" x="150" y="281">+ pistón</text>
+            <line class="thin" x1="116" y1="370" x2="146" y2="370"/><text class="lab" x="150" y="373">cartucho</text>
+            <line class="thin" x1="110" y1="463" x2="146" y2="463"/><text class="lab" x="150" y="460">válvula</text><text class="lab" x="150" y="473">de base</text>
+            <line class="thin" x1="132" y1="520" x2="146" y2="520"/><text class="lab" x="150" y="523">pata + eje</text>
+          </g>
+          <g id="shaftArrow" class="arrow"><path id="arrowPath" d="M30 210V250M24 242L30 250L36 242"/></g>
+          <text class="labd" x="12" y="204" id="arrowTxt">vástago</text>
+        </svg>
+        <figcaption>Vista explosionada</figcaption>
+      </figure>
+    </div>
+
+    <figure class="fig-detail">
+      <svg viewBox="0 0 400 420" role="img" id="detailSvg" aria-label="Corte del pistón del amortiguador con puertos, laminillas, orificio de purga y aguja. Las partículas muestran por dónde pasa el aceite en la zona elegida.">
+        <circle cx="22" cy="26" r="11" fill="var(--panel)" style="stroke:var(--oro);stroke-width:1.4"/>
+        <text x="22" y="30" text-anchor="middle" class="lab" style="fill:var(--oro)">A</text>
+        <!-- aceite en las cámaras -->
+        <rect x="60" y="40" width="200" height="360" fill="url(#gOilV)"/>
+        <!-- paredes del cartucho -->
+        <rect class="steelf" x="50" y="40" width="10" height="360"/><rect class="steelf" x="260" y="40" width="10" height="360"/>
+        <path class="dash" d="M40 8H280"/>
+        <text class="labd" x="66" y="62">cám. superior</text>
+        <text class="labd" x="66" y="392">cám. inferior</text>
+        <!-- vástago hueco -->
+        <rect class="steelf" x="146" y="0" width="28" height="192"/>
+        <rect x="154" y="120" width="12" height="72" fill="var(--port)"/>
+        <g id="boreWalls"><path class="l" id="bore" d="M154 120V192M166 120V192"/></g>
+        <path class="thin" d="M154 130H146M166 130H174"/>
+        <!-- aguja -->
+        <g id="needleG"><path class="l" id="needle" d="M160 6V138M158.5 138L160 150L161.5 138" style="stroke-width:1.6"/></g>
+        <!-- pistón -->
+        <rect class="steelf" x="62" y="192" width="196" height="36" rx="2"/>
+        <path class="spec" d="M66 198H254"/>
+        <g id="portsA">
+          <rect x="89" y="192" width="12" height="36" fill="var(--port)"/><path class="l" id="pA1" d="M89 192V228M101 192V228"/>
+          <rect x="219" y="192" width="12" height="36" fill="var(--port)"/><path class="l" id="pA2" d="M219 192V228M231 192V228"/>
+        </g>
+        <g id="portsB">
+          <rect x="119" y="192" width="12" height="36" fill="var(--port)"/><path class="l" id="pB1" d="M119 192V228M131 192V228"/>
+          <rect x="189" y="192" width="12" height="36" fill="var(--port)"/><path class="l" id="pB2" d="M189 192V228M201 192V228"/>
+        </g>
+        <rect x="154" y="192" width="12" height="36" fill="var(--port)"/><path class="l" id="holeP" d="M154 192V228M166 192V228"/>
+        <!-- laminillas de compresión (cara superior, sobre puertos A) -->
+        <g id="shT1" transform="rotate(0 106 187)"><path class="l" id="shT1p" d="M84 185.5H106M86 188H106M88 190.5H106" style="stroke-width:1.6"/></g>
+        <g id="shT2" transform="rotate(0 214 187)"><path class="l" id="shT2p" d="M214 185.5H236M214 188H234M214 190.5H232" style="stroke-width:1.6"/></g>
+        <!-- laminillas de rebote (cara inferior, sobre puertos B) -->
+        <g id="shB1" transform="rotate(0 136 233)"><path class="l" id="shB1p" d="M114 229.5H136M116 232H136M118 234.5H136" style="stroke-width:1.6"/></g>
+        <g id="shB2" transform="rotate(0 184 233)"><path class="l" id="shB2p" d="M184 229.5H206M184 232H204M184 234.5H202" style="stroke-width:1.6"/></g>
+        <!-- partículas -->
+        <g id="parts"></g>
+        <!-- etiquetas -->
+        <g>
+          <line class="thin" x1="160" y1="50" x2="290" y2="50"/><text class="lab" x="294" y="53">aguja</text>
+          <line class="thin" x1="174" y1="130" x2="290" y2="130"/><text class="lab" x="294" y="127">orificio</text><text class="lab" x="294" y="139">de purga</text>
+          <line class="thin" x1="236" y1="186" x2="290" y2="186"/><text class="lab" id="lamC1" x="294" y="183">laminillas</text><text class="lab" id="lamC2" x="294" y="195">compresión</text>
+          <line class="thin" x1="258" y1="210" x2="290" y2="210"/><text class="lab" x="294" y="213">pistón</text>
+          <line class="thin" x1="206" y1="233" x2="290" y2="233"/><text class="lab" x="294" y="236">laminillas</text><text class="lab" x="294" y="248">rebote</text>
+          <line class="thin" x1="231" y1="204" x2="250" y2="270" stroke-dasharray="2 3"/><text class="lab" x="282" y="282">puertos</text>
+        </g>
+      </svg>
+      <figcaption id="cap2">Detalle A · corte del pistón</figcaption>
+    </figure>
+
+    <figure class="fig-detailB" hidden>
+      <svg viewBox="0 0 460 420" role="img" id="detailBSvg" aria-label="Corte de la válvula de compresión en la base de la reserva del shock, con puertos, laminillas, orificio de purga, aguja, pistón flotante y nitrógeno. Las partículas muestran por dónde pasa el aceite desde el cuerpo hacia la reserva.">
+        <circle cx="22" cy="26" r="11" fill="var(--panel)" style="stroke:var(--oro);stroke-width:1.4"/>
+        <text x="22" y="30" text-anchor="middle" class="lab" style="fill:var(--oro)">B</text>
+        <!-- aceite y gas -->
+        <rect x="14" y="50" width="116" height="340" fill="url(#gOilV)"/>
+        <rect x="190" y="50" width="64" height="340" fill="url(#gOilV)"/>
+        <rect x="262" y="50" width="38" height="340" fill="url(#gasDots)"/>
+        <text class="labd" x="22" y="74">desde el cuerpo</text>
+        <text class="labd" x="196" y="74">reserva</text>
+        <!-- carcasa -->
+        <rect class="steelf" x="6" y="42" width="8" height="356"/><rect class="steelf" x="300" y="42" width="8" height="356"/>
+        <rect class="steelf" x="14" y="42" width="286" height="8"/><rect class="steelf" x="14" y="390" width="286" height="8"/>
+        <!-- bloque de válvula -->
+        <rect class="steelf" x="130" y="50" width="60" height="340"/>
+        <rect x="130" y="124" width="60" height="12" fill="var(--port)"/><path class="l" id="bPort1" d="M130 124H190M130 136H190"/>
+        <rect x="130" y="304" width="60" height="12" fill="var(--port)"/><path class="l" id="bPort2" d="M130 304H190M130 316H190"/>
+        <rect x="130" y="216" width="60" height="8" fill="var(--port)"/><path class="l" id="bBleed" d="M130 216H190M130 224H190"/>
+        <!-- aguja -->
+        <rect class="metalf" x="150" y="2" width="20" height="12" rx="2"/>
+        <g id="bNeedleG"><path class="l" id="bNeedle" d="M160 14V210M158.5 210L160 222L161.5 210" style="stroke-width:1.6"/></g>
+        <!-- laminillas de compresión sobre los puertos -->
+        <g id="bShU" transform="rotate(0 193 144)"><path class="l" id="bShUp" d="M193 116V144M195.5 118V144M198 120V144" style="stroke-width:1.6"/></g>
+        <g id="bShL" transform="rotate(0 193 296)"><path class="l" id="bShLp" d="M193 296V324M195.5 296V322M198 296V320" style="stroke-width:1.6"/></g>
+        <!-- pistón flotante -->
+        <g id="bIfp"><rect class="steelf" x="254" y="50" width="8" height="340"/></g>
+        <g id="partsB"></g>
+        <!-- etiquetas -->
+        <g>
+          <line class="thin" x1="172" y1="8" x2="312" y2="8"/><text class="lab" x="316" y="11">aguja</text>
+          <line class="thin" x1="190" y1="130" x2="312" y2="130" style="display:none"/>
+          <line class="thin" x1="200" y1="120" x2="312" y2="120"/><text class="lab" x="316" y="117">laminillas</text><text class="lab" x="316" y="131">compresión</text>
+          <line class="thin" x1="190" y1="220" x2="312" y2="220"/><text class="lab" x="316" y="217">orificio</text><text class="lab" x="316" y="231">de purga</text>
+          <line class="thin" x1="190" y1="312" x2="206" y2="340" stroke-dasharray="2 3"/><text class="lab" x="198" y="354">puertos</text>
+          <line class="thin" x1="262" y1="96" x2="312" y2="96" style="display:none"/>
+          <line class="thin" x1="262" y1="300" x2="312" y2="300"/><text class="lab" x="316" y="297">pistón</text><text class="lab" x="316" y="311">flotante</text>
+          <line class="thin" x1="300" y1="350" x2="312" y2="350"/><text class="lab" x="316" y="353">nitrógeno</text>
+        </g>
+      </svg>
+      <figcaption id="cap3">Detalle B · válvula de compresión en la reserva</figcaption>
+    </figure>
+
+    <div class="sagbox" id="sagBox" hidden></div>
+
+    <div class="topbox" id="topBox" hidden>
+      <figure class="figT1">
+        <svg viewBox="0 0 200 360" role="img" aria-label="Barra de recorrido usado con la marca del 97 %. La barra sube y se pone roja cuando pasa esa marca.">
+          <rect class="f" x="70" y="20" width="60" height="300"/>
+          <rect x="70" y="20" width="60" height="9" fill="var(--bad)" fill-opacity=".35"/>
+          <rect id="tgFill" x="72" y="320" width="56" height="0" fill="var(--cian)" fill-opacity=".55"/>
+          <line x1="62" y1="29" x2="138" y2="29" style="stroke:var(--bad);stroke-width:1.4;stroke-dasharray:4 3"/>
+          <text class="lab" x="142" y="26" style="fill:var(--bad)">97 %</text>
+          <line class="thin" x1="64" y1="320" x2="70" y2="320"/><text class="labd" x="60" y="323" text-anchor="end">0 %</text>
+          <line class="thin" x1="64" y1="170" x2="70" y2="170"/><text class="labd" x="60" y="173" text-anchor="end">50 %</text>
+          <line class="thin" x1="64" y1="20" x2="70" y2="20"/><text class="labd" x="60" y="17" text-anchor="end">100 %</text>
+          <circle id="tgDot" class="p" cx="100" cy="320" r="5" style="fill:var(--cian)"/>
+          <text id="tgVal" class="lab" x="100" y="348" text-anchor="middle" style="font-size:14px">0 %</text>
+        </svg>
+        <figcaption>Recorrido usado ahora</figcaption>
+      </figure>
+      <figure class="figT2">
+        <svg viewBox="0 0 520 300" role="img" aria-label="Gráfico de la posición de la suspensión en el tiempo en una bajada de ejemplo. Una banda roja marca el tramo sobre el 97 % del recorrido. Cada pico que entra en esa banda cuenta como un tope.">
+          <rect x="44" y="20" width="456" height="7.5" fill="var(--bad)" fill-opacity=".30"/>
+          <line x1="44" y1="27.5" x2="500" y2="27.5" style="stroke:var(--bad);stroke-width:1;stroke-dasharray:4 3"/>
+          <text class="lab" x="498" y="16" text-anchor="end" style="fill:var(--bad)">97 %</text>
+          <path class="thin" d="M44 270H500M44 145H500"/>
+          <text class="labd" x="38" y="273" text-anchor="end">0</text><text class="labd" x="38" y="148" text-anchor="end">50</text><text class="labd" x="38" y="23" text-anchor="end">100</text>
+          <text class="labd" x="44" y="12">recorrido usado (%)</text>
+          <path id="tcPath" fill="none" style="stroke:var(--cian)" stroke-width="2.2" stroke-linejoin="round"/>
+          <g id="tcMarks"></g>
+          <line id="tcHead" x1="44" y1="20" x2="44" y2="270" class="dash"/>
+          <circle id="tcDot" cx="44" cy="270" r="5" style="fill:var(--cian)"/>
+          <g class="labd" id="tcTicks"></g>
+        </svg>
+        <div class="ctl"><span class="grp">Topes que acepta el perfil <span class="seg" id="tolSeg"><button type="button" data-n="0" aria-pressed="false">0</button><button type="button" data-n="1" aria-pressed="true">1</button></span></span></div>
+        <div class="semrow"><span>Topes en la bajada <b id="tcN">0</b></span><span class="chip ok" id="tcChip">EN PUNTO</span><span id="tcMsg"></span></div>
+        <figcaption>Posición en el tiempo · bajada de ejemplo, datos inventados</figcaption>
+      </figure>
+    </div>
+
+    <div class="airbox" id="airBox" hidden>
+      <figure class="figA2">
+        <svg viewBox="0 0 520 320" role="img" aria-label="Curva de fuerza del resorte contra el recorrido usado. La curva de aire sube cada vez más rápido. La línea horizontal es la carga del piloto parado: donde la corta la curva está el SAG.">
+          <rect id="aBand" x="0" y="20" width="0" height="250" fill="var(--cian)" fill-opacity=".10"/>
+          <path class="thin" id="aGrid" d=""/>
+          <line id="a97" x1="0" y1="20" x2="0" y2="270" style="stroke:var(--bad);stroke-width:1;stroke-dasharray:4 3"/>
+          <text id="a97T" class="lab" x="0" y="14" text-anchor="middle" style="fill:var(--bad)">97 %</text>
+          <line x1="54" y1="228.3" x2="494" y2="228.3" style="stroke:var(--oro);stroke-width:1;stroke-dasharray:5 4"/>
+          <text class="lab" x="490" y="221" text-anchor="end" style="fill:var(--oro)">carga del piloto parado</text>
+          <path id="aCurveC" fill="none" style="stroke:var(--oro)" stroke-width="2"/>
+          <path id="aCurveA" fill="none" style="stroke:var(--cian)" stroke-width="2.6"/>
+          <line id="aSagL" x1="0" y1="228.3" x2="0" y2="270" style="stroke:var(--txt);stroke-width:1.2"/>
+          <circle id="aSagC" cx="0" cy="228.3" r="4.5" fill="var(--panel)" style="stroke:var(--txt);stroke-width:1.6"/>
+          <text id="aSagT" class="lab" x="0" y="262">SAG</text>
+          <circle id="aDot" cx="54" cy="270" r="5" style="fill:var(--cian);stroke:var(--panel);stroke-width:1.5"/>
+          <g class="labd" id="aTicks"></g>
+          <text class="labd" x="54" y="12">fuerza del resorte (× carga del piloto)</text>
+          <text class="labd" x="274" y="312" text-anchor="middle">recorrido usado</text>
+          <text class="lab" x="76" y="40" style="fill:var(--cian)">aire</text><text class="lab" x="76" y="54" style="fill:var(--oro)">espiral</text>
+        </svg>
+        <div class="ctl">
+          <span class="grp" id="pCtl">Presión <button type="button" id="pMinus" aria-label="Bajar 5 PSI">−5</button><b id="pVal">80 psi</b><button type="button" id="pPlus" aria-label="Subir 5 PSI">+5</button></span>
+          <span class="grp" id="tCtl">Tokens <button type="button" id="tMinus" aria-label="Quitar un token">−</button><b id="tVal">0</b><button type="button" id="tPlus" aria-label="Agregar un token">+</button></span>
+          <span class="grp" id="rCtl" hidden>Precarga <button type="button" id="rMinus" aria-label="Menos precarga">−</button><b id="rVal">2 vueltas</b><button type="button" id="rPlus" aria-label="Más precarga">+</button></span>
+        </div>
+        <div class="semrow"><span>SAG <b id="sagVal">25 %</b></span><span>objetivo <b id="sagObj">18 %</b></span><span class="chip warn" id="sagChip">FUERA</span><span id="sagMsg"></span></div>
+        <div class="semrow"><span>Soporte al 97 % del recorrido <b id="f97">×4</b> la carga</span></div>
+        <figcaption>Curvas ilustrativas, no medidas · carga y presiones de ejemplo</figcaption>
+      </figure>
+    </div>
+
+    <div class="info">
+      <div class="card"><h2>Qué pasa</h2><p id="iWhat"></p></div>
+      <div class="card"><h2>Cuándo trabaja</h2><p id="iWhen"></p></div>
+      <div class="card"><h2>Qué mira SendFlow</h2><p id="iApp"></p></div>
+    </div>
+    <div class="equilbox" id="equilBox" hidden>
+      <div class="seg" id="eqseg" role="group" aria-label="Escenario">
+        <button type="button" data-e="hoy" aria-pressed="true">Tu bajada</button>
+        <button type="button" data-e="ok" aria-pressed="false">Ya ajustado</button>
+      </div>
+      <svg viewBox="0 0 640 342" id="eqSvg" role="img" aria-label="Dos ruedas pasan un golpe y vuelven a su lugar: la delantera y la trasera">
+        <g id="eqU0"></g><g id="eqU1"></g>
+      </svg>
+      <p class="note" id="eqMsg" style="font-weight:600"></p>
+      <p class="note" id="eqNote">Se ve una rueda delantera y una trasera pasando el mismo golpe. Importa cuánto tarda cada una en volver a su lugar.</p>
+    </div>
+
+    <div class="legend" id="legend"><span><i style="background:var(--oro)"></i>aceite en compresión</span><span><i style="background:var(--azul)"></i>aceite en rebote</span><span><i style="background:var(--cian)"></i>tubos (transparentes)</span></div>
+    <p class="note" id="noteMain">Esquema genérico para explicar el principio. Cada fabricante ubica los circuitos en lugares distintos (pistón, válvula de base, cartucho aparte) y las velocidades del recuadro son ejemplos, no mediciones. Los límites de 10 % y 30 % del SAG son una referencia general; el objetivo de SendFlow sale del perfil del piloto.</p>
+    <p class="note" id="noteShock" hidden>Shock de espiral con reserva (piggyback), como en muchas bicis de descenso. Acá la compresión se regula en una válvula de la reserva y el rebote en el pistón. En un shock sin reserva, la compresión también va en el pistón, como en el detalle de la horquilla.</p>
+  </div>
+      <div class="plain">
+        <p id="plainTxt"></p>
+        <div class="barnote"><svg class="dial" viewBox="0 0 260 24" aria-hidden="true" id="barEx"></svg><p id="barTxt"></p></div>
+        <div class="fixbox" id="fixBox"></div>
+        <p class="fxnote" id="fxNote" hidden>Los clicks se cuentan desde la posición cerrada hacia la abierta. Cada click es un tope de la perilla.</p>
+        <p id="topCount" class="topc" hidden>Topes en esta pasada: <b id="topN">0</b>. <span id="topMsg"></span></p>
+        <details><summary>Qué mira SendFlow</summary><p id="techTxt"></p></details>
+      </div>
+    </div>
+  </div>
+</div>
+<script src="./js/semaforos-iconos.js"></script>
+<script src="./js/semaforo-anim.js"></script>
+</body>
+</html>

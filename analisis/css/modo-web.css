@@ -1,0 +1,227 @@
+/* Modo web (sendflow.bike/analisis): se oculta lo que necesita el Sender o la app instalada. */
+.modo-web #btnConectarWifi,
+.modo-web #btnImportarWifi,
+.modo-web #btnConfigCoach,
+.modo-web #btnConfigDispositivo,
+.modo-web #btnConfigMapaOffline,
+.modo-web #btnElegirArchivoMapaOffline,
+.modo-web #btnAbrirSagVivo,
+.modo-web #btnVerArchivosLoggerDesdeImportar { display: none !important; }
+.modo-web .hero-iconos { grid-template-columns: repeat(3, 1fr); max-width: 420px; }
+@media (max-width: 480px) { .modo-web .hero-iconos { grid-template-columns: repeat(2, 1fr); } }
+
+/* Acceso de vuelta al sitio base */
+#volverSendFlow {
+  position: fixed; top: 8px; left: 8px; z-index: 50;
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 10px; border-radius: 6px;
+  background: rgba(13, 17, 23, .85); color: #e8edf2;
+  border: 1px solid #2a3441; text-decoration: none;
+  font: 500 11px/1 "Roboto Mono", ui-monospace, monospace; letter-spacing: .5px;
+}
+#volverSendFlow:hover { border-color: #4fe3c2; color: #4fe3c2; }
+/* En el análisis (menú lateral) la app ya tiene su propia salida */
+body:has(#pantallaSuite.activa) #volverSendFlow { display: none; }
+
+/* ---- Estilo SendFlow (mismo lenguaje visual que Coach): fondo animado, onda al tocar, brillo ---- */
+.sf-fondo{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;}
+.sf-fondo .grilla{position:absolute;inset:-50%;background-image:linear-gradient(rgba(79,227,194,.045) 1px,transparent 1px),linear-gradient(90deg,rgba(79,227,194,.045) 1px,transparent 1px);background-size:48px 48px;transform:perspective(600px) rotateX(55deg) translateY(-10%);animation:sf-grilla 24s linear infinite;-webkit-mask-image:radial-gradient(ellipse at 50% 30%,#000 10%,transparent 65%);mask-image:radial-gradient(ellipse at 50% 30%,#000 10%,transparent 65%);}
+@keyframes sf-grilla{to{background-position:0 48px,48px 0;}}
+.sf-fondo .halo{position:absolute;width:60vmax;height:60vmax;border-radius:50%;filter:blur(90px);opacity:.18;}
+.sf-fondo .halo.h1{background:#4fe3c2;top:-25vmax;left:-15vmax;animation:sf-flotar 18s ease-in-out infinite alternate;}
+.sf-fondo .halo.h2{background:#4a9eff;bottom:-30vmax;right:-20vmax;opacity:.12;animation:sf-flotar 22s ease-in-out infinite alternate-reverse;}
+@keyframes sf-flotar{to{transform:translate(6vmax,4vmax) scale(1.1);}}
+.modo-web .btn{position:relative;overflow:hidden;}
+.sf-onda{position:absolute;border-radius:50%;transform:scale(0);background:rgba(255,255,255,.35);pointer-events:none;animation:sf-onda .6s cubic-bezier(.2,.8,.2,1) forwards;}
+@keyframes sf-onda{to{transform:scale(4);opacity:0;}}
+.modo-web #pantallaHome, .modo-web .hero{position:relative;z-index:1;}
+@media (prefers-reduced-motion: reduce){.sf-fondo *{animation:none !important;}.sf-onda{display:none;}}
+
+/* Entrada protegida (login + producto Sender): mientras se verifica, la app no se ve */
+html.sf-bloqueado body > *:not(#sfGate) { visibility: hidden !important; }
+#sfGate { position: fixed; inset: 0; z-index: 99999; display: flex; align-items: center; justify-content: center; padding: 20px; background: #0a0f10; }
+#sfGate .sf-gate-card { max-width: 420px; width: 100%; padding: 28px 26px; background: linear-gradient(180deg, rgba(21,27,28,.95), rgba(13,18,20,.95)); border: 1px solid #232b2c; border-radius: 6px; text-align: left; }
+#sfGate h2 { margin: 0 0 10px; font: 600 15px/1.3 "Roboto Mono", monospace; letter-spacing: .08em; text-transform: uppercase; color: #ffbd00; }
+#sfGate p { margin: 0 0 18px; color: #9aa7a5; font: 14px/1.5 system-ui, sans-serif; }
+#sfGate .sf-gate-btn { display: inline-block; padding: 12px 18px; background: #4fe3c2; color: #06110f; font: 700 12px "Roboto Mono", monospace; letter-spacing: .1em; text-transform: uppercase; text-decoration: none; border-radius: 2px; }
+
+/* Entrada directa desde sendflow.bike (#nube / #perfiles): la app no se ve detrás */
+html.sf-directo #pantallas, html.sf-directo #volverSendFlow { visibility: hidden; }
+/* El análisis de video va en Coach (la pista de demostración queda mientras se prueba) */
+.modo-web #btnAbrirVideo { display: none !important; }
+
+/* ---- Estilo Coach en el menú y los paneles (los colores de los gráficos no se tocan) ---- */
+.modo-web { --bg-abs:#070b0c; --panel:#11171a; --panel-2:#151b1c; --borde:#232b2c; --texto-dim:#8b9a98; }
+.modo-web .suite-sidebar { background: rgba(11,15,16,.82); -webkit-backdrop-filter: blur(14px); backdrop-filter: blur(14px); border-right: 1px solid #232b2c; }
+.modo-web .suite-sidebar .tab-btn { position: relative; border-radius: 4px; letter-spacing: .08em; transition: color .2s, background .2s; }
+.modo-web .suite-sidebar .tab-btn:hover { background: rgba(255,189,0,.05); }
+.modo-web .suite-sidebar .tab-btn.sel { background: rgba(255,189,0,.08); border-left-color: transparent; }
+.modo-web .suite-sidebar .tab-btn.sel::before { content: ""; position: absolute; left: -8px; top: 8px; bottom: 8px; width: 3px; border-radius: 2px; background: #ffbd00; box-shadow: 0 0 12px #ffbd00; }
+.modo-web .sidebar-abajo { border-top-color: #232b2c; }
+.modo-web .caja { background: linear-gradient(180deg, rgba(21,27,28,.92), rgba(17,23,26,.92)); border-radius: 8px; }
+.modo-web .stat-card { background: linear-gradient(180deg, rgba(21,27,28,.9), rgba(13,18,20,.9)); border-radius: 6px; transition: border-color .25s, transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s; }
+.modo-web .stat-card:hover { border-color: #2e393a; transform: translateY(-2px); box-shadow: 0 10px 40px rgba(0,0,0,.45); }
+.modo-web .btn { border-radius: 2px; letter-spacing: .1em; text-transform: uppercase; transition: border-color .2s, color .2s, background .2s, transform .15s, box-shadow .2s; }
+.modo-web .btn:active { transform: scale(.97); }
+.modo-web .btn.primario { background: linear-gradient(135deg,#4fe3c2,#2bb89a); color: #04211c; border-color: transparent; box-shadow: 0 6px 24px rgba(79,227,194,.35); }
+.modo-web .btn.primario:hover { background: linear-gradient(135deg,#4fe3c2,#2bb89a); color: #04211c; filter: brightness(1.08); }
+.modo-web .btn:not(.primario):hover { border-color: rgba(255,189,0,.5); color: #ffbd00; }
+.modo-web .tile-hero { background: linear-gradient(180deg, rgba(21,27,28,.92), rgba(17,23,26,.92)); border-color: #232b2c; border-radius: 8px; transition: border-color .25s, transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s; }
+.modo-web .tile-hero:hover { border-color: rgba(255,189,0,.5); transform: translateY(-3px); box-shadow: 0 10px 40px rgba(0,0,0,.45); }
+
+/* ---- Formularios y ventanas (perfil, avisos, etc.) con el mismo estilo Coach que los botones ---- */
+.modo-web .modal-overlay { -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.modo-web .modal-tarjeta { background: linear-gradient(180deg, rgba(21,27,28,.97), rgba(13,18,20,.97)); border: 1px solid #232b2c; border-radius: 8px; box-shadow: 0 24px 80px rgba(0,0,0,.6); animation: sfModalEntra .28s cubic-bezier(.2,.8,.2,1) both; }
+@keyframes sfModalEntra { from { opacity: 0; transform: translateY(10px) scale(.985); } to { opacity: 1; transform: none; } }
+.modo-web .modal-tarjeta h2 { letter-spacing: .12em; }
+.modo-web .campo label { letter-spacing: .08em; color: #8b9a98; }
+.modo-web .campo input, .modo-web .campo select, .modo-web .campo textarea { background: #0b1011; border: 1px solid #232b2c; border-radius: 2px; transition: border-color .2s, box-shadow .2s; }
+.modo-web .campo input:hover, .modo-web .campo select:hover, .modo-web .campo textarea:hover { border-color: #2e393a; }
+.modo-web .campo input:focus, .modo-web .campo select:focus, .modo-web .campo textarea:focus { outline: none; border-color: #4fe3c2; box-shadow: 0 0 0 3px rgba(79,227,194,.14); }
+@media (prefers-reduced-motion: reduce) { .modo-web .modal-tarjeta { animation: none; } }
+
+/* TUNE: las tarjetas de los semáforos se levantan con sombra al pasar el mouse, igual que el resto de las tarjetas */
+.modo-web .grupo-semaforo { background: linear-gradient(180deg, rgba(21,27,28,.9), rgba(13,18,20,.9)); border-radius: 6px; transition: border-color .25s, transform .25s cubic-bezier(.2,.8,.2,1), box-shadow .25s; }
+.modo-web .grupo-semaforo:hover { border-color: #2e393a; transform: translateY(-2px); box-shadow: 0 10px 40px rgba(0,0,0,.45); }
+@media (prefers-reduced-motion: reduce) { .modo-web .grupo-semaforo:hover { transform: none; } }
+
+/* Vista 3D del track y perfil de elevación (Líneas / Dinámica): sin el fondo negro plano, toman el de la tarjeta */
+.modo-web .cockpit-mapa-cont { background: linear-gradient(180deg, rgba(21,27,28,.92), rgba(17,23,26,.92)); border-radius: 6px; }
+.modo-web .cockpit-canvas-mapa { background: radial-gradient(ellipse at 50% 110%, rgba(79,227,194,.07), rgba(0,0,0,0) 70%), rgba(7,11,12,.35); border-color: #232b2c; border-radius: 4px; }
+
+/* El recuadro que contiene las tarjetas 3D/perfil (y el scrubber) no tiene fondo negro propio: se ve el de la página */
+.modo-web .suite-fija-arriba { background: transparent; }
+/* El perfil de elevación no necesita zoom */
+.modo-web #contMapaPlanimetria .controles-zoom-mapa { display: none !important; }
+
+/* Inicio: con menos tarjetas visibles (sin conexión al logger ni configuración) quedan centradas bajo el logo */
+.modo-web .hero-iconos { display: flex; flex-wrap: wrap; justify-content: center; }
+.modo-web .hero-iconos .tile-hero { flex: 0 0 124px; }
+
+/* Perfiles: tocar la tarjeta lo elige para el análisis */
+.modo-web #listaPerfiles .tarjeta-guardado { cursor: pointer; transition: border-color .2s, box-shadow .2s, transform .2s; }
+.modo-web #listaPerfiles .tarjeta-guardado:hover { border-color: rgba(255,189,0,.5); transform: translateY(-1px); }
+.modo-web #listaPerfiles .tarjeta-guardado.sf-activo { border-color: #ffbd00; box-shadow: 0 0 0 1px #ffbd00 inset, 0 0 18px rgba(255,189,0,.18); }
+.modo-web #listaPerfiles .tarjeta-guardado.sf-activo .nombre::after { content: "  · EN USO"; color: #ffbd00; font-size: 10px; letter-spacing: .1em; }
+
+/* Web de análisis: Configuración ya no existe (solo perfiles, que viven en PERFIL) */
+.modo-web #btnAbrirConfiguracion,
+.modo-web #btnExportarPerfiles,
+.modo-web label[aria-label="Importar perfiles"] { display: none !important; }
+
+
+/* Rendimiento en PC: el fondo se queda estático y sin desenfoques costosos (el scrubber compite con la GPU) */
+.modo-web .sf-fondo .grilla{animation:none !important;}
+.modo-web .sf-fondo .halo{filter:none !important;animation:none !important;background:radial-gradient(circle at center,rgba(79,227,194,1) 0%,rgba(79,227,194,.55) 30%,rgba(79,227,194,0) 70%) !important;opacity:.32 !important;}
+.modo-web .sf-fondo .halo.h2{background:radial-gradient(circle at center,rgba(74,158,255,1) 0%,rgba(74,158,255,.55) 30%,rgba(74,158,255,0) 70%) !important;opacity:.24 !important;}
+.modo-web .suite-sidebar{-webkit-backdrop-filter:none !important;backdrop-filter:none !important;background:rgba(11,15,16,.82) !important;}
+
+/* v26: aviso de datos guardados antes de separar por cuenta */
+#sfBaseVieja { position: fixed; inset: 0; z-index: 99998; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(5,8,9,.82); }
+#sfBaseVieja .sf-bv-card { max-width: 460px; width: 100%; padding: 26px 24px; background: linear-gradient(180deg, rgba(21,27,28,.98), rgba(13,18,20,.98)); border: 1px solid #232b2c; border-radius: 6px; }
+#sfBaseVieja h2 { margin: 0 0 10px; font: 600 15px/1.3 "Roboto Mono", monospace; letter-spacing: .08em; text-transform: uppercase; color: #ffbd00; }
+#sfBaseVieja p { margin: 0 0 14px; color: #9aa7a5; font: 14px/1.5 system-ui, sans-serif; }
+#sfBaseVieja .sf-bv-preg { color: #e8efed; font-weight: 600; }
+#sfBaseVieja .sf-bv-botones { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 14px; }
+#sfBaseVieja .sf-bv-btn { padding: 11px 14px; border: 1px solid #2d3738; background: transparent; color: #cfd8d6; font: 700 11px "Roboto Mono", monospace; letter-spacing: .08em; text-transform: uppercase; border-radius: 2px; cursor: pointer; }
+#sfBaseVieja .sf-bv-si { background: #4fe3c2; border-color: #4fe3c2; color: #06110f; }
+#sfBaseVieja .sf-bv-btn:disabled { opacity: .6; cursor: wait; }
+#sfBaseVieja .sf-bv-nota { margin: 0; font-size: 12px; color: #6f7c7a; }
+
+/* v27: Enviar al profe (solo si hay entrenador vinculado). El viejo "SendFlow Coach" de Configuración no va en la web. */
+#btnConfigCoach { display: none !important; }
+#btnEnviarProfe, [data-accion="enviar-coach"] { display: none !important; }
+html.sf-con-profe #btnEnviarProfe { display: inline-flex !important; color: var(--oro); border-color: var(--oro-dim); }
+html.sf-con-profe [data-accion="enviar-coach"] { display: inline-flex !important; }
+.sf-profe { z-index: 400; }
+.sf-profe .sf-profe-bajada { display: flex; flex-wrap: wrap; gap: 4px 12px; align-items: baseline; margin: 10px 0 4px; padding: 10px 12px; border: 1px solid var(--borde); border-radius: 3px; background: rgba(255,255,255,.02); }
+.sf-profe .sf-profe-bajada b { color: var(--texto); font-size: 13px; word-break: break-word; }
+.sf-profe .sf-profe-bajada span { color: var(--texto-dim); font-size: 11px; }
+.sf-profe .sf-profe-ayuda, .sf-profe .sf-profe-para, .sf-profe .sf-profe-ok { color: var(--texto-dim); font: 13px/1.5 system-ui, sans-serif; margin: 8px 0 0; }
+.sf-profe .sf-profe-para { color: var(--texto); }
+.sf-profe .sf-profe-ok { color: var(--texto); font-size: 14px; margin: 12px 0 16px; }
+.sf-profe .sf-profe-input { width: 100%; box-sizing: border-box; background: var(--bg-abs, #050808); color: var(--texto); border: 1px solid var(--borde); border-radius: 3px; padding: 10px; font: 13px system-ui, sans-serif; }
+.sf-profe textarea.sf-profe-input { resize: vertical; }
+.sf-profe .sf-profe-tipos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.sf-profe .sf-profe-tipo { text-align: left; padding: 10px 12px; background: transparent; border: 1px solid var(--borde); border-radius: 3px; color: var(--texto); cursor: pointer; display: flex; flex-direction: column; gap: 3px; font-family: inherit; }
+.sf-profe .sf-profe-tipo b { font-size: 12px; letter-spacing: .5px; }
+.sf-profe .sf-profe-tipo span { font: 11.5px/1.35 system-ui, sans-serif; color: var(--texto-dim); }
+.sf-profe .sf-profe-tipo:hover { border-color: var(--oro-dim); }
+.sf-profe .sf-profe-tipo.sel { border-color: var(--oro); background: rgba(255,189,0,.08); }
+.sf-profe .sf-profe-tipo.sel b { color: var(--oro); }
+.sf-profe .sf-profe-prog { margin-top: 14px; }
+.sf-profe .sf-profe-prog.oculto { display: none; }
+.sf-profe .sf-profe-barra { height: 6px; background: rgba(255,255,255,.06); border-radius: 3px; overflow: hidden; }
+.sf-profe .sf-profe-barra i { display: block; height: 100%; width: 0; background: var(--cian); transition: width .2s; }
+.sf-profe .sf-profe-prog small { display: block; margin-top: 6px; color: var(--texto-dim); font-size: 11px; }
+.sf-profe .sf-profe-botones { margin-top: 16px; justify-content: flex-end; }
+@media (max-width: 520px) { .sf-profe .sf-profe-tipos { grid-template-columns: 1fr; } }
+
+
+/* ---- perfiles desde la cuenta (perfiles_v1, 15/10/2026): en /analisis los perfiles solo se eligen ---- */
+.modo-web #btnNuevoPerfil, .modo-web #btnExportarPerfiles, .modo-web label:has(#inputImportarPerfiles),
+.modo-web [data-accion-perfil="editar"], .modo-web [data-accion-perfil="eliminar"],
+.modo-web #pantallaPerfiles .fila-botones > button.primario { display: none !important; }
+.modo-web #sfMisBicis { text-decoration: none; }
+/* v34: /analisis es solo para ver y analizar bajadas: sin la intro del logo (queda en sendflow.bike) */
+.modo-web #pantallaBienvenida .hero-logo, .modo-web #pantallaBienvenida .hero-sub { display: none !important; }
+/* v35: dentro de sendflow.bike (pestaña Análisis) el menú del sitio reemplaza al botón «← SENDFLOW» */
+.sf-embebido #volverSendFlow { display: none !important; }
+
+/* ---- v43: inicio de /analisis con título y pasos, como el resto de sendflow.bike ---- */
+.sf-an-cab { display: none; }
+.modo-web .sf-an-cab { display: block; width: 100%; max-width: 760px; text-align: left; margin: 0 0 22px; }
+.sf-an-titulo { font-family: -apple-system, 'Segoe UI', system-ui, Roboto, Arial, sans-serif; font-size: 30px; font-weight: 700; letter-spacing: .2px; line-height: 1.15; margin: 0; color: #f2f5f4; }
+.sf-an-sub { margin: 6px 0 0; color: #8b9a98; font: 12.5px/1.5 'IBM Plex Sans', system-ui, sans-serif; }
+.sf-an-pasos { list-style: none; counter-reset: paso; margin: 20px 0 0; padding: 0; display: grid; gap: 10px; }
+.sf-an-pasos li { counter-increment: paso; position: relative; padding: 13px 16px 13px 54px; border: 1px solid #232b2c; border-radius: 8px;
+  background: linear-gradient(180deg, rgba(21,27,28,.92), rgba(17,23,26,.92)); font: 14px/1.55 'IBM Plex Sans', system-ui, sans-serif; color: #8b9a98; }
+.sf-an-pasos li b { color: #f2f5f4; font-weight: 600; }
+.sf-an-pasos li::before { content: counter(paso); position: absolute; left: 16px; top: 12px; width: 26px; height: 26px; border-radius: 50%;
+  display: grid; place-items: center; border: 1px solid #ffbd00; color: #ffbd00; font: 600 12px/1 'Roboto Mono', ui-monospace, monospace; }
+.modo-web #pantallaBienvenida .hero { align-items: flex-start; justify-content: flex-start; text-align: left; padding: 10px 16px 40px; min-height: 0; }
+.modo-web #pantallaBienvenida .hero-iconos { justify-content: flex-start; }
+.modo-web #pantallaBienvenida .perfil-activo-home { margin: 0 0 14px; }
+@media (max-width: 900px) { .modo-web #pantallaBienvenida .hero { padding: 0 0 30px; } .sf-an-titulo { font-size: 26px; } }
+.sf-solo-web { display: none !important; }
+.modo-web .sf-solo-web { display: flex !important; }
+
+
+/* ---- Semáforos con popup (semaforos-popup.js): ⓘ por grupo, "qué hacer" bajo cada barra y el popup con la animación ---- */
+.sf-info { margin-left: auto; width: 34px; height: 34px; border-radius: 50%; border: 1px solid #2e393a; background: transparent; color: #8b9a98;
+  font: 600 14px/1 'Roboto Mono', ui-monospace, monospace; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.sf-info:hover { border-color: #ffbd00; color: #ffbd00; }
+.sf-info:focus-visible, .sf-nom:focus-visible, .sf-pop-x:focus-visible { outline: 2px solid #ffbd00; outline-offset: 2px; }
+.sf-nom { cursor: pointer; }
+.sf-nom:hover { text-decoration: underline; }
+.sf-devol { margin-top: 6px; --bad: #ff6b5e; --oro: #ffbd00; --cian: #4fe3c2; --line: #9fb0b3; --mute: #5e6b6a; --dim: #8b9a98; --panel: #11171a; --port: #0a1012; }
+.sf-devol .sf-ind { display: block; margin: 0 auto; max-width: 100%; height: auto; }
+.sf-devol .tk { fill: none; stroke: var(--mute); stroke-width: 1; }
+.sf-devol text { font-family: 'Roboto Mono', ui-monospace, monospace; }
+.sf-pop { position: fixed; inset: 0; z-index: 400; background: rgba(3,6,7,.72); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.sf-pop[hidden] { display: none; }
+.sf-pop-c { width: min(1000px, 100%); height: min(92vh, 940px); background: #070b0c; border: 1px solid #2e393a; border-radius: 12px; box-shadow: 0 24px 80px rgba(0,0,0,.6); display: flex; flex-direction: column; overflow: hidden; }
+.sf-pop-h { display: flex; align-items: center; gap: 10px; padding: 12px 16px; border-bottom: 1px solid #232b2c; background: #11171a; }
+.sf-pop-h h2 { margin: 0; font: 600 13px/1.3 system-ui, sans-serif; letter-spacing: .06em; color: #f2f5f4; }
+.sf-pop-x { margin-left: auto; width: 36px; height: 36px; border-radius: 8px; border: 1px solid #2e393a; background: transparent; color: #f2f5f4; font-size: 18px; line-height: 1; cursor: pointer; }
+.sf-pop-f { flex: 1; width: 100%; border: 0; background: #070b0c; }
+.sf-pop-abierto { overflow: hidden; }
+@media (max-width: 700px) { .sf-pop { padding: 0; align-items: flex-end; } .sf-pop-c { height: 94vh; border-radius: 12px 12px 0 0; } }
+/* Tarjetas de una misma fila del mismo alto (la más alta manda); las filas internas reparten el espacio */
+.modo-web #contSemaforos, .modo-web .grid-semaforos { align-items: stretch; }
+.modo-web #contSemaforos .grupo-semaforo { display: flex; flex-direction: column; }
+.modo-web #contSemaforos .grupo-semaforo > .fila-semaforo { flex: 1 1 auto; }
+/* Balance de rebote: el "qué hacer" va junto al texto en pantalla grande y abajo del semáforo en pantalla chica */
+.sf-info-eq { margin-left: 12px; }
+.grupo-semaforo-ancho .cont-barra-sem { max-width: 620px; display: grid; grid-template-columns: 260px minmax(0, 1fr); column-gap: 18px; align-items: center; }
+.grupo-semaforo-ancho .cont-barra-sem .msg-semaforo { grid-column: 1; grid-row: 1; margin-bottom: 5px; }
+.grupo-semaforo-ancho .cont-barra-sem canvas.barra-sem { grid-column: 1; grid-row: 2; }
+.grupo-semaforo-ancho .cont-barra-sem .sev-semaforo { grid-column: 1; grid-row: 3; }
+.grupo-semaforo-ancho .cont-barra-sem .sf-devol { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; align-self: center; justify-self: start; }
+@media (max-width: 760px) {
+  .titulo-grupo-semaforo .dato-balance { order: 1; }
+  .sf-info-eq { margin-left: auto; }
+  .grupo-semaforo-ancho .cont-barra-sem { display: block; max-width: 260px; }
+  .grupo-semaforo-ancho .cont-barra-sem .sf-devol { margin-top: 6px; }
+}
+/* fin semáforos con popup */

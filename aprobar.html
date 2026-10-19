@@ -1,0 +1,42 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Aprobar cuenta · SendFlow</title>
+  <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#0d1117">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Roboto+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="estilo/sendflow.css">
+  <link rel="stylesheet" href="css/sitio.css">
+</head>
+<body>
+
+<header class="cabecera">
+  <a class="marca" href="./" aria-label="SendFlow Bike, inicio">
+    <svg class="isotipo" viewBox="0 0 200 120" width="43" height="26" aria-hidden="true">
+      <path d="M10,100 L40,60 L60,85 L85,28 L110,80 L130,55 L160,95 L190,100" fill="none" stroke="#4fe3c2" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/>
+      <circle cx="85" cy="28" r="9" fill="#ffffff"/>
+    </svg>
+    <span class="marca-texto">Send<span>Flow</span><small class="marca-bike">BIKE</small></span>
+  </a>
+  </header>
+
+<main>
+  <section class="vista centrada">
+    <div class="tarjeta auth entra">
+      <h2 id="ap-titulo">Aprobar cuenta</h2>
+      <p id="ap-texto" class="ayuda">Confirmá la acción para esta cuenta nueva.</p>
+      <button id="ap-confirmar" class="btn primario" type="button">Confirmar</button>
+      <p id="ap-msg" class="mensaje" role="status" aria-live="polite" hidden></p>
+    </div>
+  </section>
+</main>
+<script src="estilo/sendflow.js"></script>
+<script src="js/config.js"></script>
+<script src="js/aprobar.js"></script>
+</body>
+</html>
