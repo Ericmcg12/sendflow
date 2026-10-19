@@ -18,14 +18,11 @@ Orden sugerido: de lo que más importa a lo opcional. Después de cada cambio, v
 - Verificá: `curl -sI https://sendflow.bike/ | grep -i strict`.
 - Además, en la misma pantalla: **Always Use HTTPS** encendido, **Minimum TLS Version = 1.2**, **Automatic HTTPS Rewrites** encendido.
 
-## 3) Script en línea bloqueado por el CSP (error en la consola)
-- Qué es: Cloudflare inyecta un fragmento con `window.__CF$cv$params` (detección de bots por JavaScript) y el CSP de la portada lo bloquea. No es un riesgo; solo ensucia la consola.
-- Para eliminarlo, probá en este orden y mirá cuál lo apaga:
-  1. **Security → Settings** (o **Security → Bots**) → buscá **JavaScript Detections** → Off.
-  2. **Speed → Optimization → Content Optimization** → **Rocket Loader** → Off.
-  3. **Scrape Shield → Email Address Obfuscation** → Off.
-- Verificá: abrir la portada con la consola y confirmar que no aparece "Refused to execute inline script".
-- No agregues `'unsafe-inline'` a `script-src` para resolverlo: baja la protección del CSP.
+## 3) Script en línea bloqueado por el CSP (error en la consola) — no tiene arreglo útil
+- Qué es: Cloudflare inyecta un fragmento con `window.__CF$cv$params` (detección de bots por JavaScript) en cada respuesta. Se verificó que **cambia en cada solicitud** (lleva un identificador y una marca de tiempo), así que no se puede permitir en el CSP con un hash.
+- El CSP lo bloquea y está haciendo bien su trabajo: el error es solo ruido en la consola, no afecta al sitio.
+- Opciones: (a) dejarlo así (recomendado); (b) apagar "Bot Fight Mode" en Security → Bots, que en los planes gratuitos es lo que activa esa detección; pierde protección contra bots, y hoy el registro ya está protegido con Turnstile. En los planes gratuitos no existe un interruptor aparte de "JavaScript Detections" ni "Rocket Loader".
+- No agregues `'unsafe-inline'` a `script-src`: bajaría la protección de todo el sitio.
 
 ## 4) `/LEEME.md` público — ya está en el repo
 - El archivo se movió a `SendFlow_Bike_Web_herramientas/LEEME_sitio.md`. Al subir el sitio, verificá: `curl -sI https://sendflow.bike/LEEME.md | head -1` debe dar 404 (o 307 hacia `/`).
@@ -51,5 +48,5 @@ Orden sugerido: de lo que más importa a lo opcional. Después de cada cambio, v
 
 ## Lo que NO se arregla en Cloudflare
 - supabase-js 2.45.4: actualizar el bundle (`vendor/supabase.bundle.js`).
-- Mensajes distintos de "no confirmaste" y "contraseña incorrecta" (permite saber si un email está registrado): se cambia en la lógica de login del sitio (`js/app.js`) o en Supabase.
+- (Corrección) Los mensajes "no confirmaste" y "contraseña incorrecta" no permiten saber si un email está registrado: Supabase solo muestra el primero cuando la contraseña es correcta. No hay nada que arreglar ahí.
 - Restringir por dominio la clave de MapTiler: panel de MapTiler (Account → API keys → Allowed HTTP origins).
