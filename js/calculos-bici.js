@@ -14,13 +14,16 @@
 
   var cur = null;          // adaptador del formulario desde el que se abrió la ventana
   var panel, opener = null, vista = null;
-  function dialogo(id, titulo, cuerpo) {
+  var FLECHA = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>';
+  // Ventana al estilo del sitio: cabecera / cuerpo / pie con los botones a la derecha; se sale con «Volver» (flecha), nunca con una X.
+  function dialogo(id, titulo, cuerpo, pieExtra) {
     var p = el("div", "sfc-fondo"); p.hidden = true;
     p.innerHTML = '<div class="sfc-caja" role="dialog" aria-modal="true" aria-labelledby="' + id + 'T">' +
-      '<div class="sfc-cab"><h3 id="' + id + 'T">' + titulo + '</h3><button type="button" class="sfc-x" aria-label="Cerrar">×</button></div>' + cuerpo + "</div>";
+      '<div class="sfc-cab"><h3 id="' + id + 'T">' + titulo + "</h3></div>" + cuerpo +
+      '<div class="sfc-pie"><button type="button" class="sfc-b sfc-volver">' + FLECHA + " Volver</button>" + (pieExtra || "") + "</div></div>";
     document.body.appendChild(p);
     p.addEventListener("click", function (e) { if (e.target === p) cerrar(); });
-    p.querySelector(".sfc-x").addEventListener("click", cerrar);
+    p.querySelector(".sfc-volver").addEventListener("click", cerrar);
     return p;
   }
   function cerrar() { if (panel) panel.hidden = true; panel = null; if (opener && opener.focus) opener.focus(); }
@@ -46,12 +49,12 @@
         '<label class="sfc-l"><span id="sfcRecL"></span><input id="sfcRec" type="text" inputmode="decimal" autocomplete="off"></label>' +
         '<label class="sfc-l"><span>Cuánto se corrió el o-ring (mm)</span><input id="sfcMov" type="text" inputmode="decimal" autocomplete="off"></label>' +
         '<p class="sfc-out" id="sfcOut" aria-live="polite"></p>' +
-        '<div class="sfc-bot"><button type="button" class="btn chico" id="sfcUsar" disabled>Usar este valor</button></div>' +
         '<details><summary>Cómo medir el SAG</summary><ol>' +
         '<li>Ponete el equipo completo que usás para andar: casco, zapatos, mochila y agua.</li>' +
         '<li>Empujá el o-ring hasta pegarlo al guardapolvo (en el shock, hasta el sello).</li>' +
         '<li>Subite a la bici en posición de ataque, sin rebotar, apoyado en una pared o con ayuda.</li>' +
-        '<li>Bajate con cuidado, sin mover el o-ring, y medí cuánto se corrió. Repetilo 2 o 3 veces.</li></ol></details>');
+        '<li>Bajate con cuidado, sin mover el o-ring, y medí cuánto se corrió. Repetilo 2 o 3 veces.</li></ol></details>',
+        '<button type="button" class="sfc-b prim" id="sfcUsar" disabled>Usar este valor</button>');
       pSag.addEventListener("input", sagCalc);
       $("sfcUsar").addEventListener("click", function () { cur.set(sagS === "S" ? "sagS" : "sagH", $("sfcUsar").getAttribute("data-v")); cerrar(); });
     }
@@ -66,10 +69,10 @@
   // Fórmula propia: carga por rueda y ancho de cubierta (exponente 1,5: más aire, menos presión) con factores de ajuste.
   var REPARTO = { D: 0.45, T: 0.55 }, C0 = 1.83, EXP_ANCHO = 1.5, MIN_PSI = 12, MAX_PSI = 45;
   var F_ESTILO = { xc: 1.05, trail: 1, enduro: 0.97, dh: 0.95 }, F_CARCASA = { liviana: 1.08, trail: 1, enduro: 0.95, dh: 0.9 };
-  var F_SISTEMA = { tubeless: 1, camara: 1.12 }, F_TERRENO = { liso: 1.05, mixto: 1, roto: 1.03, mojado: 0.94 }, F_INSERTO = { si: 0.94, no: 1 };
+  var F_SISTEMA = { tubeless: 1, camara: 1.12 }, F_PISTA = { compacto: 1.04, seco_suelto: 1, humedo: 0.97, barroso: 0.95, mojado: 0.94 }, F_INSERTO = { si: 0.94, no: 1 };
   var pPres = null;
   function psi(rueda, carga, ancho, ins, carcasa) {
-    var p = C0 * REPARTO[rueda] * carga / Math.pow(ancho, EXP_ANCHO) * F_ESTILO[$("pnEstilo").value] * F_CARCASA[carcasa] * F_SISTEMA[$("pnSistema").value] * F_TERRENO[$("pnTerreno").value] * F_INSERTO[ins];
+    var p = C0 * REPARTO[rueda] * carga / Math.pow(ancho, EXP_ANCHO) * F_ESTILO[$("pnEstilo").value] * F_CARCASA[carcasa] * F_SISTEMA[$("pnSistema").value] * F_PISTA[$("pnPista").value] * F_INSERTO[ins];
     return Math.max(MIN_PSI, Math.min(MAX_PSI, p));
   }
   function presCalc() {
@@ -96,17 +99,17 @@
         '<label class="sfc-l"><span>Sistema</span><select id="pnSistema">' + opt([["tubeless", "Tubeless"], ["camara", "Con cámara"]]) + "</select></label>" +
         '<label class="sfc-l"><span>Inserto delantero</span><select id="pnInsD">' + opt([["no", "No"], ["si", "Sí"]]) + "</select></label>" +
         '<label class="sfc-l"><span>Inserto trasero</span><select id="pnInsT">' + opt([["no", "No"], ["si", "Sí"]]) + "</select></label>" +
-        '<label class="sfc-l sfc-ancho"><span>Terreno</span><select id="pnTerreno">' + opt([["liso", "Liso / tierra compacta"], ["mixto", "Mixto"], ["roto", "Roto / piedras"], ["mojado", "Mojado / resbaloso"]]) + "</select></label></div>" +
+        '<label class="sfc-l sfc-ancho"><span>Estado de la pista</span><select id="pnPista">' + opt([["seco_suelto", "Seco y suelto"], ["compacto", "Compacto"], ["humedo", "Húmedo"], ["barroso", "Barroso"], ["mojado", "Mojado"]]) + "</select></label></div>" +
         '<p class="sfc-out" id="pnOut" aria-live="polite"></p>' +
-        '<div class="sfc-bot"><button type="button" class="btn chico" id="pnUsar" disabled>Usar estos valores</button></div>' +
-        '<p class="sfc-aviso">Es un punto de partida, no una especificación del fabricante. Respetá la presión mínima y máxima de tu cubierta y de tu llanta, y ajustá de a 1 psi en un tramo que conozcas.</p>');
+        '<p class="sfc-aviso">Es un punto de partida, no una especificación del fabricante. Respetá la presión mínima y máxima de tu cubierta y de tu llanta, y ajustá de a 1 psi en un tramo que conozcas.</p>',
+        '<button type="button" class="sfc-b prim" id="pnUsar" disabled>Usar estos valores</button>');
       pPres.addEventListener("input", presCalc); pPres.addEventListener("change", presCalc);
       $("pnUsar").addEventListener("click", function () { var b = $("pnUsar"); cur.set("presD", b.getAttribute("data-d")); cur.set("presT", b.getAttribute("data-t")); cerrar(); });
     }
     $("pnPiloto").value = cur.get("pesoPiloto") || ""; $("pnBici").value = cur.get("pesoBici") || "";
     $("pnAnchoD").value = cur.get("anchoD") || ""; $("pnAnchoT").value = cur.get("anchoT") || "";
     $("pnInsD").value = cur.get("insD") === "si" ? "si" : "no"; $("pnInsT").value = cur.get("insT") === "si" ? "si" : "no";
-    $("pnEstilo").value = "trail"; $("pnCarcD").value = F_CARCASA[cur.get("carcasaD")] ? cur.get("carcasaD") : "trail"; $("pnCarcT").value = F_CARCASA[cur.get("carcasaT")] ? cur.get("carcasaT") : "trail"; $("pnTerreno").value = "mixto"; $("pnSistema").value = "tubeless";
+    $("pnEstilo").value = "trail"; $("pnCarcD").value = F_CARCASA[cur.get("carcasaD")] ? cur.get("carcasaD") : "trail"; $("pnCarcT").value = F_CARCASA[cur.get("carcasaT")] ? cur.get("carcasaT") : "trail"; $("pnPista").value = cur.get("estadoPista") || "seco_suelto"; $("pnSistema").value = "tubeless";
     presCalc(); abrirPanel(pPres, desde); $("pnPiloto").focus();
   }
 
@@ -149,7 +152,7 @@
     [i0 - 1, i0, i0 + 1].forEach(function (i) {
       if (i < 0 || i >= lista.length) return;
       var kk = lista[i], s = 100 * (cargaLb * lr) / (kk * strokePulg);
-      html += '<div class="sfc-fila"><span><b>' + kk + " lb</b> → SAG " + s.toFixed(1).replace(".", ",") + " % (" + (s / 100 * stroke).toFixed(1).replace(".", ",") + ' mm)</span><button type="button" class="btn chico" data-k="' + kk + '">Usar</button></div>';
+      html += '<div class="sfc-fila"><span><b>' + kk + " lb</b> → SAG " + s.toFixed(1).replace(".", ",") + " % (" + (s / 100 * stroke).toFixed(1).replace(".", ",") + ' mm)</span><button type="button" class="sfc-b" data-k="' + kk + '">Usar</button></div>';
     });
     res.innerHTML = html;
   }
@@ -178,9 +181,10 @@
   // Un adaptador describe un formulario: get(clave), set(clave, valor), ancla(clave) → el campo (input) junto al que va el botón, lev() → curva o null.
   function boton(ad, ancla, etiqueta, fn) {
     if (!ancla || ancla.parentNode.querySelector('.sfc-btn[data-sfc="' + etiqueta + '"]')) return;
-    var b = el("button", "btn chico sfc-btn", "Calcular"); b.type = "button"; b.setAttribute("data-sfc", etiqueta); b.setAttribute("aria-label", etiqueta);
+    var b = el("button", "sfc-b sfc-btn", "Calcular"); b.type = "button"; b.setAttribute("data-sfc", etiqueta); b.setAttribute("aria-label", etiqueta);
     b.addEventListener("click", function () { cur = ad; fn(b); });
-    ancla.insertAdjacentElement("afterend", b);
+    // el campo queda corto y el botón a su lado, en una sola línea (el resto de los campos de la fila no se mueven)
+    var par = el("div", "sfc-par"); ancla.parentNode.insertBefore(par, ancla); par.appendChild(ancla); par.appendChild(b); ancla.classList.add("sfc-corto");
   }
   function montar(ad) {
     boton(ad, ad.ancla("sagH"), "Calcular el SAG de la horquilla", function (b) { abrirSag("H", b); });
@@ -197,7 +201,7 @@
   // App de análisis (web): Recorte (ids rc…). Peso de la bici, cubiertas, inserto y carcasa son datos del perfil de la bici elegida
   // (estado.perfilActivoDatos); lo que está en el formulario de Recorte tiene prioridad.
   function adaptadorRecorte() {
-    var ID = { sagH: "rcSagMedidoH", sagS: "rcSagMedidoS", recH: "rcRecH", sensS: "rcSensS", recS: "rcRecS", presD: "rcPresD", presT: "rcPresT", durezaS: "rcDurezaResorteS", pesoPiloto: "rcPeso" };
+    var ID = { sagH: "rcSagMedidoH", sagS: "rcSagMedidoS", recH: "rcRecH", sensS: "rcSensS", recS: "rcRecS", presD: "rcPresD", presT: "rcPresT", durezaS: "rcDurezaResorteS", pesoPiloto: "rcPeso", estadoPista: "rcEstadoPista" };
     var PERFIL = { pesoBici: "pesoBici", anchoD: "anchoCubiertaD", anchoT: "anchoCubiertaT", insD: "insertoD", insT: "insertoT", carcasaD: "carcasaD", carcasaT: "carcasaT" };
     function datos() { try { return (window.__sfAnalisis.estado.perfilActivoDatos) || {}; } catch (e) { return {}; } }
     return {
