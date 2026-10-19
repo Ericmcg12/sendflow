@@ -7,7 +7,7 @@ import os, shutil, sys
 
 destino = sys.argv[1]
 aqui = os.path.join(os.path.dirname(os.path.abspath(__file__)), "piezas")
-for f in ("semaforos-iconos.js", "semaforos-popup.js", "semaforo-anim.js", "calculos-bici.js"):
+for f in ("semaforos-iconos.js", "semaforos-popup.js", "semaforo-anim.js", "calculos-bici.js", "inicio-web.js"):
     shutil.copy(os.path.join(aqui, f), os.path.join(destino, "js", f))
 shutil.copy(os.path.join(aqui, "semaforo-anim.css"), os.path.join(destino, "css", "semaforo-anim.css"))
 shutil.copy(os.path.join(aqui, "calculos-bici.css"), os.path.join(destino, "css", "calculos-bici.css"))
@@ -36,6 +36,8 @@ for _viejo in ("sag-calculadora", "presion-neumaticos", "resorte-coil"):   # ver
     html = html.replace('\n<script src="./js/' + _viejo + '.js"></script>', "")
 if "calculos-bici.js" not in html:
     html = html.replace('<script src="./js/semaforos-popup.js"></script>', '<script src="./js/semaforos-popup.js"></script>\n<script src="./js/calculos-bici.js"></script>')
+if "inicio-web.js" not in html:
+    html = html.replace('<script src="./js/calculos-bici.js"></script>', '<script src="./js/calculos-bici.js"></script>\n<script src="./js/inicio-web.js"></script>')
 if "calculos-bici.css" not in html:
     html = html.replace("</head>", '<link rel="stylesheet" href="./css/calculos-bici.css">\n</head>', 1)
 open(ruta_html, "w", encoding="utf-8").write(html)
@@ -111,6 +113,39 @@ def parchar_foto(destino):
         '    cont.textContent = ""; { const im = sfImgSegura(estado.fotoTemporalPF, "Foto de perfil"); if (im) cont.appendChild(im); }')
     open(ruta, "w", encoding="utf-8").write(js)
 
+def parchar_inicio(destino):
+    """Inicio de /analisis: sin el botón «Perfil» (la bici se elige en Recorte) y con los tres modos de importar directamente."""
+    ruta = os.path.join(destino, "index.html")
+    h = open(ruta, encoding="utf-8").read()
+    if 'id="tileImpSfb"' in h:
+        return
+    def ico(p): return '<span class="tile-hero-icono"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">' + p + '</svg></span>'
+    def tile(i, txt, tit, p): return ('        <button class="tile-hero" id="' + i + '" style="opacity:0;" title="' + tit + '">\n          ' + ico(p) +
+                                      '\n          <span class="tile-hero-texto">' + txt + '</span>\n        </button>\n')
+    nuevos = (tile("tileImpSfb", "Desde archivo .sfb", "Una bajada de Sender guardada como archivo, por ejemplo copiada de la microSD", '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>') +
+              tile("tileImpNube", "Desde la nube", "Las bajadas que subiste con la app SendFlow Bike", '<path d="M7 18a4 4 0 0 1-.6-7.96A5.5 5.5 0 0 1 17 8.5a4.5 4.5 0 0 1 .5 9z"/>') +
+              tile("tileImpGuardadas", "Guardadas en este navegador", "Bajadas que ya abriste y guardaste en este navegador", '<path d="M6 4h12v17l-6-4-6 4z"/>'))
+    ancla = '        <button class="tile-hero" id="btnAbrirImportar"'
+    assert h.count(ancla) == 1, "index.html cambió: no está el botón Importar bajada"
+    h = h.replace(ancla, nuevos + ancla, 1)
+    paso1 = "          <li><b>Elegí tu perfil y la bici</b> que querés analizar, con el botón Perfil.</li>\n"
+    paso2 = "          <li><b>Importá la bajada</b> desde un archivo .sfb guardado en tu computadora (por ejemplo, copiado de la microSD del Sender) o desde la nube, donde están las que subiste con la app.</li>\n"
+    assert paso1 in h and paso2 in h, "index.html cambió: no están los pasos del inicio"
+    h = h.replace(paso1 + paso2,
+        "          <li><b>Importá la bajada</b> desde un archivo .sfb guardado en tu computadora (por ejemplo, copiado de la microSD del Sender), desde la nube (las que subiste con la app) o desde las guardadas en este navegador.</li>\n"
+        "          <li><b>En Recorte elegí la bici</b> (perfil con su set-up) con la que querés analizar esa bajada. Las bicis se cargan en tu perfil de sendflow.bike.</li>\n", 1)
+    open(ruta, "w", encoding="utf-8").write(h)
+
+def parchar_export(destino):
+    """Expone a los módulos web dos funciones de la app (la curva de leverage genérica) sin tocar su lógica."""
+    ruta = os.path.join(destino, "js", "app.js")
+    js = open(ruta, encoding="utf-8").read()
+    if "generarTablaLeverageDefault: generarTablaLeverageDefault" in js:
+        return
+    viejo = "listarPerfilesDB: listarPerfilesDB,"
+    assert js.count(viejo) == 1, "app.js cambió: no se encuentra el export de __sfAnalisis"
+    open(ruta, "w", encoding="utf-8").write(js.replace(viejo, viejo + " generarTablaLeverageDefault: generarTablaLeverageDefault,", 1))
+
 def parchar_perfil_vacio(destino):
     """En /analisis los perfiles solo se eligen: sin perfiles, el botón «Perfil» del inicio avisa dónde cargar la bici
     (sendflow.bike/perfil) en vez de abrir el formulario de perfil nuevo de la app."""
@@ -142,6 +177,8 @@ def parchar_nombre_sag(destino):
 
 parchar_app(destino)
 parchar_foto(destino)
+parchar_inicio(destino)
+parchar_export(destino)
 parchar_perfil_vacio(destino)
 parchar_nombre_sag(destino)
 asegurar_cabeceras(destino)

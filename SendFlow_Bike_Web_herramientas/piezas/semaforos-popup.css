@@ -38,4 +38,8 @@
 }
 /* en /analisis los perfiles solo se eligen: sin «Nuevo perfil» en el selector del inicio */
 .modo-web #btnIrANuevoPerfilDesdeHome { display: none !important; }
+/* inicio de /analisis: sin «Perfil» ni «Importar bajada» (los tres modos de importar están directamente); la bici se elige en Recorte */
+.modo-web #btnSeleccionarPerfilHome, .modo-web #btnAbrirImportar { display: none !important; }
+.modo-web .hero-iconos { grid-template-columns: repeat(4, 1fr); max-width: 600px; }
+@media (max-width: 600px) { .modo-web .hero-iconos { grid-template-columns: repeat(2, 1fr); } }
 /* fin semáforos con popup */

@@ -333,6 +333,7 @@
   var SINO = [["no", "No"], ["si", "Sí"]], AIRE = [["aire", "Aire"], ["resorte", "Resorte"]];
   var PASTILLAS = [["organica", "Orgánica"], ["sinterizada", "Sinterizada"], ["semimetalica", "Semi-metálica"]];
   var RAYOS = [["normal", "Normal"], ["sueltos", "Sueltos"], ["tensos", "Tensos"]];
+  var CARCASAS = [["", "—"], ["liviana", "XC / liviana"], ["trail", "Trail"], ["enduro", "Enduro / reforzada"], ["dh", "Descenso / doble capa"]];
   var DEF = { ebike: "no", talleBici: "M", tmdInstalado: "no", pastillaCompuesto: "sinterizada", tipoResorteH: "aire", tipoResorteS: "aire",
     ruedaTamanoD: '29"', ruedaTamanoT: '29"', insertoD: "no", insertoT: "no", tensionRayosD: "normal", tensionRayosT: "normal" };
 
@@ -449,6 +450,7 @@
         campo("ruedaTamano" + x, "Tamaño de rueda", "sel", RUEDAS),
         campo("cubiertaModelo" + x, "Cubierta", "lista", LISTAS.cubiertas, { ancho: true }),
         campo("anchoCubierta" + x, "Ancho de cubierta (pulgadas)", "dec", null, { ph: "2.4" }),
+        campo("carcasa" + x, "Carcasa", "sel", CARCASAS),
         campo("pres" + x, "Presión (psi)", "n3"),
         campo("inserto" + x, "Inserto", "sel", SINO),
         campo("tensionRayos" + x, "Tensión de rayos", "sel", RAYOS)
@@ -660,5 +662,7 @@
   }
   function abierto() { return !!estado; }
 
-  window.SFEditorBici = { iniciar: function (h) { H = h; sb = h.sb; }, abrir: abrir, cerrar: cerrar, abierto: abierto };
+  // curva de leverage del formulario (la de la bici o, si no cargó una, la genérica): la usan las calculadoras (calculos-bici.js)
+  function levActual() { var p = !!(leverage && leverage.length >= 2); return { t: p ? leverage : generica(numDe("sensS") || 75, numDe("recS") || 220), propia: p }; }
+  window.SFEditorBici = { iniciar: function (h) { H = h; sb = h.sb; }, abrir: abrir, cerrar: cerrar, abierto: abierto, leverage: levActual };
 })();
