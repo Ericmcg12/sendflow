@@ -1,7 +1,7 @@
 # v34/v35: secciones del sitio base con su propia dirección (sendflow.bike/perfil, /mensajes, /bajadas)
+# Cada sección es una copia de index.html (perfil.html, mensajes.html, bajadas.html): Cloudflare Pages las sirve en /perfil, /mensajes y /bajadas
+# con el mismo mecanismo que admin.html -> /admin. Las reglas anteriores "/perfil /index.html 200" terminaban en un 307 hacia "/" y rompían
+# las recargas y los enlaces directos. Si se cambia index.html, correr SendFlow_Bike_Web_herramientas/sincronizar_rutas.py.
 /perfil/    /perfil     301
 /mensajes/  /mensajes   301
 /bajadas/   /bajadas    301
-/perfil     /index.html 200
-/mensajes   /index.html 200
-/bajadas    /index.html 200

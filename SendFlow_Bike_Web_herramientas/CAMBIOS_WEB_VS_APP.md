@@ -105,6 +105,12 @@ conviene corregir el origen.
   en cada build si el `_headers` se regenera. Detalle y pendientes: `REVISION_SEGURIDAD_2026-10-19.md`.
 - `LEEME.md` del sitio se movió a `SendFlow_Bike_Web_herramientas/LEEME_sitio.md`: se publicaba en `https://sendflow.bike/LEEME.md`.
 
+## 2c) Rutas del sitio base (`/perfil`, `/mensajes`, `/bajadas`)
+
+No es de la app: es del sitio madre. Las reglas `_redirects` `... /index.html 200` respondían 307 hacia `/`. Ahora cada ruta es una copia
+de `index.html` (`perfil.html`, `mensajes.html`, `bajadas.html`). Hay que correr `sincronizar_rutas.py` cada vez que cambie `index.html`.
+Pendiente de verificar en producción: `curl -sI https://sendflow.bike/perfil` debe dar 200. Guía: `GUIA_CLOUDFLARE_SEGURIDAD.md`.
+
 ## 3) Diseño
 
 - Las tarjetas de una misma fila de `#contSemaforos` toman el alto de la más alta (`align-items: stretch`; las filas internas
