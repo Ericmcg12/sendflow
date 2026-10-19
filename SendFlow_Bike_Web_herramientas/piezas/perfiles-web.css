@@ -1,6 +1,6 @@
 
 /* ---- perfiles desde la cuenta (perfiles_v1, 15/10/2026): en /analisis los perfiles solo se eligen ---- */
-.modo-web #btnNuevoPerfil, .modo-web #btnExportarPerfiles, .modo-web label:has(#inputImportarPerfiles),
+.modo-web #btnNuevoPerfil, .modo-web #btnIrANuevoPerfilDesdeHome, .modo-web #btnExportarPerfiles, .modo-web label:has(#inputImportarPerfiles),
 .modo-web [data-accion-perfil="editar"], .modo-web [data-accion-perfil="eliminar"],
 .modo-web #pantallaPerfiles .fila-botones > button.primario { display: none !important; }
 .modo-web #sfMisBicis { text-decoration: none; }

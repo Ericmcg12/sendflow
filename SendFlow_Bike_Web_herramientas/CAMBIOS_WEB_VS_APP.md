@@ -121,6 +121,9 @@ Falta probar en un celular real (iPhone y Android).
 ## 2d-bis) Nombre «SAG»
 En la copia web se quitó «en reposo» de todos los textos («SAG en reposo» → «SAG»; títulos de tarjeta, popup, campos de Recorte/Bajada, informe y mensajes), porque el SAG se mide con el piloto sobre la bici. Lo hace `parchar_nombre_sag` en `aplicar_semaforos_popup.py` (reemplazo de texto en `app.js` e `index.html`). La app de escritorio sigue diciendo «SAG en reposo».
 
+## 2d-bis2) Perfiles en /analisis: solo se eligen
+En la web los perfiles (bicis) se crean y editan en `/perfil`. En `/analisis`: se oculta «Nuevo perfil» también del selector del inicio (`#btnIrANuevoPerfilDesdeHome`), y si no hay bicis el botón «Perfil» del inicio muestra «Todavía no tenés bicis en tu cuenta. Cargalas en sendflow.bike/perfil → Mis bicis» en vez de abrir el formulario de perfil nuevo (`parchar_perfil_vacio` en `aplicar_semaforos_popup.py`). La app de escritorio mantiene su comportamiento (modo coach: crear perfiles sin cuenta).
+
 ## 2d-ter) Dónde están las calculadoras (SAG, presión de neumáticos, resorte)
 Un solo módulo, `piezas/calculos-bici.js` (+ `calculos-bici.css`), con un «adaptador» por formulario. Botón «Calcular» junto al campo:
 - **Perfil de bici del sitio** (`/perfil` → Mis bicis, `js/editor-bici.js`): sus campos no tienen id, se buscan por el grupo y la etiqueta (`SITIO` en el módulo); un `MutationObserver` agrega los botones cuando se arma el formulario. No se editó `editor-bici.js` (lo comparte el sitio Coach). La curva de leverage del editor es privada, así que acá el resorte usa el leverage promedio.

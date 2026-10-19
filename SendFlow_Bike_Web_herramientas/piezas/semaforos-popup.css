@@ -36,4 +36,6 @@
   .grupo-semaforo-ancho .cont-barra-sem { display: block; max-width: 260px; }
   .grupo-semaforo-ancho .cont-barra-sem .sf-devol { margin-top: 6px; }
 }
+/* en /analisis los perfiles solo se eligen: sin «Nuevo perfil» en el selector del inicio */
+.modo-web #btnIrANuevoPerfilDesdeHome { display: none !important; }
 /* fin semáforos con popup */

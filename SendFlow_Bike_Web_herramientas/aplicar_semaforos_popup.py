@@ -111,6 +111,26 @@ def parchar_foto(destino):
         '    cont.textContent = ""; { const im = sfImgSegura(estado.fotoTemporalPF, "Foto de perfil"); if (im) cont.appendChild(im); }')
     open(ruta, "w", encoding="utf-8").write(js)
 
+def parchar_perfil_vacio(destino):
+    """En /analisis los perfiles solo se eligen: sin perfiles, el botón «Perfil» del inicio avisa dónde cargar la bici
+    (sendflow.bike/perfil) en vez de abrir el formulario de perfil nuevo de la app."""
+    ruta = os.path.join(destino, "js", "app.js")
+    js = open(ruta, encoding="utf-8").read()
+    viejo = ("      // sin perfiles todavia -> directo a crear uno nuevo, sin pantalla intermedia vacia\n"
+             "      mostrarPantalla(\"pantallaPerfiles\");\n"
+             "      renderizarListaPerfiles();\n"
+             "      abrirModalPerfil(null);\n"
+             "      return;")
+    nuevo = ("      // (copia web) los perfiles se cargan en sendflow.bike/perfil: acá solo se eligen\n"
+             "      $(\"listaSeleccionarPerfil\").innerHTML = '<div class=\"vacio-guardados\">Todavía no tenés bicis en tu cuenta. Cargalas en sendflow.bike/perfil → Mis bicis.</div>';\n"
+             "      $(\"modalSeleccionarPerfil\").classList.remove(\"oculto\");\n"
+             "      return;")
+    if viejo in js:
+        js = js.replace(viejo, nuevo, 1)
+        open(ruta, "w", encoding="utf-8").write(js)
+    else:
+        assert nuevo in js, "app.js cambió: no se encuentra el bloque de «sin perfiles»"
+
 def parchar_nombre_sag(destino):
     """«SAG en reposo» no existe como concepto: el SAG es lo que se hunde la suspensión con el piloto aboard. Se quita «en reposo» de los textos."""
     for rel in (os.path.join("js", "app.js"), "index.html"):
@@ -122,6 +142,7 @@ def parchar_nombre_sag(destino):
 
 parchar_app(destino)
 parchar_foto(destino)
+parchar_perfil_vacio(destino)
 parchar_nombre_sag(destino)
 asegurar_cabeceras(destino)
 print("Semáforos con popup aplicados en", destino)
