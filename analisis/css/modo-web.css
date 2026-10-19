@@ -224,25 +224,4 @@ html.sf-con-profe [data-accion="enviar-coach"] { display: inline-flex !important
   .grupo-semaforo-ancho .cont-barra-sem { display: block; max-width: 260px; }
   .grupo-semaforo-ancho .cont-barra-sem .sf-devol { margin-top: 6px; }
 }
-/* calculadora de SAG del perfil (sag-calculadora.js) */
-.sfc-btn { margin-top: 6px; }
-.sfc-fondo { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,.6); display: flex; align-items: center; justify-content: center; padding: 16px; }
-.sfc-caja { width: 100%; max-width: 380px; max-height: 90vh; overflow: auto; background: var(--panel, #11171a); border: 1px solid var(--borde-2, #2e393a); border-radius: 12px; padding: 16px; color: var(--texto, #f2f5f4); box-shadow: var(--sombra, 0 10px 40px rgba(0,0,0,.45)); }
-.sfc-cab { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-.sfc-cab h3 { margin: 0; font-size: 15px; }
-.sfc-x { background: none; border: 0; color: inherit; font-size: 24px; line-height: 1; cursor: pointer; padding: 4px 8px; }
-.sfc-l { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; font-size: 12.5px; color: var(--texto-dim, #8b9a98); }
-.sfc-l input { font-size: 16px; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--borde-2, #2e393a); background: var(--bg-abs, #070b0c); color: var(--texto, #f2f5f4); min-width: 0; }
-.sfc-out { margin: 4px 0 10px; min-height: 22px; font-size: 14px; }
-.sfc-out b { font-size: 20px; }
-.sfc-bot { margin-bottom: 10px; }
-.sfc-caja details { font-size: 13px; color: var(--texto-dim, #8b9a98); }
-.sfc-caja summary { cursor: pointer; }
-.sfc-caja ol { margin: 8px 0 0; padding-left: 20px; line-height: 1.55; text-align: justify; hyphens: auto; }
-.sfc-dos { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 0 12px; }
-.sfc-dos .sfc-ancho { grid-column: 1 / -1; }
-.sfc-l select { font-size: 15px; padding: 8px 10px; border-radius: 6px; border: 1px solid var(--borde-2, #2e393a); background: var(--bg-abs, #070b0c); color: var(--texto, #f2f5f4); min-width: 0; }
-.sfc-aviso { margin: 0; font-size: 12.5px; line-height: 1.5; color: var(--texto-dim, #8b9a98); text-align: justify; hyphens: auto; }
-.sfc-res { margin-bottom: 10px; }
-.sfc-fila { display: flex; justify-content: space-between; align-items: center; gap: 10px; padding: 6px 0; border-top: 1px solid var(--borde, #232b2c); font-size: 13.5px; }
 /* fin semáforos con popup */
