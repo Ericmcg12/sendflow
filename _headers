@@ -2,7 +2,8 @@
 /*
   X-Content-Type-Options: nosniff
   Referrer-Policy: strict-origin-when-cross-origin
-  Permissions-Policy: camera=(), microphone=()
+  Permissions-Policy: camera=(), microphone=(), payment=(), usb=(), serial=(), bluetooth=(), accelerometer=(), gyroscope=(), magnetometer=(), geolocation=(self)
+  Strict-Transport-Security: max-age=31536000
 
 # Sitio base (portada y login): sin scripts ni estilos en línea
 /
@@ -29,4 +30,4 @@
 # SendFlow Bike web: la app usa estilos en línea, un worker (mapa) y descarga mapas de MapTiler
 /analisis/*
   X-Frame-Options: SAMEORIGIN
-  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://api.maptiler.com; media-src 'self' blob:; connect-src 'self' https://cloudflareinsights.com data: blob: https://api.maptiler.com https://oksqbxptdzdcqrvyxrpa.supabase.co https://*.r2.cloudflarestorage.com; worker-src 'self' blob:; frame-ancestors 'self'; base-uri 'self'
+  Content-Security-Policy: default-src 'self'; script-src 'self' https://static.cloudflareinsights.com; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data: blob: https://api.maptiler.com; media-src 'self' blob:; connect-src 'self' https://cloudflareinsights.com data: blob: https://api.maptiler.com https://oksqbxptdzdcqrvyxrpa.supabase.co https://*.r2.cloudflarestorage.com; worker-src 'self' blob:; frame-ancestors 'self'; base-uri 'self'; form-action 'self'

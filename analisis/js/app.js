@@ -3380,13 +3380,18 @@ async function renderizarListaPerfiles(){
 }
 
 // ---- Selector de perfil activo desde Home ----
+// SFIMGSEGURA (agregado en la copia web): solo imágenes data:image en base64; el <img> se crea por DOM, sin armar HTML con el dato.
+function sfImgSegura(src, alt, estilo){
+  if (typeof src !== 'string' || !/^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+\/=]+$/.test(src)) return null;
+  const im = document.createElement('img'); im.src = src; im.alt = alt || ''; if (estilo) im.setAttribute('style', estilo); return im;
+}
 function actualizarIndicadorPerfilActivoHome(){
   const iconoTile = document.querySelector("#btnSeleccionarPerfilHome .tile-hero-icono");
   const textoTile = document.querySelector("#btnSeleccionarPerfilHome .tile-hero-texto");
   if (estado.perfilActivoNombre){
     const nombreBase = estado.perfilActivoNombreBase || estado.perfilActivoNombre;
     if (estado.perfilActivoFoto){
-      iconoTile.innerHTML = `<img src="${estado.perfilActivoFoto}" alt="" style="width:42px;height:42px;border-radius:50%;object-fit:cover;">`;
+      iconoTile.textContent = ""; { const im = sfImgSegura(estado.perfilActivoFoto, "", "width:42px;height:42px;border-radius:50%;object-fit:cover;"); if (im) iconoTile.appendChild(im); }
     } else {
       const iniciales = nombreBase.trim().split(/\s+/).slice(0,2).map(p => p[0] || "").join("").toUpperCase();
       iconoTile.innerHTML = `<span style="display:flex;align-items:center;justify-content:center;width:42px;height:42px;border-radius:50%;background:var(--panel-2);border:1px solid var(--oro-dim);font-size:16px;font-weight:700;color:var(--oro);">${iniciales || "?"}</span>`;
@@ -4132,7 +4137,7 @@ $("pfTipoResorteH").addEventListener("change", actualizarVisibilidadResortePF);
 function actualizarAvatarPerfil(){
   const cont = $("pfAvatarPreview");
   if (estado.fotoTemporalPF){
-    cont.innerHTML = `<img src="${estado.fotoTemporalPF}" alt="Foto de perfil">`;
+    cont.textContent = ""; { const im = sfImgSegura(estado.fotoTemporalPF, "Foto de perfil"); if (im) cont.appendChild(im); }
   } else {
     cont.innerHTML = `<svg viewBox="0 0 24 24" width="30" height="30" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 4-6 8-6s8 2 8 6"/></svg>`;
   }
