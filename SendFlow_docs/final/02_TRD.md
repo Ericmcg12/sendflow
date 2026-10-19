@@ -170,5 +170,5 @@ Errores `{"error":"motivo"}` con 400/404/409. Respuestas largas partidas en bloq
 | `docs/Sender_componentes.xlsx` | Lista de materiales y precios | Local |
 | `firmware_nuevo/sender_firmware/README.md` + `CAMBIOS_*.md` | Firmware y huecos abiertos (#5 auto-pausa, #8 cable cortado, #11 batería en la app) | Local |
 | `claude/ESTADO_NUBE_Y_COACH_2026-10-10.md` | Scripts SQL, funciones, despliegue, incidentes | Project + `SendFlow_docs` |
-| `SendFlow_Bike_Web/LEEME.md` | Publicar el sitio madre | Local |
+| `SendFlow_Bike_Web_herramientas/LEEME_sitio.md` (antes `SendFlow_Bike_Web/LEEME.md`; se sacó del sitio porque se publicaba) | Publicar el sitio madre | Local |
 | `FlowBench/respaldo_2026-09-24_v2_scotch_yoke/` | Banco | Local |

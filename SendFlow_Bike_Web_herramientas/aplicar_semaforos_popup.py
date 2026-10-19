@@ -51,5 +51,44 @@ def parchar_app(destino):
                '      const texto = bal.accion && bal.accion.tipo === "sag" ? bal.mensaje_sugerido.replace(/ \\(.*\\)$/, "") : fueraH\n')
     open(ruta, "w", encoding="utf-8").write(js)
 
+
+# ---- Endurecimiento de seguridad (revisión del 19/10/2026) ----
+def asegurar_cabeceras(destino):
+    ruta = os.path.join(os.path.dirname(os.path.abspath(destino)), "_headers")
+    if not os.path.exists(ruta):
+        return
+    h = open(ruta, encoding="utf-8").read()
+    nueva = "  Permissions-Policy: camera=(), microphone=(), payment=(), usb=(), serial=(), bluetooth=(), accelerometer=(), gyroscope=(), magnetometer=(), geolocation=(self)\n  Strict-Transport-Security: max-age=31536000\n"
+    if "Strict-Transport-Security" not in h and "  Permissions-Policy: camera=(), microphone=()\n" in h:
+        h = h.replace("  Permissions-Policy: camera=(), microphone=()\n", nueva, 1)
+    viejo = "worker-src 'self' blob:; frame-ancestors 'self'; base-uri 'self'"
+    if viejo in h and viejo + "; form-action 'self'" not in h:
+        h = h.replace(viejo, viejo + "; form-action 'self'", 1)
+    open(ruta, "w", encoding="utf-8").write(h)
+
+def parchar_foto(destino):
+    """La foto de perfil se armaba con innerHTML; ahora se valida que sea una imagen data: y se crea el <img> por DOM."""
+    ruta = os.path.join(destino, "js", "app.js")
+    js = open(ruta, encoding="utf-8").read()
+    if "SFIMGSEGURA" in js:
+        return
+    def rep(viejo, nuevo):
+        nonlocal js
+        assert js.count(viejo) == 1, "app.js cambió, no se encuentra: " + viejo[:70]
+        js = js.replace(viejo, nuevo)
+    ayuda = ("// SFIMGSEGURA (agregado en la copia web): solo imágenes data:image en base64; el <img> se crea por DOM, sin armar HTML con el dato.\n"
+             "function sfImgSegura(src, alt, estilo){\n"
+             "  if (typeof src !== 'string' || !/^data:image\\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+\\/=]+$/.test(src)) return null;\n"
+             "  const im = document.createElement('img'); im.src = src; im.alt = alt || ''; if (estilo) im.setAttribute('style', estilo); return im;\n"
+             "}\n")
+    rep("function actualizarIndicadorPerfilActivoHome(){", ayuda + "function actualizarIndicadorPerfilActivoHome(){")
+    rep('      iconoTile.innerHTML = `<img src="${estado.perfilActivoFoto}" alt="" style="width:42px;height:42px;border-radius:50%;object-fit:cover;">`;',
+        '      iconoTile.textContent = ""; { const im = sfImgSegura(estado.perfilActivoFoto, "", "width:42px;height:42px;border-radius:50%;object-fit:cover;"); if (im) iconoTile.appendChild(im); }')
+    rep('    cont.innerHTML = `<img src="${estado.fotoTemporalPF}" alt="Foto de perfil">`;',
+        '    cont.textContent = ""; { const im = sfImgSegura(estado.fotoTemporalPF, "Foto de perfil"); if (im) cont.appendChild(im); }')
+    open(ruta, "w", encoding="utf-8").write(js)
+
 parchar_app(destino)
+parchar_foto(destino)
+asegurar_cabeceras(destino)
 print("Semáforos con popup aplicados en", destino)

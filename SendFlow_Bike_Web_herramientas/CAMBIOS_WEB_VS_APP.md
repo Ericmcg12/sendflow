@@ -95,6 +95,16 @@ conviene corregir el origen.
   desviación del shock en HSC es negativa cuando pide cerrar, la de la horquilla positiva): la web decide el sentido por el
   texto del mensaje (`Cerrar…` / `Abrir…`) o por `accion`, no por el signo.
 
+## 2b) Seguridad (revisión del 19/10/2026) — otro parche en `app.js` de la web
+
+- **Foto de perfil** (`actualizarIndicadorPerfilActivoHome`, `actualizarAvatarPerfil`): la app arma el `<img>` con `innerHTML` y el dato
+  de la foto. La web agrega `sfImgSegura()` (acepta solo `data:image/(jpeg|png|webp|gif);base64,...` y crea el elemento por DOM).
+  Para llevarlo a la app: misma función y los dos reemplazos (los hace `parchar_foto()` del script).
+- `_headers`: se agregan HSTS, `form-action 'self'` en `/analisis/*` y una `Permissions-Policy` más completa
+  (se deja `geolocation=(self)` porque el análisis usa la geolocalización del navegador). `asegurar_cabeceras()` del script lo repite
+  en cada build si el `_headers` se regenera. Detalle y pendientes: `REVISION_SEGURIDAD_2026-10-19.md`.
+- `LEEME.md` del sitio se movió a `SendFlow_Bike_Web_herramientas/LEEME_sitio.md`: se publicaba en `https://sendflow.bike/LEEME.md`.
+
 ## 3) Diseño
 
 - Las tarjetas de una misma fila de `#contSemaforos` toman el alto de la más alta (`align-items: stretch`; las filas internas
