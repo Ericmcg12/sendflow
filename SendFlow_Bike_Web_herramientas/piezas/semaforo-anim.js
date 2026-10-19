@@ -495,14 +495,42 @@
     $("fxNote").textContent = "Se cambia de a un click, desde la posición cerrada hacia la abierta. Si la medición está muy lejos del centro, hacia los extremos de la barra, se cambian dos.";
   }
 
-  // EQUILIBRIO: una bici de costado (avanza hacia la derecha) pasa tres obstáculos que vienen de frente.
-  // Cada extremo del cuadro es una masa sobre un resorte con amortiguación de compresión y de rebote;
-  // lo único que cambia entre la delantera y la trasera es el rebote.
-  var EQT = 6, EQ_G = 330, EQ_Y = 274, EQ_XF = 550, EQ_XR = 250, EQ_V = 300, EQ_HIT = [.6, 1.5, 2.4], EQ_BH = 40, EQ_BW = 62;
-  var eqSeries = null, eqKey = "";
+  // EQUILIBRIO: bici de costado con la cinemática de un cuadro de descenso de cuadrilátero (coordenadas medidas
+  // sobre el dibujo del cuadro, en px). El rebote es lo único que cambia entre la delantera y la trasera.
+  //   Pm: pivote del tirante inferior en el cuadro   R: pivote del balancín en el cuadro   SL: ojal inferior del shock
+  //   D: unión tirante inferior / tirante superior   S: unión tirante superior / balancín   T: ojal superior del shock (en el balancín)
+  //   A: eje de la rueda, solidario al tirante superior
+  var K = { PM:[487,552], D0:[135,613], S0:[368,398], R0:[475,413], T0:[520,360], SL:[527,572], A0:[92,588], C0:[958,142], XF:1205, YA:588, WR:307, MX:650 };
+  var EQT = 7, EQ_G = K.YA + K.WR, EQ_V = 700, EQ_HIT = [.5, 1.45, 2.4], EQ_BH = 80, EQ_BW = 110;
+  var eqSeries = null, eqKey = "", eqTab = null;
+  function kd(a, b){ return Math.hypot(a[0] - b[0], a[1] - b[1]); }
+  function kRot(p, o, a){ var c = Math.cos(a), s = Math.sin(a); return [o[0] + (p[0] - o[0])*c - (p[1] - o[1])*s, o[1] + (p[0] - o[0])*s + (p[1] - o[1])*c]; }
+  function kSolve(th){
+    var L1 = kd(K.PM, K.D0), L2 = kd(K.D0, K.S0), L3 = kd(K.S0, K.R0);
+    var D = kRot(K.D0, K.PM, th), dd = kd(D, K.R0), aa = (L2*L2 - L3*L3 + dd*dd)/(2*dd), h2 = L2*L2 - aa*aa;
+    if (h2 < 0) return null;
+    var h = Math.sqrt(h2), ux = (K.R0[0] - D[0])/dd, uy = (K.R0[1] - D[1])/dd, mx = D[0] + aa*ux, my = D[1] + aa*uy;
+    var c1 = [mx + h*uy, my - h*ux], c2 = [mx - h*uy, my + h*ux], S = kd(c1, K.S0) < kd(c2, K.S0) ? c1 : c2;
+    var ph = Math.atan2(S[1] - D[1], S[0] - D[0]) - Math.atan2(K.S0[1] - K.D0[1], K.S0[0] - K.D0[0]);
+    var ps = Math.atan2(S[1] - K.R0[1], S[0] - K.R0[0]) - Math.atan2(K.S0[1] - K.R0[1], K.S0[0] - K.R0[0]);
+    var A = kRot([D[0] + (K.A0[0] - K.D0[0]), D[1] + (K.A0[1] - K.D0[1])], D, ph), T = kRot(K.T0, K.R0, ps);
+    return { rise: K.A0[1] - A[1], D: D, S: S, A: A, T: T, ph: ph };
+  }
+  function kTable(){
+    if (eqTab) return eqTab;
+    eqTab = []; for (var n = -14; n <= 56; n++){ var r = kSolve(n*.01); if (r) eqTab.push(r); }
+    return eqTab;
+  }
+  function kAt(rise){
+    var t = kTable(), i = 0;
+    while (i < t.length - 2 && t[i + 1].rise < rise) i++;
+    var a = t[i], b = t[i + 1], u = Math.max(-.2, Math.min(1.2, (rise - a.rise)/((b.rise - a.rise) || 1)));
+    var lp = function(p, q){ return [p[0] + (q[0] - p[0])*u, p[1] + (q[1] - p[1])*u]; };
+    return { D: lp(a.D, b.D), S: lp(a.S, b.S), A: lp(a.A, b.A), T: lp(a.T, b.T) };
+  }
   function eqWheelH(x, t){
     var h = 0;
-    EQ_HIT.forEach(function(th){ var u = (x - (EQ_XF + EQ_V*(th - t)))/EQ_BW; if (Math.abs(u) < 1) h += EQ_BH*.5*(1 + Math.cos(Math.PI*u)); });
+    EQ_HIT.forEach(function(th){ var u = (x - (K.XF + EQ_V*(th - t)))/EQ_BW; if (Math.abs(u) < 1) h += EQ_BH*.5*(1 + Math.cos(Math.PI*u)); });
     return h;
   }
   function eqSim(zr, xw){
@@ -521,41 +549,47 @@
     var rt = EQ.esc === "ok" ? 1 : EQ.ratio, key = EQ.esc + rt.toFixed(2);
     if (key === eqKey) return; eqKey = key;
     var zF = .75, zR = Math.max(.3, Math.min(1.7, .75/rt));
-    eqSeries = { f: eqSim(zF, EQ_XF), r: eqSim(zR, EQ_XR), zeta: [zF, zR] };
-    $("eqSpF").setAttribute("width", (160*Math.min(1, (.75/zF)/2.2)).toFixed(1));
-    $("eqSpR").setAttribute("width", (160*Math.min(1, (.75/zR)/2.2)).toFixed(1));
+    eqSeries = { f: eqSim(zF, K.XF), r: eqSim(zR, K.A0[0]), zeta: [zF, zR] };
+    $("eqSpF").setAttribute("width", (280*Math.min(1, (.75/zF)/2.2)).toFixed(1));
+    $("eqSpR").setAttribute("width", (280*Math.min(1, (.75/zR)/2.2)).toFixed(1));
     $("eqMsg").textContent = EQ.esc === "ok" ? "Ya ajustado: las dos suspensiones recuperan al mismo ritmo y la bici sigue pareja."
       : rt > 1.15 ? "Tu bajada: el shock vuelve más rápido que la horquilla. Se ve cómo la trasera rebota y levanta la bici de atrás."
       : rt < .85 ? "Tu bajada: el shock vuelve más lento que la horquilla. Con obstáculos seguidos no alcanza a recuperarse y se hunde cada vez más."
       : "Tu bajada: las dos suspensiones vuelven casi al mismo ritmo.";
   }
+  function eqTube(a, b, w){
+    return '<line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'" stroke="var(--line)" stroke-width="'+(w + 5)+'" stroke-linecap="round"/>' +
+           '<line x1="'+a[0]+'" y1="'+a[1]+'" x2="'+b[0]+'" y2="'+b[1]+'" stroke="var(--bg,#070b0c)" stroke-width="'+w+'" stroke-linecap="round"/>';
+  }
   function eqDraw(){
-    var H = "";
-    var ln = function(id, w, col){ return '<line id="'+id+'" stroke="'+(col || "var(--line)")+'" stroke-width="'+w+'" stroke-linecap="round"/>'; };
-    H += '<line x1="20" y1="'+EQ_G+'" x2="780" y2="'+EQ_G+'" stroke="var(--mute,#5e6b6a)" stroke-width="1.4"/>';
-    EQ_HIT.forEach(function(th, j){ H += '<path id="eqB'+j+'" d="M-'+EQ_BW+' 0 Q-'+(EQ_BW/2)+' 0 0 -'+EQ_BH+' Q'+(EQ_BW/2)+' 0 '+EQ_BW+' 0Z" fill="rgba(159,176,179,.14)" stroke="var(--line)" stroke-width="1.4"/>'; });
-    // rueda trasera y delantera
-    [["R", EQ_XR], ["F", EQ_XF]].forEach(function(u){
-      var sp = ""; for (var a = 0; a < 6; a++) sp += '<line x1="0" y1="-48" x2="0" y2="48" transform="rotate('+(a*30)+')" stroke="var(--mute,#5e6b6a)" stroke-width="1"/>';
-      H += '<g id="eqW'+u[0]+'"><circle r="56" fill="none" stroke="var(--line)" stroke-width="3"/><circle r="49" fill="none" stroke="var(--mute,#5e6b6a)" stroke-width="1"/><g id="eqS'+u[0]+'">'+sp+'</g><circle r="5" fill="var(--line)"/></g>';
+    var BG = "var(--bg,#070b0c)", LN = "var(--line)", MU = "var(--mute,#5e6b6a)", H = "";
+    var pv = function(p){ return '<circle cx="'+p[0]+'" cy="'+p[1]+'" r="13" fill="'+BG+'" stroke="'+LN+'" stroke-width="4"/><circle cx="'+p[0]+'" cy="'+p[1]+'" r="4" fill="'+LN+'"/>'; };
+    H += '<line x1="-200" y1="'+EQ_G+'" x2="1520" y2="'+EQ_G+'" stroke="'+MU+'" stroke-width="2.4"/>';
+    EQ_HIT.forEach(function(th, j){ H += '<path id="eqB'+j+'" d="M-'+EQ_BW+' 0 Q-'+(EQ_BW/2)+' 0 0 -'+EQ_BH+' Q'+(EQ_BW/2)+' 0 '+EQ_BW+' 0Z" fill="rgba(159,176,179,.14)" stroke="'+LN+'" stroke-width="2.4"/>'; });
+    [["R"], ["F"]].forEach(function(u){
+      var sp = ""; for (var a = 0; a < 8; a++) sp += '<line x1="0" y1="-'+(K.WR - 18)+'" x2="0" y2="'+(K.WR - 18)+'" transform="rotate('+(a*22.5)+')" stroke="'+MU+'" stroke-width="1.6"/>';
+      H += '<g id="eqW'+u[0]+'"><circle r="'+K.WR+'" fill="none" stroke="'+LN+'" stroke-width="7"/><circle r="'+(K.WR - 24)+'" fill="none" stroke="'+MU+'" stroke-width="2"/><g id="eqS'+u[0]+'">'+sp+'</g><circle r="16" fill="'+BG+'" stroke="'+LN+'" stroke-width="4"/></g>';
     });
-    // cuadro (se mueve y se inclina como un solo cuerpo)
-    H += '<g id="eqBody" fill="none" stroke="var(--line)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">' +
-      '<path d="M347 158L500 162M503 178L385 282M347 158L385 282"/>' +
-      '<path d="M498 158L506 184" stroke-width="7"/><path d="M498 158L493 132L478 127"/>' +
-      '<path d="M330 148H366M347 158V148"/>' +
-      '<circle cx="385" cy="282" r="7" stroke-width="2"/><circle cx="372" cy="262" r="4" stroke-width="2" fill="var(--bg,#070b0c)"/>' +
-      '</g>';
-    H += '<g id="eqSw"><line id="eqSwL" stroke="var(--line)" stroke-width="5" stroke-linecap="round"/></g>';
-    H += '<g id="eqFk">' + ln("eqFkU", 12, "rgba(159,176,179,.55)") + ln("eqFkL", 7, "var(--line)") + '</g>';
-    H += '<g id="eqShk">' + ln("eqShB", 12, "rgba(159,176,179,.55)") + ln("eqShR", 4, "var(--line)") + '<path id="eqShC" fill="none" stroke="var(--oro)" stroke-width="2.4" stroke-linejoin="round"/></g>';
-    H += '<text x="'+EQ_XR+'" y="78" text-anchor="middle" font-size="13" font-weight="600" letter-spacing="1.5" fill="var(--oro)">TRASERA · SHOCK</text>' +
-      '<text x="'+EQ_XF+'" y="78" text-anchor="middle" font-size="13" font-weight="600" letter-spacing="1.5" fill="var(--cian)">DELANTERA · HORQUILLA</text>' +
-      '<path d="M360 18H440M432 12L440 18L432 24" fill="none" stroke="var(--dim,#8b9a98)" stroke-width="1.6"/><text x="400" y="12" text-anchor="middle" font-size="10" fill="var(--dim,#8b9a98)">sentido de marcha</text>' +
-      '<path d="M770 100H700M708 94L700 100L708 106" fill="none" stroke="var(--dim,#8b9a98)" stroke-width="1.6"/><text x="735" y="90" text-anchor="middle" font-size="10" fill="var(--dim,#8b9a98)">obstáculos</text>';
-    [["R", EQ_XR, "var(--oro)"], ["F", EQ_XF, "var(--cian)"]].forEach(function(u){
-      H += '<text x="'+u[1]+'" y="362" text-anchor="middle" font-size="10.5" fill="var(--dim,#8b9a98)" letter-spacing=".8">VELOCIDAD DE REBOTE</text>' +
-        '<rect x="'+(u[1]-80)+'" y="370" width="160" height="7" rx="3" fill="rgba(159,176,179,.18)"/><rect id="eqSp'+u[0]+'" x="'+(u[1]-80)+'" y="370" width="0" height="7" rx="3" fill="'+u[2]+'"/>';
+    // cuadro delantero: se mueve y se inclina como un solo cuerpo
+    H += '<g id="eqBody">' +
+      eqTube([895, 140], [545, 600], 54) + eqTube([885, 92], [468, 335], 36) + eqTube([454, 340], [472, 548], 34) +
+      '<rect x="424" y="296" width="40" height="62" rx="9" fill="'+BG+'" stroke="'+LN+'" stroke-width="4"/><line x1="444" y1="312" x2="444" y2="340" stroke="'+LN+'" stroke-width="5" stroke-linecap="round"/>' +
+      '<path d="M873 64L925 40L975 128L912 152Z" fill="'+BG+'" stroke="'+LN+'" stroke-width="5" stroke-linejoin="round"/>' +
+      '<circle cx="512" cy="612" r="30" fill="'+BG+'" stroke="'+LN+'" stroke-width="5"/><circle cx="512" cy="612" r="9" fill="'+LN+'"/>' +
+      '<path d="M880 62L868 20L836 14M868 20L905 14" fill="none" stroke="'+LN+'" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>' +
+      '<path d="M455 296L440 262H410" fill="none" stroke="'+LN+'" stroke-width="7" stroke-linecap="round" stroke-linejoin="round"/>' +
+      pv(K.PM) + pv(K.R0) + '</g>';
+    H += '<g id="eqRear"><path id="eqSsP" fill="'+LN+'" stroke="'+LN+'" stroke-width="40" stroke-linejoin="round"/><path id="eqSsB" fill="'+BG+'" stroke="'+BG+'" stroke-width="34" stroke-linejoin="round"/>' +
+      '<g id="eqCs"></g><path id="eqRkP" fill="'+LN+'" stroke="'+LN+'" stroke-width="44" stroke-linejoin="round"/><path id="eqRkB" fill="'+BG+'" stroke="'+BG+'" stroke-width="38" stroke-linejoin="round"/><g id="eqPv"></g></g>';
+    H += '<g id="eqFk"><line id="eqFkU" stroke="rgba(159,176,179,.55)" stroke-width="30" stroke-linecap="round"/><line id="eqFkL" stroke="'+LN+'" stroke-width="20" stroke-linecap="round"/></g>';
+    H += '<g id="eqShk"></g>';
+    H += '<text x="'+K.A0[0]+'" y="236" text-anchor="middle" font-size="27" font-weight="600" letter-spacing="3" fill="var(--oro)">TRASERA · SHOCK</text>' +
+      '<text x="'+K.XF+'" y="236" text-anchor="middle" font-size="27" font-weight="600" letter-spacing="3" fill="var(--cian)">DELANTERA · HORQUILLA</text>' +
+      '<path d="M330 80H560M538 64L560 80L538 96" fill="none" stroke="var(--dim,#8b9a98)" stroke-width="4"/><text x="445" y="56" text-anchor="middle" font-size="22" fill="var(--dim,#8b9a98)">sentido de marcha</text>' +
+      '<path d="M1500 130H1360M1382 114L1360 130L1382 146" fill="none" stroke="var(--dim,#8b9a98)" stroke-width="4"/><text x="1430" y="106" text-anchor="middle" font-size="22" fill="var(--dim,#8b9a98)">obstáculos</text>';
+    [["R", K.A0[0], "var(--oro)"], ["F", K.XF, "var(--cian)"]].forEach(function(u){
+      H += '<text x="'+u[1]+'" y="962" text-anchor="middle" font-size="22" fill="var(--dim,#8b9a98)" letter-spacing="2">VELOCIDAD DE REBOTE</text>' +
+        '<rect x="'+(u[1] - 140)+'" y="976" width="280" height="14" rx="6" fill="rgba(159,176,179,.18)"/><rect id="eqSp'+u[0]+'" x="'+(u[1] - 140)+'" y="976" width="0" height="14" rx="6" fill="'+u[2]+'"/>';
     });
     $("eqU0").innerHTML = H;
   }
@@ -563,27 +597,40 @@
     if (!$("eqBody")) eqDraw();
     eqBuild();
     var t = tt % EQT, i = Math.min(eqSeries.f.length - 1, Math.floor(t*60)), f = eqSeries.f[i], r = eqSeries.r[i];
-    var zf = Math.max(-34, f[0]*2), zr = Math.max(-34, r[0]*2), zm = (zf + zr)/2, pit = Math.atan2(zf - zr, EQ_XF - EQ_XR), a = -pit, ca = Math.cos(a), sa = Math.sin(a);
-    var W = function(x, y){ var dx = x - 400, dy = y - 274; return [400 + dx*ca - dy*sa, 274 + dx*sa + dy*ca - zm]; };
-    $("eqBody").setAttribute("transform", "translate(0 " + (-zm).toFixed(2) + ") rotate(" + (a*180/Math.PI).toFixed(2) + " 400 274)");
-    var wf = [EQ_XF, EQ_Y - f[1]], wr = [EQ_XR, EQ_Y - r[1]], rot = (t*EQ_V/56*180/Math.PI).toFixed(1);
+    var zf = f[0], zr = r[0], zm = (zf + zr)/2, a = -Math.atan2(zf - zr, K.XF - K.A0[0]), ca = Math.cos(a), sa = Math.sin(a), MY = K.YA;
+    var W = function(p){ var dx = p[0] - K.MX, dy = p[1] - MY; return [K.MX + dx*ca - dy*sa, MY + dx*sa + dy*ca - zm]; };
+    $("eqBody").setAttribute("transform", "translate(0 " + (-zm).toFixed(2) + ") rotate(" + (a*180/Math.PI).toFixed(3) + " " + K.MX + " " + MY + ")");
+    var kin = kAt(r[1] - r[0]), P = function(p){ var q = W(p); return q[0].toFixed(1) + " " + q[1].toFixed(1); };
+    var wr = W(kin.A), wf = [K.XF, K.YA - f[1]], rot = (t*EQ_V/K.WR*180/Math.PI).toFixed(1);
+    $("eqWR").setAttribute("transform", "translate(" + wr[0].toFixed(1) + " " + wr[1].toFixed(1) + ")");
     $("eqWF").setAttribute("transform", "translate(" + wf[0] + " " + wf[1].toFixed(1) + ")");
-    $("eqWR").setAttribute("transform", "translate(" + wr[0] + " " + wr[1].toFixed(1) + ")");
-    $("eqSF").setAttribute("transform", "rotate(" + rot + ")"); $("eqSR").setAttribute("transform", "rotate(" + rot + ")");
-    var set = function(id, a1, b1){ var e = $(id); e.setAttribute("x1", a1[0].toFixed(1)); e.setAttribute("y1", a1[1].toFixed(1)); e.setAttribute("x2", b1[0].toFixed(1)); e.setAttribute("y2", b1[1].toFixed(1)); };
-    var along = function(a1, b1, d){ var L = Math.hypot(b1[0] - a1[0], b1[1] - a1[1]) || 1; return [a1[0] + (b1[0] - a1[0])*d/L, a1[1] + (b1[1] - a1[1])*d/L]; };
-    var C = W(506, 184);
-    set("eqFkU", C, along(C, wf, 84)); set("eqFkL", wf, along(wf, C, 80));
-    var P = W(372, 262), swA = wr;
-    set("eqSwL", P, swA);
-    var A = W(357, 176), B = [P[0] + (swA[0] - P[0])*.55, P[1] + (swA[1] - P[1])*.55 - 12];
-    set("eqShB", A, along(A, B, 54)); set("eqShR", along(A, B, 54), B);
-    if (spring === "resorte" || PERFIL.S === "resorte"){
-      var L = Math.hypot(B[0] - A[0], B[1] - A[1]), ux = (B[0] - A[0])/L, uy = (B[1] - A[1])/L, d = "M" + A[0].toFixed(1) + " " + A[1].toFixed(1);
-      for (var n = 1; n <= 9; n++){ var s0 = 8 + (L - 16)*n/9, sg = n % 2 ? 1 : -1; d += "L" + (A[0] + ux*s0 - uy*8*sg).toFixed(1) + " " + (A[1] + uy*s0 + ux*8*sg).toFixed(1); }
-      $("eqShC").setAttribute("d", d + "L" + B[0].toFixed(1) + " " + B[1].toFixed(1));
-    } else { $("eqShC").setAttribute("d", ""); }
-    EQ_HIT.forEach(function(th, j){ $("eqB"+j).setAttribute("transform", "translate(" + (EQ_XF + EQ_V*(th - t)).toFixed(1) + " " + EQ_G + ")"); });
+    $("eqSR").setAttribute("transform", "rotate(" + rot + ")"); $("eqSF").setAttribute("transform", "rotate(" + rot + ")");
+    // tirante inferior, tirante superior, balancín
+    var tri = "M" + P(kin.S) + "L" + P(kin.A) + "L" + P(kin.D) + "Z";
+    $("eqSsP").setAttribute("d", tri); $("eqSsB").setAttribute("d", tri);
+    var rk = "M" + P(kin.S) + "L" + P(K.R0) + "L" + P(kin.T) + "Z";
+    $("eqRkP").setAttribute("d", rk); $("eqRkB").setAttribute("d", rk);
+    var BG = "var(--bg,#070b0c)", LN = "var(--line)", Dw = W(kin.D), Pw = W(K.PM);
+    $("eqCs").innerHTML = eqTube(Pw, Dw, 40);
+    var pv = function(p){ var q = W(p); return '<circle cx="'+q[0].toFixed(1)+'" cy="'+q[1].toFixed(1)+'" r="13" fill="'+BG+'" stroke="'+LN+'" stroke-width="4"/><circle cx="'+q[0].toFixed(1)+'" cy="'+q[1].toFixed(1)+'" r="4" fill="'+LN+'"/>'; };
+    $("eqPv").innerHTML = pv(kin.D) + pv(kin.S) + pv(K.R0) + pv(kin.A);
+    // horquilla
+    var C = W(K.C0), set = function(id, p, q){ var e = $(id); e.setAttribute("x1", p[0].toFixed(1)); e.setAttribute("y1", p[1].toFixed(1)); e.setAttribute("x2", q[0].toFixed(1)); e.setAttribute("y2", q[1].toFixed(1)); };
+    var along = function(p, q, d){ var L = kd(p, q) || 1; return [p[0] + (q[0] - p[0])*d/L, p[1] + (q[1] - p[1])*d/L]; };
+    set("eqFkU", C, along(C, wf, 290)); set("eqFkL", wf, along(wf, C, 300));
+    // shock: del balancín (arriba) al cuadro (abajo)
+    var Tw = W(kin.T), Sw = W(K.SL), L = kd(Tw, Sw), ux = (Sw[0] - Tw[0])/L, uy = (Sw[1] - Tw[1])/L, coil = PERFIL.S === "resorte", bw = coil ? 34 : 62, bl = coil ? 100 : 130;
+    var e1 = [Tw[0] + ux*bl, Tw[1] + uy*bl], sh = eqTube(Tw, e1, bw) + '<line x1="'+e1[0].toFixed(1)+'" y1="'+e1[1].toFixed(1)+'" x2="'+Sw[0].toFixed(1)+'" y2="'+Sw[1].toFixed(1)+'" stroke="'+LN+'" stroke-width="18" stroke-linecap="round"/>';
+    if (coil){
+      var d = "M" + (Tw[0] + ux*24).toFixed(1) + " " + (Tw[1] + uy*24).toFixed(1), n = 11, len = L - 48;
+      for (var q = 1; q <= n; q++){ var s0 = 24 + len*q/n, sg = q % 2 ? 1 : -1; d += "L" + (Tw[0] + ux*s0 - uy*26*sg).toFixed(1) + " " + (Tw[1] + uy*s0 + ux*26*sg).toFixed(1); }
+      sh += '<path d="'+d+'" fill="none" stroke="var(--oro)" stroke-width="5" stroke-linejoin="round"/>';
+    } else {
+      sh += '<line x1="'+(Tw[0] + ux*8).toFixed(1)+'" y1="'+(Tw[1] + uy*8).toFixed(1)+'" x2="'+(e1[0] - ux*8).toFixed(1)+'" y2="'+(e1[1] - uy*8).toFixed(1)+'" stroke="var(--oro)" stroke-width="5" stroke-linecap="round" opacity=".85"/>';
+    }
+    sh += pv(kin.T) + pv(K.SL);
+    $("eqShk").innerHTML = sh;
+    EQ_HIT.forEach(function(th, j){ $("eqB"+j).setAttribute("transform", "translate(" + (K.XF + EQ_V*(th - t)).toFixed(1) + " " + EQ_G + ")"); });
   }
   document.querySelectorAll("#eqseg button").forEach(function(b){
     b.addEventListener("click", function(){
