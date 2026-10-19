@@ -357,10 +357,13 @@
     Array.prototype.forEach.call(document.querySelectorAll("[data-pt]"), function (b) { b.addEventListener("click", function () { pestana(b.dataset.pt, true); }); });
     H.$("pf-agregar").addEventListener("click", function () { abrirEditorBici(null); });
     H.$("form-perfil-datos").addEventListener("submit", guardarDatos);
-    H.$("pf-foto").addEventListener("change", function (ev) {
-      var f = ev.target.files && ev.target.files[0]; if (!f) return;
-      reducirFoto(f).then(pintarFoto).catch(function (e) { H.mensaje("msg-pf-datos", e.message, "error"); });
-      ev.target.value = "";
+    // «Elegir foto» abre la galería; «Sacar foto» abre la cámara del celular (capture). Las dos pasan por el mismo reductor.
+    ["pf-foto", "pf-foto-cam"].forEach(function (id) {
+      H.$(id).addEventListener("change", function (ev) {
+        var f = ev.target.files && ev.target.files[0]; if (!f) return;
+        reducirFoto(f).then(pintarFoto).catch(function (e) { H.mensaje("msg-pf-datos", e.message, "error"); });
+        ev.target.value = "";
+      });
     });
     H.$("pf-foto-quitar").addEventListener("click", function () { pintarFoto(""); });
     H.$("pf-nacimiento").addEventListener("change", edadDesdeFecha);

@@ -111,6 +111,13 @@ No es de la app: es del sitio madre. Las reglas `_redirects` `... /index.html 20
 de `index.html` (`perfil.html`, `mensajes.html`, `bajadas.html`). Hay que correr `sincronizar_rutas.py` cada vez que cambie `index.html`.
 Pendiente de verificar en producción: `curl -sI https://sendflow.bike/perfil` debe dar 200. Guía: `GUIA_CLOUDFLARE_SEGURIDAD.md`.
 
+## 2d) Foto de perfil con cámara (sitio base)
+
+`index.html` (y sus copias `perfil.html`, `mensajes.html`, `bajadas.html`), `js/mi-perfil.js`, `css/sitio.css`: junto a «Elegir foto» (galería) hay un
+«Sacar foto» (`<input type="file" accept="image/*" capture="user">`) que abre la cámara frontal del celular. En la compu el botón se oculta
+(el navegador ignoraría la cámara). Es la cámara del sistema, no `getUserMedia`, así que no hay que tocar `Permissions-Policy: camera=()`.
+Falta probar en un celular real (iPhone y Android).
+
 ## 3) Diseño
 
 - Las tarjetas de una misma fila de `#contSemaforos` toman el alto de la más alta (`align-items: stretch`; las filas internas
