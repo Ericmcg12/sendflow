@@ -3417,10 +3417,9 @@ $("btnSeleccionarPerfilHome").addEventListener("click", async () => {
   try{
     const perfiles = await listarPerfilesDB();
     if (!perfiles.length){
-      // sin perfiles todavia -> directo a crear uno nuevo, sin pantalla intermedia vacia
-      mostrarPantalla("pantallaPerfiles");
-      renderizarListaPerfiles();
-      abrirModalPerfil(null);
+      // (copia web) los perfiles se cargan en sendflow.bike/perfil: acá solo se eligen
+      $("listaSeleccionarPerfil").innerHTML = '<div class="vacio-guardados">Todavía no tenés bicis en tu cuenta. Cargalas en sendflow.bike/perfil → Mis bicis.</div>';
+      $("modalSeleccionarPerfil").classList.remove("oculto");
       return;
     }
     perfiles.sort((a,b) => (a.nombre||"").localeCompare(b.nombre||""));
