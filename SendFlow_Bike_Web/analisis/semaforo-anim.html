@@ -519,6 +519,18 @@
       <div class="card"><h2>Cuándo trabaja</h2><p id="iWhen"></p></div>
       <div class="card"><h2>Qué mira SendFlow</h2><p id="iApp"></p></div>
     </div>
+    <div class="equilbox" id="equilBox" hidden>
+      <div class="seg" id="eqseg" role="group" aria-label="Escenario">
+        <button type="button" data-e="hoy" aria-pressed="true">Tu bajada</button>
+        <button type="button" data-e="ok" aria-pressed="false">Ya ajustado</button>
+      </div>
+      <svg viewBox="0 0 640 342" id="eqSvg" role="img" aria-label="Dos ruedas pasan un golpe y vuelven a su lugar: la delantera y la trasera">
+        <g id="eqU0"></g><g id="eqU1"></g>
+      </svg>
+      <p class="note" id="eqMsg" style="font-weight:600"></p>
+      <p class="note" id="eqNote">Se ve una rueda delantera y una trasera pasando el mismo golpe. Importa cuánto tarda cada una en volver a su lugar.</p>
+    </div>
+
     <div class="legend" id="legend"><span><i style="background:var(--oro)"></i>aceite en compresión</span><span><i style="background:var(--azul)"></i>aceite en rebote</span><span><i style="background:var(--cian)"></i>tubos (transparentes)</span></div>
     <p class="note" id="noteMain">Esquema genérico para explicar el principio. Cada fabricante ubica los circuitos en lugares distintos (pistón, válvula de base, cartucho aparte) y las velocidades del recuadro son ejemplos, no mediciones. Los límites de 10 % y 30 % del SAG son una referencia general; el objetivo de SendFlow sale del perfil del piloto.</p>
     <p class="note" id="noteShock" hidden>Shock de espiral con reserva (piggyback), como en muchas bicis de descenso. Acá la compresión se regula en una válvula de la reserva y el rebote en el pistón. En un shock sin reserva, la compresión también va en el pistón, como en el detalle de la horquilla.</p>

@@ -207,3 +207,21 @@ html.sf-con-profe [data-accion="enviar-coach"] { display: inline-flex !important
 .sf-pop-f { flex: 1; width: 100%; border: 0; background: #070b0c; }
 .sf-pop-abierto { overflow: hidden; }
 @media (max-width: 700px) { .sf-pop { padding: 0; align-items: flex-end; } .sf-pop-c { height: 94vh; border-radius: 12px 12px 0 0; } }
+/* Tarjetas de una misma fila del mismo alto (la más alta manda); las filas internas reparten el espacio */
+.modo-web #contSemaforos, .modo-web .grid-semaforos { align-items: stretch; }
+.modo-web #contSemaforos .grupo-semaforo { display: flex; flex-direction: column; }
+.modo-web #contSemaforos .grupo-semaforo > .fila-semaforo { flex: 1 1 auto; }
+/* Balance de rebote: el "qué hacer" va junto al texto en pantalla grande y abajo del semáforo en pantalla chica */
+.sf-info-eq { margin-left: 12px; }
+.grupo-semaforo-ancho .cont-barra-sem { max-width: 620px; display: grid; grid-template-columns: 260px minmax(0, 1fr); column-gap: 18px; align-items: center; }
+.grupo-semaforo-ancho .cont-barra-sem .msg-semaforo { grid-column: 1; grid-row: 1; margin-bottom: 5px; }
+.grupo-semaforo-ancho .cont-barra-sem canvas.barra-sem { grid-column: 1; grid-row: 2; }
+.grupo-semaforo-ancho .cont-barra-sem .sev-semaforo { grid-column: 1; grid-row: 3; }
+.grupo-semaforo-ancho .cont-barra-sem .sf-devol { grid-column: 2; grid-row: 1 / span 2; margin-top: 0; align-self: center; justify-self: start; }
+@media (max-width: 760px) {
+  .titulo-grupo-semaforo .dato-balance { order: 1; }
+  .sf-info-eq { margin-left: auto; }
+  .grupo-semaforo-ancho .cont-barra-sem { display: block; max-width: 260px; }
+  .grupo-semaforo-ancho .cont-barra-sem .sf-devol { margin-top: 6px; }
+}
+/* fin semáforos con popup */

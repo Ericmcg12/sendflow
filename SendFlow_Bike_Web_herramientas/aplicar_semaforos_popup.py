@@ -14,9 +14,11 @@ shutil.copy(os.path.join(aqui, "semaforo-anim.html"), os.path.join(destino, "sem
 
 ruta_css = os.path.join(destino, "css", "modo-web.css")
 css = open(ruta_css, encoding="utf-8").read()
-if "Semáforos con popup (semaforos-popup.js)" not in css:
-    css += "\n" + open(os.path.join(aqui, "semaforos-popup.css"), encoding="utf-8").read()
-    open(ruta_css, "w", encoding="utf-8").write(css)
+marca = "/* ---- Semáforos con popup (semaforos-popup.js)"
+if marca in css:  # versión anterior: se reemplaza el bloque (va siempre al final del archivo)
+    css = css[:css.index(marca)].rstrip("\n") + "\n"
+css += "\n" + open(os.path.join(aqui, "semaforos-popup.css"), encoding="utf-8").read()
+open(ruta_css, "w", encoding="utf-8").write(css)
 
 ruta_html = os.path.join(destino, "index.html")
 html = open(ruta_html, encoding="utf-8").read()

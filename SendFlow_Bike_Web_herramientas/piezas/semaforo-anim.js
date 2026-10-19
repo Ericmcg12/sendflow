@@ -29,6 +29,10 @@
       what:"Un tope (bottom-out) es una compresión que llega a más del 97 % del recorrido. Un golpe fuerte puede terminar el recorrido y la suspensión choca contra su final. SendFlow cuenta cuántos hubo en la bajada, por separado en la horquilla y en el shock.",
       when:"Aterrizajes largos, golpes grandes de frente y tramos rotos con la suspensión muy comprimida. Tocar fondo de vez en cuando en los golpes más grandes es normal, según el manual.",
       app:"Cero topes, o los que acepta tu perfil (0 o 1 según estilo y peso), es zona objetivo. Más que eso pide «Aumentar soporte» y el texto sugiere sumar presión de aire o un token. El manual de ajuste fino propone primero 1 click de HSC, después un token y después presión. No es lo mismo que el «tiempo en tope» del Panel, que mide el porcentaje de la bajada pasado del 97 %." },
+    EQUIL: { title:"EQUILIBRIO", sub:"Rebote de la delantera y de la trasera", dir:1, speed:0, hz:.3, amp:0, v:0, shim:null, ports:null, bleedN:0, portN:0, thr:false,
+      what:"Después de un golpe, las dos ruedas tienen que volver a su lugar al mismo ritmo. Si la trasera vuelve más rápido que la delantera, la bici rebota y salta de atrás. Si vuelve más lento, no llega a recuperarse entre golpes seguidos y se va hundiendo.",
+      when:"Tramos rotos, saltos y golpes seguidos. Se mide en la bajada, con las dos suspensiones juntas.",
+      app:"Compara la velocidad de rebote rápida (percentil 95) de cada rueda: la horquilla proyectada a vertical y la trasera por la leverage, sin contar el tiempo en el aire. La zona objetivo es trasera ÷ delantera entre 0,85 y 1,15. Fuera de esa zona pide abrir o cerrar el rebote del shock, de a un click o de a dos si está lejos." },
     AIRE: { title:"RESORTE", sub:"Presión, tokens y curva de fuerza", dir:-1, speed:0, hz:.3, amp:0, v:0, shim:null, ports:null, bleedN:0, portN:0, thr:false,
       what:"El resorte guarda la energía del golpe y empuja la suspensión de vuelta. En aire es aire sellado: al comprimirse sube la presión y la fuerza crece cada vez más rápido (curva progresiva). En espiral crece en línea recta. La presión, o la precarga en espiral, define el SAG. Los tokens ocupan volumen y endurecen el final del recorrido, solo en aire.",
       when:"Es lo primero que se ajusta, porque condiciona todo lo demás. Presión para el SAG, en pasos de 5 PSI según el manual. Tokens para tener soporte al final del recorrido. Con más presión hace falta más rebote cerrado (+5 a 10 PSI, +1 a 2 clicks de rebote).",
@@ -103,8 +107,8 @@
     $("cap2").textContent = "Detalle A · corte del pistón · " + mode;
     var isSag = mode === "SAG";
     $("sheet").style.setProperty("--flow", isSag ? "var(--cian)" : (M.dir<0 ? "var(--flow-c)" : "var(--flow-r)"));
-    var shock = comp === "shock", isTop = mode === "TOPES", isAir = mode === "AIRE", special = isSag || isTop || isAir, useB = shock && M.dir < 0 && !special;
-    $("leftcol").hidden = (isTop && !popup) || (isSag && !shock);
+    var shock = comp === "shock", isTop = mode === "TOPES", isAir = mode === "AIRE", isEq = mode === "EQUIL", special = isSag || isTop || isAir || isEq, useB = shock && M.dir < 0 && !special;
+    $("leftcol").hidden = (isTop && !popup) || (isSag && !shock) || isEq;
     document.querySelector(".fig-detail").hidden = special || useB;
     document.querySelector(".fig-detailB").hidden = !useB;
     $("noteShock").hidden = !shock;
@@ -133,8 +137,10 @@
     $("sagBox").hidden = !isSag;
     $("topBox").hidden = !isTop || popup;
     $("airBox").hidden = !isAir;
+    $("equilBox").hidden = !isEq;
+    $("noteShock").hidden = !shock || isEq;
     if (isTop || isAir) phase = 0;
-    $("noteMain").hidden = isTop || isAir;
+    $("noteMain").hidden = isTop || isAir || isEq;
     if (isAir) drawAir();
     if (isSag) phase = 2;
     buildStreams();
@@ -184,6 +190,7 @@
     $("bShL").setAttribute("transform", "rotate(" + (M.shim==="top" ? -ang : 0) + " 193 296)");
     $("bNeedleG").setAttribute("transform", "translate(0 " + (M.needle ? (6*Math.sin(tt*1.1)).toFixed(1) : 0) + ")");
     if (mode === "SAG") updateSag(tt);
+    if (mode === "EQUIL") updateEq(tt);
     if (mode === "TOPES") updateTop(tt);
     var hit = mode === "TOPES" && posTop > .97;
     ["fkHitG", "shHitG", "saHitG"].forEach(function(id){ $(id).style.display = hit ? "" : "none"; });
@@ -435,7 +442,7 @@
     LSR: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>'
   };
   var ORDER = ["SAG","TOPES","HSC","LSC","HSR","LSR"];
-  var TITLE = { SAG:"SAG EN REPOSO", TOPES:"TOPES", HSC:"COMPRESIÓN ALTA VELOCIDAD (HSC)", LSC:"COMPRESIÓN BAJA VELOCIDAD (LSC)", HSR:"REBOTE ALTA VELOCIDAD (HSR)", LSR:"REBOTE BAJA VELOCIDAD (LSR)" };
+  var TITLE = { EQUIL:"BALANCE DE REBOTE ADELANTE / ATRÁS", SAG:"SAG EN REPOSO", TOPES:"TOPES", HSC:"COMPRESIÓN ALTA VELOCIDAD (HSC)", LSC:"COMPRESIÓN BAJA VELOCIDAD (LSC)", HSR:"REBOTE ALTA VELOCIDAD (HSR)", LSR:"REBOTE BAJA VELOCIDAD (LSR)" };
   /* El perfil (piloto + bici) define qué suspensiones hay y de qué tipo de resorte. Acá es un ejemplo. */
   var PERFIL = { H:"aire", S:"resorte" };
   var PLAIN = {
@@ -444,6 +451,7 @@
     HSC: "Cuando la rueda pega fuerte en una piedra, una raíz o un salto, el vástago entra muy rápido y el aceite no alcanza a pasar por el agujerito. Entonces empuja unas láminas finitas, las laminillas, que se abren como una puerta y dejan pasar el aceite. Así se frena el golpe sin que la suspensión se hunda de golpe.",
     LSC: "Cuando te apoyás en una curva, frenás o pedaleás, la suspensión se mueve despacio. Ahí el aceite pasa solo por un agujerito que regula la aguja. Cerrar clicks achica el agujero: la suspensión se hunde menos y te da más apoyo.",
     HSR: "Después de un golpe, el resorte devuelve la suspensión rápido a su lugar y el aceite pasa en sentido contrario. Abre las laminillas de rebote, del otro lado del pistón. Si vuelve muy rápido, la rueda salta. Si vuelve muy lento, no llega a recuperarse antes del próximo golpe.",
+    EQUIL: "Después de un golpe, las dos ruedas tienen que volver a su lugar al mismo ritmo. Si la de atrás vuelve más rápido que la de adelante, la bici rebota y salta de atrás. Si vuelve más lento, no llega a recuperarse entre golpes seguidos y se va hundiendo. Por eso se ajusta el rebote del shock hasta igualarlo con el de la horquilla.",
     LSR: "Cuando la suspensión vuelve despacio a su lugar, el aceite pasa por un agujerito que regula la aguja de rebote. Las laminillas no se abren. Es el ajuste del rebote de todos los días: con más clicks cerrados, la suspensión vuelve más lenta."
   };
   function plainFor(k, S){
@@ -465,6 +473,7 @@
     if (k === "TOPES") return sp === "aire"
       ? [["psi","up","SUBIR PRESIÓN","de aire","Si el SAG está alto: es lo que corrige el SAG y evita el tope."], ["tokb","","AGREGAR TOKEN","el SAG está bien","Si el SAG está en zona y sigue haciendo tope: el token endurece el final del recorrido sin cambiar el SAG."]]
       : [["knob","cw","MÁS PRECARGA","sentido horario","Si el SAG está fuera de zona: se corrige primero con la precarga."], ["lbs","","RESORTE MÁS DURO","más lbs, no la precarga","Si el SAG está en zona y sigue haciendo tope: cambiar por un resorte de más lbs. Subir la precarga no sirve, cambia el SAG."]];
+    if (k === "EQUIL") return [["knob","cw","CERRAR REBOTE","sentido horario","La trasera vuelve más lento y se iguala a la delantera."], ["knob","ccw","ABRIR REBOTE","sentido antihorario","La trasera vuelve más rápido y se iguala a la delantera."]];
     var close = { HSC:"El circuito rápido frena más: los golpes fuertes encuentran más resistencia.", LSC:"Más apoyo: la suspensión se hunde menos al pedalear, en curvas y frenadas.", HSR:"Después de un golpe fuerte la suspensión vuelve más lento.", LSR:"Vuelve más lento en los movimientos suaves." };
     var open = { HSC:"El circuito rápido frena menos.", LSC:"Más suave: sigue mejor el terreno.", HSR:"Vuelve más rápido.", LSR:"Vuelve más rápido." };
     return [["knob","cw","CERRAR 1 CLICK","sentido horario",close[k]], ["knob","ccw","ABRIR 1 CLICK","sentido antihorario",open[k]]];
@@ -482,16 +491,103 @@
     var S = comp === "shock" ? "S" : "H";
     $("plainTxt").textContent = plainFor(popK, S); $("fixBox").innerHTML = fixHTML(popK, S); $("barEx").innerHTML = barSVG(.45);
     $("barTxt").textContent = "En el semáforo, el centro es el valor recomendado. Cuanto más lejos del centro está el punto, más fuera de zona está la medición. Abajo ves qué hacer para volver al centro.";
-    $("fxNote").hidden = !/^(HSC|LSC|HSR|LSR)$/.test(popK);
+    $("fxNote").hidden = !/^(HSC|LSC|HSR|LSR|EQUIL)$/.test(popK);
     $("fxNote").textContent = "Se cambia de a un click, desde la posición cerrada hacia la abierta. Si la medición está muy lejos del centro, hacia los extremos de la barra, se cambian dos.";
   }
+
+  // EQUILIBRIO: delantera y trasera pasan el mismo golpe; la trasera vuelve a distinto ritmo según el escenario.
+  var EQT = 5.6, EQ_FRONT = 1.1, EQ_H = 50, EQ_Y = 286;
+  var eqSeries = null, eqKey = "";
+  function eqSim(treb, over, hits){
+    var N = Math.round(EQT*60), out = [], c = 0, cs = 0, hi = -1, tEnd = 0, start = 0, over1 = over;
+    for (var i = 0; i < N; i++){
+      var t = i/60, k = -1;
+      for (var j = 0; j < hits.length; j++) if (t >= hits[j]) k = j;
+      if (k < 0){ out.push(0); continue; }
+      if (k !== hi){ hi = k; cs = c; }
+      var h = hits[k];
+      if (t < h + .5){ c = cs + (1 - cs)*ease((t - h)/.5); }
+      else {
+        var r = Math.min(1, (t - h - .5)/treb);
+        c = 1 - (1 + over1)*ease(r);
+        if (r >= 1){ var dt = t - h - .5 - treb; c = -over1*Math.exp(-4*dt)*Math.cos(14*dt); }
+      }
+      out.push(c);
+    }
+    return out;
+  }
+  function eqBuild(){
+    var rt = EQ.esc === "ok" ? 1 : EQ.ratio, key = EQ.esc + rt.toFixed(2);
+    if (key === eqKey) return; eqKey = key;
+    var trR = Math.max(.35, Math.min(3, EQ_FRONT/rt)), rápido = rt > 1.05, lento = rt < .95;
+    eqSeries = {
+      treb: [EQ_FRONT, trR],
+      c: [eqSim(EQ_FRONT, 0, [.3]), eqSim(trR, rápido ? Math.min(.45, (rt - 1)*.45) : 0, lento ? [.3, 2.4] : [.3])],
+      hits: [[.3], lento ? [.3, 2.4] : [.3]]
+    };
+    var H = "";
+    [[160, "DELANTERA"], [480, "TRASERA"]].forEach(function(u, n){
+      var cx = u[0];
+      H += '<g id="eqG'+n+'">' +
+        '<text x="'+cx+'" y="22" text-anchor="middle" font-size="13" font-weight="600" letter-spacing="1.5" fill="'+(n ? "var(--oro)" : "var(--cian)")+'">'+u[1]+'</text>' +
+        '<line x1="'+(cx-140)+'" y1="'+EQ_Y+'" x2="'+(cx+140)+'" y2="'+EQ_Y+'" stroke="var(--mute,#5e6b6a)" stroke-width="1.4"/>' +
+        '<path id="eqB'+n+'a" d="M-50 0 Q-18 0 0 -'+EQ_H+' Q18 0 50 0Z" fill="rgba(159,176,179,.14)" stroke="var(--line)" stroke-width="1.4"/>' +
+        '<path id="eqB'+n+'b" d="M-50 0 Q-18 0 0 -'+EQ_H+' Q18 0 50 0Z" fill="rgba(159,176,179,.14)" stroke="var(--line)" stroke-width="1.4"/>' +
+        '<line x1="'+(cx-70)+'" y1="62" x2="'+(cx+70)+'" y2="62" stroke="var(--mute,#5e6b6a)" stroke-dasharray="4 4"/>' +
+        '<text x="'+(cx+76)+'" y="66" font-size="10" fill="var(--dim,#8b9a98)">posición normal</text>' +
+        '<g id="eqBody'+n+'"><rect x="'+(cx-17)+'" y="58" width="34" height="100" rx="3" fill="rgba(17,23,26,.8)" stroke="var(--line)" stroke-width="1.6"/>' +
+        '<path d="M'+(cx-26)+' 58H'+(cx+26)+'" stroke="var(--line)" stroke-width="3" stroke-linecap="round"/></g>' +
+        '<g id="eqWh'+n+'"><rect x="'+(cx-10)+'" y="124" width="20" height="96" rx="2" fill="rgba(159,176,179,.22)" stroke="var(--line)" stroke-width="1.4"/>' +
+        '<line x1="'+cx+'" y1="220" x2="'+cx+'" y2="250" stroke="var(--line)" stroke-width="2"/>' +
+        '<circle cx="'+cx+'" cy="250" r="36" fill="none" stroke="var(--line)" stroke-width="2"/><circle cx="'+cx+'" cy="250" r="6" fill="var(--line)"/>' +
+        '<path d="M'+cx+' 214V286M'+(cx-36)+' 250H'+(cx+36)+'" stroke="var(--mute,#5e6b6a)" stroke-width="1"/></g>' +
+        '<g id="eqAr'+n+'"></g>' +
+        '<text x="'+cx+'" y="318" text-anchor="middle" font-size="10.5" fill="var(--dim,#8b9a98)" letter-spacing=".8">VELOCIDAD DE REBOTE</text>' +
+        '<rect x="'+(cx-80)+'" y="326" width="160" height="7" rx="3" fill="rgba(159,176,179,.18)"/>' +
+        '<rect id="eqSp'+n+'" x="'+(cx-80)+'" y="326" width="0" height="7" rx="3" fill="'+(n ? "var(--oro)" : "var(--cian)")+'"/>' +
+        '</g>';
+    });
+    $("eqU0").innerHTML = H;
+    [0, 1].forEach(function(n){ $("eqSp"+n).setAttribute("width", (160*Math.min(1, (EQ_FRONT/eqSeries.treb[n])/2.4)).toFixed(1)); });
+    var msg = EQ.esc === "ok" ? "Ya ajustado: las dos vuelven al mismo ritmo y el golpe se absorbe parejo."
+      : rt > 1.15 ? "Tu bajada: la trasera vuelve más rápido que la delantera, rebota y la bici salta de atrás."
+      : rt < .85 ? "Tu bajada: la trasera vuelve más lento: con golpes seguidos no se recupera y se va hundiendo."
+      : "Tu bajada: las dos vuelven casi al mismo ritmo.";
+    $("eqMsg").textContent = msg;
+  }
+  function updateEq(tt){
+    eqBuild();
+    var t = (tt % EQT);
+    [0, 1].forEach(function(n){
+      var cx = n ? 480 : 160, c = eqSeries.c[n][Math.min(eqSeries.c[n].length - 1, Math.floor(t*60))] || 0;
+      $("eqWh"+n).setAttribute("transform", "translate(0 " + (-EQ_H*Math.max(c, 0)).toFixed(1) + ")");
+      $("eqBody"+n).setAttribute("transform", "translate(0 " + (EQ_H*Math.min(c, 0)).toFixed(1) + ")");
+      var hits = eqSeries.hits[n], ids = ["a", "b"];
+      ids.forEach(function(id, j){
+        var el = $("eqB"+n+id);
+        if (j >= hits.length){ el.style.display = "none"; return; }
+        el.style.display = "";
+        el.setAttribute("transform", "translate(" + (cx + (hits[j] + .25 - t)*220).toFixed(1) + " " + EQ_Y + ")");
+      });
+    });
+  }
+  document.querySelectorAll("#eqseg button").forEach(function(b){
+    b.addEventListener("click", function(){
+      EQ.esc = b.dataset.e; phase = 0;
+      document.querySelectorAll("#eqseg button").forEach(function(x){ x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+      if (mode === "EQUIL") updateEq(0);
+    });
+  });
   var opener = null;
   $("pCtl").appendChild($("compseg"));
+  var EQ = { ratio: 1.7, esc: "hoy" };
   function openPopup(k, S, from){
+    if (k === "EQUIL"){ S = "S"; }
     mode = k; comp = S === "S" ? "shock" : "fork"; spring = PERFIL[S === "S" ? "S" : "H"]; popK = k; popup = true; view = "ctx"; phase = 0; opener = from || null;
     $("pIc").innerHTML = ICON[k]; $("pT").textContent = TITLE[k];
     $("techTxt").textContent = MODES[k].app; $("topCount").hidden = k !== "TOPES"; popupText();
     buildSag(); applyMode();
+    $("compseg").hidden = k === "EQUIL";
     $("ov").hidden = false; $("pX").focus();
   }
   function closePopup(){ try { parent.postMessage({ sf: "cerrar" }, location.origin); } catch (e) {} }
@@ -506,6 +602,7 @@
   if (hp[2] === "aire" || hp[2] === "resorte") PERFIL.H = hp[2];
   if (hp[3] === "aire" || hp[3] === "resorte") PERFIL.S = hp[3];
   applyMode();
+  if (hp[4] && +hp[4] > 0) EQ.ratio = Math.max(.3, Math.min(3, +hp[4]));
   if (TITLE[hp[0]]){ openPopup(hp[0], hp[1] === "S" ? "S" : "H", null); }
   requestAnimationFrame(loop);
 })();

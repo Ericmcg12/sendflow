@@ -187,3 +187,7 @@ body { padding: 0 !important; }
 .mod { width: 100%; max-height: none; border: 0; border-radius: 0; box-shadow: none; background: var(--bg); overflow: visible; }
 .mh { display: none; }
 .mb { padding: 14px 16px 24px; }
+
+.equilbox { grid-column: 1 / -1; display: flex; flex-direction: column; gap: 10px; align-items: center; }
+.equilbox svg { width: 100%; max-width: 760px; height: auto; display: block; }
+.equilbox .seg { align-self: flex-start; }

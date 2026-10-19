@@ -12,8 +12,9 @@
     HSC: ["HORQUILLA_HSC", "SHOCK_HSC"], LSC: ["HORQUILLA_LSC", "SHOCK_LSC"],
     HSR: ["HORQUILLA_HSR", "SHOCK_HSR"], LSR: ["HORQUILLA_LSR", "SHOCK_LSR"]
   };
+  var CLAVE_EQUIL = "BALANCE_REBOTE";
   var TITULO = {
-    SAG: "SAG EN REPOSO", TOPES: "TOPES", HSC: "COMPRESIÓN ALTA VELOCIDAD (HSC)", LSC: "COMPRESIÓN BAJA VELOCIDAD (LSC)",
+    EQUIL: "BALANCE DE REBOTE ADELANTE / ATRÁS", SAG: "SAG EN REPOSO", TOPES: "TOPES", HSC: "COMPRESIÓN ALTA VELOCIDAD (HSC)", LSC: "COMPRESIÓN BAJA VELOCIDAD (LSC)",
     HSR: "REBOTE ALTA VELOCIDAD (HSR)", LSR: "REBOTE BAJA VELOCIDAD (LSR)"
   };
   var CLICK_FUERTE = 0.55; // misma desviación que la app marca como FUERTE: a partir de ahí se piden 2 clicks
@@ -30,6 +31,14 @@
 
   // Qué hacer para una fila: { svg, clicks, sagAlto, aire } o null si no hay nada que corregir.
   function devolucion(E, k, S) {
+    if (k === "EQUIL") {
+      var q = E.resIa && E.resIa[CLAVE_EQUIL], mq = (q && q.mensaje_sugerido) || "";
+      if (!q || sinAccion(mq)) return null;
+      var cierra0 = /^Cerrar/.test(mq), abre0 = /^Abrir/.test(mq);
+      if (!cierra0 && !abre0) return null;
+      var fq = Math.abs(q.desviacion) > CLICK_FUERTE, nq = fq ? 2 : 1;
+      return { svg: svg(SFI.knobSVG(cierra0 ? "cw" : "ccw", nq, (cierra0 ? "CERRAR " : "ABRIR ") + nq + (nq === 1 ? " CLICK" : " CLICKS"), "rebote del shock", fq ? "var(--bad)" : "var(--oro)")), clicks: nq };
+    }
     var res = E.resIa, i = S === "S" ? 1 : 0, r = res && res[CLAVES[k][i]];
     if (!r) return null;
     var msg = r.mensaje_sugerido || "", sp = tipoResorte(E, S), fuerte = Math.abs(r.desviacion) > CLICK_FUERTE, col = fuerte ? "var(--bad)" : "var(--oro)";
@@ -61,7 +70,7 @@
   // El texto de la fila queda de acuerdo con el indicador: sin flechas, con la cantidad de clicks
   // y con el sentido correcto del SAG en aire (SAG alto pide subir la presión).
   function ajustarTexto(k, S, d) {
-    var clave = CLAVES[k][S === "S" ? 1 : 0], m = document.getElementById("msg_" + clave);
+    var clave = k === "EQUIL" ? CLAVE_EQUIL : CLAVES[k][S === "S" ? 1 : 0], m = document.getElementById("msg_" + clave);
     if (!m) return;
     var t = (m.textContent || "").replace(/^[→←]\s*/, "");
     if (d && d.clicks === 2) t = t.replace(/\b1 click\b/, "2 clicks");
@@ -92,6 +101,25 @@
         if (d) { var w = document.createElement("div"); w.className = "sf-devol"; w.innerHTML = d.svg; cb.appendChild(w); }
       });
     });
+    var gb = cont.querySelector(".grupo-semaforo-ancho");
+    if (gb && E.resIa[CLAVE_EQUIL]) {
+      var tb = gb.querySelector(".titulo-grupo-semaforo");
+      if (tb && !tb.querySelector(".sf-info")) {
+        var bq = document.createElement("button");
+        bq.type = "button"; bq.className = "sf-info sf-info-eq"; bq.setAttribute("data-sf-k", "EQUIL"); bq.setAttribute("data-sf-s", "S");
+        bq.setAttribute("aria-label", "Ver cómo funciona: " + TITULO.EQUIL); bq.textContent = "i";
+        tb.appendChild(bq);
+      }
+      var fq2 = gb.querySelector(".fila-semaforo"), nq2 = fq2 && fq2.querySelector(".nom-semaforo");
+      if (nq2) { nq2.classList.add("sf-nom"); nq2.setAttribute("data-sf-k", "EQUIL"); nq2.setAttribute("data-sf-s", "S"); nq2.setAttribute("role", "button"); nq2.setAttribute("tabindex", "0"); }
+      var cbq = fq2 && fq2.querySelector(".cont-barra-sem");
+      if (cbq) {
+        var vq = cbq.querySelector(".sf-devol"); if (vq) vq.remove();
+        var dq = devolucion(E, "EQUIL", "S");
+        ajustarTexto("EQUIL", "S", dq);
+        if (dq) { var wq = document.createElement("div"); wq.className = "sf-devol"; wq.innerHTML = dq.svg; cbq.appendChild(wq); }
+      }
+    }
   }
 
   function popup() {
@@ -108,7 +136,8 @@
     var E = estado(), p = popup(), f = p.querySelector("iframe");
     var h = E ? tipoResorte(E, "H") : "aire", s = E ? tipoResorte(E, "S") : "aire";
     p.querySelector("#sfPopT").textContent = TITULO[k];
-    f.src = "./semaforo-anim.html?v=" + Date.now() + "#" + [k, S, h, s].join("-");
+    var rq = E && E.resIa && E.resIa[CLAVE_EQUIL] && E.resIa[CLAVE_EQUIL].datos;
+    f.src = "./semaforo-anim.html?v=" + Date.now() + "#" + [k, S, h, s].concat(k === "EQUIL" && rq && rq.ratio ? [rq.ratio.toFixed(2)] : []).join("-");
     abierto = desde || null; p.hidden = false; document.documentElement.classList.add("sf-pop-abierto");
     p.querySelector(".sf-pop-x").focus();
   }
