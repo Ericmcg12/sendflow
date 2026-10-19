@@ -64,7 +64,7 @@ const estado = {
     presD: 23, presT: 26, compuesto: "MAXXIS · 3C MAXX GRIP", leverageTabla: null,
     clicksLscH: 0, clicksLscS: 0, clicksHscH: 0, clicksHscS: 0,
     clicksLsrH: 0, clicksLsrS: 0, clicksHsrH: 0, clicksHsrS: 0,
-    presSuspH: 0, presSuspS: 0, clima: "seco", estadoPista: "seco_suelto",
+    presSuspH: 0, presSuspS: 0, clima: "despejado", estadoPista: "seco_suelto",
     idHorquilla: "", idShock: "",
     tipoResorteH: "aire", tipoResorteS: "aire", sagMedidoH: null, sagMedidoS: null,
     durezaResorteH: null, durezaResorteS: null
@@ -1967,7 +1967,7 @@ function escribirCamposCalibracion(prefijo, config){
   $(prefijo+"ClicksHsrS").value = config.clicksHsrS ?? 0;
   $(prefijo+"PresSuspH").value = config.presSuspH ?? 0;
   $(prefijo+"PresSuspS").value = config.presSuspS ?? 0;
-  $(prefijo+"Clima").value = config.clima || "seco";
+  $(prefijo+"Clima").value = ({seco:"despejado", humedo:"nublado"})[config.clima] || config.clima || "despejado";
   $(prefijo+"EstadoPista").value = config.estadoPista || "seco_suelto";
   $(prefijo+"IdHorquilla").value = config.idHorquilla || "";
   $(prefijo+"IdShock").value = config.idShock || "";
@@ -4631,7 +4631,7 @@ function tituloResumenNotas(texto){
 }
 const NOMBRES_NIVEL_NOTAS = {principiante:"Principiante", medio:"Intermedio", avanzado:"Avanzado"};
 const NOMBRES_ESTILO_NOTAS = {prolijo:"Prolijo", guerrero:"Guerrero", precavido:"Precavido", saltarin:"Saltarín", tecnico:"Técnico", agresivo:"Agresivo"};
-const NOMBRES_CLIMA_NOTAS = {seco:"Seco", humedo:"Húmedo", lluvia:"Lluvia"};
+const NOMBRES_CLIMA_NOTAS = {despejado:"Despejado / soleado", muy_soleado:"Seco / muy soleado", nublado:"Nublado", lluvia:"Lluvia", nieve:"Nieve", ventoso:"Ventoso", seco:"Despejado / soleado", humedo:"Nublado"};
 const NOMBRES_ESTADOPISTA_NOTAS = {seco_suelto:"Seco y suelto", compacto:"Compacto", humedo:"Húmedo", barroso:"Barroso", mojado:"Mojado"};
 const NOMBRES_TENSIONRAYOS_NOTAS = {normal:"Normal", sueltos:"Sueltos", tensos:"Tensos"};
 function valNotas(v, sufijo){
@@ -7412,7 +7412,7 @@ function construirRecomendaciones(resIa, recH, recS, config){
   const items = [];
   const prioridades = []; // {texto, severidad} — para la síntesis final, la severidad es 0-1
 
-  const NOMBRES_CLIMA = {seco:"seco", humedo:"húmedo", lluvia:"lluvia"};
+  const NOMBRES_CLIMA = {despejado:"despejado", muy_soleado:"muy soleado", nublado:"nublado", lluvia:"lluvia", nieve:"nieve", ventoso:"ventoso", seco:"despejado", humedo:"nublado"};
   const NOMBRES_PISTA = {seco_suelto:"seco y suelto", compacto:"compacto", humedo:"húmedo", barroso:"barroso", mojado:"mojado"};
   const NOMBRES_NIVEL = {principiante:"principiante", medio:"intermedio", avanzado:"avanzado"};
   const lluviaTxt = resIa.pesoExtraLluvia ? ` (incluye +${resIa.pesoExtraLluvia} kg estimados de barro/agua encima por la lluvia — estimación, no una pesada real)` : "";

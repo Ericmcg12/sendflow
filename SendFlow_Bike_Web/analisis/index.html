@@ -435,11 +435,8 @@
       <div class="campo"><label>Presión rueda delantera (psi)</label><input type="number" id="rcPresD" step="1"></div>
       <div class="campo"><label>Presión rueda trasera (psi)</label><input type="number" id="rcPresT" step="1"></div>
       <div class="campo"><label>Clima</label>
-        <select id="rcClima">
-          <option value="seco">Seco</option>
-          <option value="humedo">Húmedo</option>
-          <option value="lluvia">Lluvia</option>
-        </select>
+        <select id="rcClima"><option value="despejado">Despejado / soleado</option><option value="muy_soleado">Seco / muy soleado</option><option value="nublado">Nublado</option><option value="lluvia">Lluvia</option><option value="nieve">Nieve</option><option value="ventoso">Ventoso</option></select>
+        <div class="aviso sf-clima-hint" id="rcClimaHint"></div>
       </div>
       <div class="campo"><label>Estado de la pista</label>
         <select id="rcEstadoPista">
@@ -1042,11 +1039,7 @@
       <div class="campo"><label>Presión rueda delantera (psi)</label><input type="number" id="btPresD" step="1"></div>
       <div class="campo"><label>Presión rueda trasera (psi)</label><input type="number" id="btPresT" step="1"></div>
       <div class="campo"><label>Clima</label>
-        <select id="btClima">
-          <option value="seco">Seco</option>
-          <option value="humedo">Húmedo</option>
-          <option value="lluvia">Lluvia</option>
-        </select>
+        <select id="btClima"><option value="despejado">Despejado / soleado</option><option value="muy_soleado">Seco / muy soleado</option><option value="nublado">Nublado</option><option value="lluvia">Lluvia</option><option value="nieve">Nieve</option><option value="ventoso">Ventoso</option></select>
       </div>
       <div class="campo"><label>Estado de la pista</label>
         <select id="btEstadoPista">

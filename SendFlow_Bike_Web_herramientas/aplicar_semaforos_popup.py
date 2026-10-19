@@ -146,6 +146,36 @@ def parchar_export(destino):
     assert js.count(viejo) == 1, "app.js cambió: no se encuentra el export de __sfAnalisis"
     open(ruta, "w", encoding="utf-8").write(js.replace(viejo, viejo + " generarTablaLeverageDefault: generarTablaLeverageDefault,", 1))
 
+def parchar_clima(destino):
+    """Clima de Recorte: despejado/soleado, muy soleado, nublado, lluvia, nieve, ventoso (antes seco/húmedo/lluvia).
+    El análisis solo distingue «lluvia» (suma 2,5 kg al piloto): el resto no cambia sus cuentas. Lo guardado como seco → despejado y húmedo → nublado."""
+    import re
+    ruta_h = os.path.join(destino, "index.html"); h = open(ruta_h, encoding="utf-8").read()
+    if 'value="muy_soleado"' not in h:
+        opciones = ('<option value="despejado">Despejado / soleado</option><option value="muy_soleado">Seco / muy soleado</option><option value="nublado">Nublado</option>'
+                    '<option value="lluvia">Lluvia</option><option value="nieve">Nieve</option><option value="ventoso">Ventoso</option>')
+        for p in ("rc", "bt"):
+            h, n = re.subn(r'(<select id="' + p + r'Clima">)\s*<option value="seco">.*?</select>', lambda m: m.group(1) + opciones + "</select>", h, count=1, flags=re.S)
+            assert n == 1, "index.html cambió: no se encuentra el desplegable de clima " + p
+        ancla = '<div class="campo"><label>Estado de la pista</label>'
+        assert h.count(ancla) >= 1
+        h = h.replace('</select>\n      </div>\n      ' + ancla, '</select>\n        <div class="aviso sf-clima-hint" id="rcClimaHint"></div>\n      </div>\n      ' + ancla, 1)
+        open(ruta_h, "w", encoding="utf-8").write(h)
+    ruta = os.path.join(destino, "js", "app.js"); js = open(ruta, encoding="utf-8").read()
+    if 'muy_soleado' in js:
+        return
+    def rep(viejo, nuevo):
+        nonlocal js
+        assert js.count(viejo) == 1, "app.js cambió, no se encuentra: " + viejo[:70]
+        js = js.replace(viejo, nuevo)
+    rep('clima: "seco", estadoPista: "seco_suelto",', 'clima: "despejado", estadoPista: "seco_suelto",')
+    rep('$(prefijo+"Clima").value = config.clima || "seco";', '$(prefijo+"Clima").value = ({seco:"despejado", humedo:"nublado"})[config.clima] || config.clima || "despejado";')
+    rep('const NOMBRES_CLIMA_NOTAS = {seco:"Seco", humedo:"Húmedo", lluvia:"Lluvia"};',
+        'const NOMBRES_CLIMA_NOTAS = {despejado:"Despejado / soleado", muy_soleado:"Seco / muy soleado", nublado:"Nublado", lluvia:"Lluvia", nieve:"Nieve", ventoso:"Ventoso", seco:"Despejado / soleado", humedo:"Nublado"};')
+    rep('const NOMBRES_CLIMA = {seco:"seco", humedo:"húmedo", lluvia:"lluvia"};',
+        'const NOMBRES_CLIMA = {despejado:"despejado", muy_soleado:"muy soleado", nublado:"nublado", lluvia:"lluvia", nieve:"nieve", ventoso:"ventoso", seco:"despejado", humedo:"nublado"};')
+    open(ruta, "w", encoding="utf-8").write(js)
+
 def parchar_perfil_vacio(destino):
     """En /analisis los perfiles solo se eligen: sin perfiles, el botón «Perfil» del inicio avisa dónde cargar la bici
     (sendflow.bike/perfil) en vez de abrir el formulario de perfil nuevo de la app."""
@@ -178,6 +208,7 @@ def parchar_nombre_sag(destino):
 parchar_app(destino)
 parchar_foto(destino)
 parchar_inicio(destino)
+parchar_clima(destino)
 parchar_export(destino)
 parchar_perfil_vacio(destino)
 parchar_nombre_sag(destino)
