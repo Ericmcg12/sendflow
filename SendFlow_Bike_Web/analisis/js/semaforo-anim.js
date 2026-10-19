@@ -448,11 +448,11 @@
   var PLAIN = {
     SAG: "El SAG es cuánto se hunde la suspensión solo con tu peso, parado sobre la bici y con el equipo puesto. Se mide con el anillo (o-ring) que queda marcado en el tubo. Si el SAG es alto, el vástago entra demasiado en la cámara y queda poco recorrido útil: hay que subir la presión de aire. Si es muy bajo, la suspensión está dura: hay que bajarla.",
     TOPES: "Un tope es cuando la suspensión llega al final de su recorrido y no tiene más para dar. Uno de vez en cuando, en un golpe muy grande, es normal. Si pasa seguido, falta soporte. Se corrige igual que un SAG alto: subiendo la presión de aire, o agregando un token.",
-    HSC: "Cuando la rueda pega fuerte en una piedra, una raíz o un salto, el vástago entra muy rápido y el aceite no alcanza a pasar por el agujerito. Entonces empuja unas láminas finitas, las laminillas, que se abren como una puerta y dejan pasar el aceite. Así se frena el golpe sin que la suspensión se hunda de golpe.",
-    LSC: "Cuando te apoyás en una curva, frenás o pedaleás, la suspensión se mueve despacio. Ahí el aceite pasa solo por un agujerito que regula la aguja. Cerrar clicks achica el agujero: la suspensión se hunde menos y te da más apoyo.",
-    HSR: "Después de un golpe, el resorte devuelve la suspensión rápido a su lugar y el aceite pasa en sentido contrario. Abre las laminillas de rebote, del otro lado del pistón. Si vuelve muy rápido, la rueda salta. Si vuelve muy lento, no llega a recuperarse antes del próximo golpe.",
+    HSC: "Cuando la rueda pega fuerte en una piedra, una raíz o un salto, el vástago entra muy rápido y el aceite no alcanza a pasar por el agujerito. Entonces empuja unas láminas finitas, las laminillas, que se abren como una puerta y dejan pasar el aceite. Así se frena el golpe sin que la suspensión se hunda de golpe. “Alta” y “baja” velocidad hablan de lo rápido que se mueve el vástago de la suspensión, no de lo rápido que vas en la bici.",
+    LSC: "Cuando te apoyás en una curva, frenás o pedaleás, la suspensión se mueve despacio. Ahí el aceite pasa solo por un agujerito que regula la aguja. Cerrar clicks achica el agujero: la suspensión se hunde menos y te da más apoyo. “Alta” y “baja” velocidad hablan de lo rápido que se mueve el vástago de la suspensión, no de lo rápido que vas en la bici.",
+    HSR: "Después de un golpe, el resorte devuelve la suspensión rápido a su lugar y el aceite pasa en sentido contrario. Abre las laminillas de rebote, del otro lado del pistón. Si vuelve muy rápido, la rueda salta. Si vuelve muy lento, no llega a recuperarse antes del próximo golpe. “Alta” y “baja” velocidad hablan de lo rápido que se mueve el vástago de la suspensión, no de lo rápido que vas en la bici.",
     EQUIL: "Este semáforo mira si la bici trabaja pareja entre la rueda de adelante y la de atrás. Primero compara cuánto recorrido usa cada una mientras bajás: la trasera tiene que usar unos 10 puntos más que la delantera. Si la diferencia es otra, se corrige el SAG (presión de aire o precarga). Después compara cuánto tarda cada suspensión en recuperarse de un golpe: la de atrás nunca debería tardar más que la de adelante. Si tarda más, queda hundida y llega sin recorrido al próximo golpe: se abre el rebote del shock.",
-    LSR: "Cuando la suspensión vuelve despacio a su lugar, el aceite pasa por un agujerito que regula la aguja de rebote. Las laminillas no se abren. Es el ajuste del rebote de todos los días: con más clicks cerrados, la suspensión vuelve más lenta."
+    LSR: "Cuando la suspensión vuelve despacio a su lugar, el aceite pasa por un agujerito que regula la aguja de rebote. Las laminillas no se abren. Es el ajuste del rebote de todos los días: con más clicks cerrados, la suspensión vuelve más lenta. “Alta” y “baja” velocidad hablan de lo rápido que se mueve el vástago de la suspensión, no de lo rápido que vas en la bici."
   };
   function plainFor(k, S){
     var sp = PERFIL[S];
@@ -468,10 +468,10 @@
   function fixItems(k, S){
     var sp = PERFIL[S];
     if (k === "SAG") return sp === "aire"
-      ? [["psi","up","SUBIR PRESIÓN","de aire","El aire empuja más: el vástago queda más afuera de la cámara y hay más recorrido útil."], ["psi","down","BAJAR PRESIÓN","de aire","La suspensión se hunde más con tu peso."]]
+      ? [["psi","up","SUBIR PRESIÓN","de aire","El aire empuja más: el vástago queda más afuera de la cámara y hay más recorrido útil. Por cada 5–10 psi que subas, cerrá 1–2 clicks de rebote."], ["psi","down","BAJAR PRESIÓN","de aire","La suspensión se hunde más con tu peso. Por cada 5–10 psi que bajes, abrí 1–2 clicks de rebote."]]
       : [["knob","cw","MÁS PRECARGA","sentido horario","El resorte arranca más comprimido: la suspensión se hunde menos con tu peso."], ["knob","ccw","MENOS PRECARGA","sentido antihorario","La suspensión se hunde más con tu peso."], ["tok","","LA PRECARGA AJUSTA FINO","","Si no alcanza, hay que cambiar el resorte por uno más duro o más blando."]];
     if (k === "TOPES") return sp === "aire"
-      ? [["psi","up","SUBIR PRESIÓN","de aire","Si el SAG está alto: es lo que corrige el SAG y evita el tope."], ["tokb","","AGREGAR TOKEN","el SAG está bien","Si el SAG está en zona y sigue haciendo tope: el token endurece el final del recorrido sin cambiar el SAG."]]
+      ? [["psi","up","SUBIR PRESIÓN","de aire","Si el SAG está alto: es lo que corrige el SAG y evita el tope. Con más presión, cerrá 1–2 clicks de rebote cada 5–10 psi."], ["tokb","","AGREGAR TOKEN","el SAG está bien","Si el SAG está en zona y sigue haciendo tope: el token endurece el final del recorrido sin cambiar el SAG."]]
       : [["knob","cw","MÁS PRECARGA","sentido horario","Si el SAG está fuera de zona: se corrige primero con la precarga."], ["lbs","","RESORTE MÁS DURO","más lbs, no la precarga","Si el SAG está en zona y sigue haciendo tope: cambiar por un resorte de más lbs. Subir la precarga no sirve, cambia el SAG."]];
     if (k === "EQUIL") return [["knob","ccw","ABRIR REBOTE","rebote del shock","Pack down trasero: el shock se recupera más rápido y llega con recorrido al próximo golpe."], ["knob","cw","CERRAR REBOTE","rebote del shock","Si la trasera recupera mucho antes que la delantera, la bici rebota de atrás."], ["psi","up","SUBIR PRESIÓN","o más precarga","Si la trasera usa demasiado recorrido comparada con la delantera: más soporte atrás."], ["psi","down","BAJAR PRESIÓN","o menos precarga","Si usa muy poco recorrido comparada con la delantera."]];
     var close = { HSC:"El circuito rápido frena más: los golpes fuertes encuentran más resistencia.", LSC:"Más apoyo: la suspensión se hunde menos al pedalear, en curvas y frenadas.", HSR:"Después de un golpe fuerte la suspensión vuelve más lento.", LSR:"Vuelve más lento en los movimientos suaves." };
@@ -492,7 +492,9 @@
     $("plainTxt").textContent = plainFor(popK, S); $("fixBox").innerHTML = fixHTML(popK, S); $("barEx").innerHTML = barSVG(.45);
     $("barTxt").textContent = "En el semáforo, el centro es el valor recomendado. Cuanto más lejos del centro está el punto, más fuera de zona está la medición. Abajo ves qué hacer para volver al centro.";
     $("fxNote").hidden = !/^(HSC|LSC|HSR|LSR|EQUIL)$/.test(popK);
-    $("fxNote").textContent = "Se cambia de a un click, desde la posición cerrada hacia la abierta. Si la medición está muy lejos del centro, hacia los extremos de la barra, se cambian dos.";
+    $("safeNote").hidden = !/^(SAG|TOPES|EQUIL)$/.test(popK);
+    sagToolsSync();
+    $("fxNote").textContent = "Se cambia de a un click, desde la posición cerrada hacia la abierta. Si la medición está muy lejos del centro, hacia los extremos de la barra, se cambian dos. No hay una cantidad de clicks que sirva para todos los modelos: depende de la marca y del año.";
   }
 
   // EQUILIBRIO: bici de costado con la cinemática de un cuadro de descenso de cuadrilátero (coordenadas medidas
@@ -638,6 +640,37 @@
       document.querySelectorAll("#eqseg button").forEach(function(x){ x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
       if (mode === "EQUIL") updateEq(0);
     });
+  });
+
+  // Calculadora de SAG (en el popup de SAG). Lee del hash/consulta el recorrido y el objetivo de la bajada abierta.
+  var QS = (function(){ var o = {}; (location.search || "").replace(/^\?/, "").split("&").forEach(function(kv){ var a = kv.split("="); if (a[0]) o[a[0]] = decodeURIComponent(a[1] || ""); }); return o; })();
+  var SG = { rh: +QS.rh || 0, rs: +QS.rs || 0, oh: +QS.oh || 18, os: +QS.os || 28 };
+  function sgNum(id){ var v = parseFloat(String($(id).value).replace(",", ".")); return isFinite(v) ? v : NaN; }
+  function sgS(){ return comp === "shock" ? "S" : "H"; }
+  function sagToolsSync(){
+    var on = popK === "SAG"; $("sagTools").hidden = !on; if (!on) return;
+    var shock = comp === "shock";
+    $("sgTravelU").textContent = shock ? "de la carrera del shock (mm, de ojal a ojal)" : "de la horquilla (mm)";
+    var pre = shock ? SG.rs : SG.rh; if (!$("sgTravel").dataset.tocado || $("sgTravel").dataset.comp !== sgS()){ $("sgTravel").value = pre ? pre : ""; $("sgTravel").dataset.comp = sgS(); $("sgTravel").dataset.tocado = ""; }
+    $("sgMove").value = ""; $("sgMsg").hidden = true; sgCalc();
+  }
+  function sgCalc(){
+    var T = sgNum("sgTravel"), m = sgNum("sgMove"), obj = sgS() === "S" ? SG.os : SG.oh, out = $("sgOut"), use = $("sgUse");
+    use.hidden = true;
+    if (!(T > 0)) { out.textContent = "Poné el recorrido (mm)."; return; }
+    var tg = (obj/100*T).toFixed(1).replace(".", ",");
+    if (!(m >= 0) || $("sgMove").value === "") { out.innerHTML = "Tu objetivo es <b>" + obj.toFixed(0) + " %</b>: el o-ring tendría que correrse unos <b>" + tg + " mm</b>."; return; }
+    var sag = 100*m/T, d = sag - obj, cls = Math.abs(d) <= 2 ? "ok" : Math.abs(d) <= 5 ? "med" : "mal";
+    var txt = Math.abs(d) <= 2 ? "Está en zona." : d > 0 ? "Está blando: se hunde más de lo que buscás." : "Está duro: se hunde menos de lo que buscás.";
+    out.innerHTML = 'Tu SAG: <b class="' + cls + '">' + sag.toFixed(1).replace(".", ",") + ' %</b> (objetivo ' + obj.toFixed(0) + ' %, ' + tg + ' mm). ' + txt;
+    use.hidden = !(sag > 0 && sag < 100); use.dataset.valor = sag.toFixed(1);
+  }
+  ["sgTravel", "sgMove"].forEach(function(id){ $(id).addEventListener("input", function(){ if (id === "sgTravel") $(id).dataset.tocado = "1"; sgCalc(); }); });
+  $("sgUse").addEventListener("click", function(){ try { parent.postMessage({ sf: "sag", S: sgS(), valor: parseFloat($("sgUse").dataset.valor) }, location.origin); } catch (e) {} });
+  window.addEventListener("message", function(e){
+    if (e.origin !== location.origin || !e.data || e.data.sf !== "sag-ok") return;
+    var m = $("sgMsg"); m.hidden = false;
+    m.textContent = e.data.n ? "Cargado en " + e.data.n + (e.data.n === 1 ? " campo" : " campos") + " de SAG. Volvé a analizar la bajada para que los semáforos lo usen." : "No hay un campo de SAG abierto ahora. Cargá " + $("sgUse").dataset.valor.replace(".", ",") + " % en Recorte o en tu perfil.";
   });
   var opener = null;
   $("pCtl").appendChild($("compseg"));

@@ -224,4 +224,7 @@ html.sf-con-profe [data-accion="enviar-coach"] { display: inline-flex !important
   .grupo-semaforo-ancho .cont-barra-sem { display: block; max-width: 260px; }
   .grupo-semaforo-ancho .cont-barra-sem .sf-devol { margin-top: 6px; }
 }
+/* nota corta bajo la indicación (regla de psi / máximos del fabricante) */
+.sf-devol .sf-nota { margin: 4px 0 0; max-width: 260px; font-size: 10.5px; line-height: 1.45; color: #8b9a98; text-align: left; letter-spacing: .02em; }
+.grupo-semaforo-ancho .cont-barra-sem .sf-devol .sf-nota { max-width: 300px; }
 /* fin semáforos con popup */
