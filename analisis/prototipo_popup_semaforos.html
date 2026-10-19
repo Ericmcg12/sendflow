@@ -171,8 +171,15 @@ svg .hitT { font-family: var(--font-mono); font-size: 14px; font-weight: 700; fi
 .nm:hover { text-decoration: underline; }
 .msg { display: block; font-size: 11.5px; text-align: center; min-height: 16px; margin-bottom: 4px; }
 .sev { display: block; font: 400 9px/1 var(--font-mono); letter-spacing: .08em; color: var(--dim); text-align: center; margin-top: 4px; min-height: 10px; }
-.dial { width: 100%; height: 24px; display: block; }
-.dial .tk { fill: none; stroke: var(--mute); stroke-width: 1; }
+.ind { width: 190px; max-width: 100%; height: 48px; display: block; margin: 0 auto; }
+.ind .tk { fill: none; stroke: var(--mute); stroke-width: 1; }
+.ind text { font-family: var(--font-mono); }
+.fixbox { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; }
+@media (max-width: 700px) { .fixbox { grid-template-columns: minmax(0, 1fr); } }
+.fx { border: 1px solid var(--borde); border-radius: 8px; padding: 8px 12px 10px; display: flex; flex-direction: column; gap: 2px; }
+.fx p { font-size: 13.5px !important; color: var(--dim); }
+.fx b { font: 600 12px/1 var(--font-mono); color: var(--oro); letter-spacing: .06em; padding: 14px 0 10px; }
+.fxnote { font-size: 12.5px !important; color: var(--dim); }
 .ov { position: fixed; inset: 0; z-index: 20; background: rgba(3,6,7,.72); display: flex; align-items: center; justify-content: center; padding: 16px; }
 .mod { width: min(980px, 100%); max-height: calc(100% - 8px); overflow: auto; background: linear-gradient(180deg, var(--panel2), var(--panel)); border: 1px solid var(--borde2); border-radius: 12px; box-shadow: var(--sombra); }
 @media (max-width: 700px) { .ov { padding: 0; align-items: flex-end; } .mod { max-height: 94%; border-radius: 12px 12px 0 0; } }
@@ -710,6 +717,8 @@ svg .hitT { font-family: var(--font-mono); font-size: 14px; font-weight: 700; fi
   </div>
       <div class="plain">
         <p id="plainTxt"></p>
+        <div class="fixbox" id="fixBox"></div>
+        <p class="fxnote" id="fxNote" hidden>Los clicks se cuentan desde la posición cerrada hacia la abierta. Cada click es un tope de la perilla.</p>
         <p id="topCount" class="topc" hidden>Topes en esta pasada: <b id="topN">0</b>. <span id="topMsg"></span></p>
         <details><summary>Qué mira SendFlow</summary><p id="techTxt"></p></details>
       </div>
@@ -1038,7 +1047,7 @@ svg .hitT { font-family: var(--font-mono); font-size: 14px; font-weight: 700; fi
     if (!n) return { cls:"ok", chip:"EN PUNTO", msg:"Zona objetivo correcta" };
     if (n <= tol) return { cls:"ok", chip:"EN PUNTO", msg:"Zona objetivo correcta (" + n + " tope aislado)" };
     var d = Math.min(1, .35 + (n - tol)*.12);
-    return { cls: d > .55 ? "bad" : "warn", chip: d > .55 ? "FUERTE" : d > .22 ? "MODERADO" : "LEVE", msg:"→ Aumentar soporte (" + n + " bottom-out" + (n > 1 ? "s" : "") + ")" };
+    return { cls: d > .55 ? "bad" : "warn", chip: d > .55 ? "FUERTE" : d > .22 ? "MODERADO" : "LEVE", msg:"Aumentar soporte (" + n + " bottom-out" + (n > 1 ? "s" : "") + "): subir presión de aire o agregar token" };
   }
   document.querySelectorAll("#tolSeg button").forEach(function(b){
     b.addEventListener("click", function(){
@@ -1155,35 +1164,80 @@ svg .hitT { font-family: var(--font-mono); font-size: 14px; font-weight: 700; fi
   var ORDER = ["SAG","TOPES","HSC","LSC","HSR","LSR"];
   var TITLE = { SAG:"SAG EN REPOSO", TOPES:"TOPES", HSC:"COMPRESIÓN ALTA VELOCIDAD (HSC)", LSC:"COMPRESIÓN BAJA VELOCIDAD (LSC)", HSR:"REBOTE ALTA VELOCIDAD (HSR)", LSR:"REBOTE BAJA VELOCIDAD (LSR)" };
   var MOCK = {
-    SAG:   { H:[0, ""], S:[.4, "→ Subir presión de aire (SAG por encima del objetivo)"] },
-    TOPES: { H:[0, ""], S:[.59, "→ Aumentar soporte (3 bottom-outs)"] },
-    HSC:   { H:[.45, "→ Cerrar 1 click HSC (mucho tiempo en el circuito rápido)"], S:[0, ""] },
-    LSC:   { H:[0, ""], S:[.3, "→ Cerrar 1 click LSC (las transferencias de peso lentas usan demasiado recorrido)"] },
-    HSR:   { H:[.35, "→ Cerrar rebote (vuelve más rápido de lo que se hundió)"], S:[0, ""] },
-    LSR:   { H:[0, ""], S:[-.4, "← Abrir rebote (no llega a extenderse entre golpes)"] }
+    SAG:   { H:{t:"ok"}, S:{t:"psi", d:"up", m:.4, msg:"Subir presión de aire (SAG por encima del objetivo)", sub:"de aire"} },
+    TOPES: { H:{t:"ok"}, S:{t:"psi", d:"up", m:.59, msg:"Aumentar soporte (3 bottom-outs): subir presión de aire o agregar token", sub:"o agregar token"} },
+    HSC:   { H:{t:"knob", d:"cw", m:.45, msg:"Cerrar 1 click HSC (mucho tiempo en el circuito rápido)"}, S:{t:"ok"} },
+    LSC:   { H:{t:"ok"}, S:{t:"knob", d:"cw", m:.3, msg:"Cerrar 1 click LSC (las transferencias de peso lentas usan demasiado recorrido)"} },
+    HSR:   { H:{t:"knob", d:"cw", m:.35, msg:"Cerrar rebote (vuelve más rápido de lo que se hundió)"}, S:{t:"ok"} },
+    LSR:   { H:{t:"ok"}, S:{t:"knob", d:"ccw", m:.4, msg:"Abrir rebote (no llega a extenderse entre golpes)"} }
   };
   var PLAIN = {
-    SAG: "El SAG es cuánto se hunde la suspensión solo con tu peso, parado sobre la bici y con el equipo puesto. Se mide con el anillo (o-ring) que queda marcado en el tubo. Si se hunde muy poco, la suspensión está muy dura. Si se hunde mucho, está muy blanda.",
-    TOPES: "Un tope es cuando la suspensión llega al final de su recorrido y no tiene más para dar. Uno de vez en cuando, en un golpe muy grande, es normal. Si pasa seguido, falta soporte: más presión de aire o un token.",
+    SAG: "El SAG es cuánto se hunde la suspensión solo con tu peso, parado sobre la bici y con el equipo puesto. Se mide con el anillo (o-ring) que queda marcado en el tubo. Si el SAG es alto, el vástago entra demasiado en la cámara y queda poco recorrido útil: hay que subir la presión de aire. Si es muy bajo, la suspensión está dura: hay que bajarla.",
+    TOPES: "Un tope es cuando la suspensión llega al final de su recorrido y no tiene más para dar. Uno de vez en cuando, en un golpe muy grande, es normal. Si pasa seguido, falta soporte. Se corrige igual que un SAG alto: subiendo la presión de aire, o agregando un token.",
     HSC: "Cuando la rueda pega fuerte en una piedra, una raíz o un salto, el vástago entra muy rápido y el aceite no alcanza a pasar por el agujerito. Entonces empuja unas láminas finitas, las laminillas, que se abren como una puerta y dejan pasar el aceite. Así se frena el golpe sin que la suspensión se hunda de golpe.",
     LSC: "Cuando te apoyás en una curva, frenás o pedaleás, la suspensión se mueve despacio. Ahí el aceite pasa solo por un agujerito que regula la aguja. Cerrar clicks achica el agujero: la suspensión se hunde menos y te da más apoyo.",
     HSR: "Después de un golpe, el resorte devuelve la suspensión rápido a su lugar y el aceite pasa en sentido contrario. Abre las laminillas de rebote, del otro lado del pistón. Si vuelve muy rápido, la rueda salta. Si vuelve muy lento, no llega a recuperarse antes del próximo golpe.",
     LSR: "Cuando la suspensión vuelve despacio a su lugar, el aceite pasa por un agujerito que regula la aguja de rebote. Las laminillas no se abren. Es el ajuste del rebote de todos los días: con más clicks cerrados, la suspensión vuelve más lenta."
   };
-  function dialHTML(dev){
-    var w = 260, m = 10, au = w - m*2, c = m + au/2, x = c + Math.max(-1, Math.min(1, dev))*au/2, ok = Math.abs(dev) < .02;
-    var col = ok ? "var(--cian)" : (Math.abs(dev) > .55 ? "var(--bad)" : "var(--oro)"), h = '<line x1="'+m+'" y1="12" x2="'+(w-m)+'" y2="12" class="tk"/>';
-    for (var i = 0; i < 5; i++) h += '<circle cx="'+(m + i/4*au)+'" cy="12" r="'+(i === 2 ? 3 : 2.2)+'" class="tk"/>';
-    return h + '<line x1="'+c+'" y1="12" x2="'+x+'" y2="12" style="stroke:'+col+';stroke-opacity:.7;stroke-width:2.5"/><circle cx="'+x+'" cy="12" r="5" style="fill:'+col+';stroke:var(--bg);stroke-width:1.2"/>';
+  function pol(cx, cy, r, deg){ var q = deg*Math.PI/180; return [cx + r*Math.cos(q), cy + r*Math.sin(q)]; }
+  function f1(n){ return n.toFixed(1); }
+  /* perilla: horario cierra, antihorario abre. dir: cw | ccw | ok */
+  function knobSVG(dir, mag, label, sub, col){
+    var cx = 24, cy = 24, R = 19, c = col || (dir === "ok" ? "var(--cian)" : (mag > .55 ? "var(--bad)" : "var(--oro)"));
+    var h = '<circle cx="'+cx+'" cy="'+cy+'" r="12" fill="var(--panel)" stroke="var(--line)" stroke-width="1.4"/>';
+    for (var i = 0; i < 12; i++){ var p1 = pol(cx, cy, 14.8, i*30 - 90), p2 = pol(cx, cy, 17.2, i*30 - 90); h += '<line x1="'+f1(p1[0])+'" y1="'+f1(p1[1])+'" x2="'+f1(p2[0])+'" y2="'+f1(p2[1])+'" class="tk"/>'; }
+    if (dir === "ok"){
+      var q = pol(cx, cy, 9, -90); h += '<line x1="'+cx+'" y1="'+cy+'" x2="'+f1(q[0])+'" y2="'+f1(q[1])+'" stroke="'+c+'" stroke-width="2.4" stroke-linecap="round"/>';
+    } else {
+      var sg = dir === "cw" ? 1 : -1, th = 50 + 150*mag, a0 = -90, a1 = a0 + sg*th, s0 = pol(cx, cy, R, a0), s1 = pol(cx, cy, R, a1);
+      h += '<path d="M'+f1(s0[0])+' '+f1(s0[1])+' A'+R+' '+R+' 0 '+(th > 180 ? 1 : 0)+' '+(dir === "cw" ? 1 : 0)+' '+f1(s1[0])+' '+f1(s1[1])+'" fill="none" stroke="'+c+'" stroke-width="2.6" stroke-linecap="round"/>';
+      var t = (a1 + sg*90)*Math.PI/180, r = a1*Math.PI/180, tip = [s1[0] + 7*Math.cos(t), s1[1] + 7*Math.sin(t)], b1 = [s1[0] + 4.6*Math.cos(r), s1[1] + 4.6*Math.sin(r)], b2 = [s1[0] - 4.6*Math.cos(r), s1[1] - 4.6*Math.sin(r)];
+      h += '<polygon points="'+f1(tip[0])+','+f1(tip[1])+' '+f1(b1[0])+','+f1(b1[1])+' '+f1(b2[0])+','+f1(b2[1])+'" fill="'+c+'"/>';
+      var q2 = pol(cx, cy, 9, a1); h += '<line x1="'+cx+'" y1="'+cy+'" x2="'+f1(q2[0])+'" y2="'+f1(q2[1])+'" stroke="'+c+'" stroke-width="2.4" stroke-linecap="round"/>';
+    }
+    h += '<text x="54" y="21" style="font-size:11px;font-weight:600;fill:'+c+'">'+label+'</text><text x="54" y="35" style="font-size:9.5px;fill:var(--dim)">'+sub+'</text>';
+    return h;
+  }
+  /* manómetro con flecha: subir o bajar presión. dir: up | down | ok */
+  function psiSVG(dir, mag, label, sub, col){
+    var cx = 24, cy = 36, c = col || (dir === "ok" ? "var(--cian)" : (mag > .55 ? "var(--bad)" : "var(--oro)"));
+    var h = '<path d="M4 36 A20 20 0 0 1 44 36" fill="none" stroke="var(--line)" stroke-width="1.4"/>';
+    for (var i = 0; i <= 6; i++){ var a = 180 + i*30, p1 = pol(cx, cy, 15, a), p2 = pol(cx, cy, 18, a); h += '<line x1="'+f1(p1[0])+'" y1="'+f1(p1[1])+'" x2="'+f1(p2[0])+'" y2="'+f1(p2[1])+'" class="tk"/>'; }
+    var ang = dir === "ok" ? 270 : (dir === "up" ? 270 - (25 + 60*mag) : 270 + (25 + 60*mag)), n = pol(cx, cy, 15, ang);
+    h += '<line x1="'+cx+'" y1="'+cy+'" x2="'+f1(n[0])+'" y2="'+f1(n[1])+'" stroke="'+c+'" stroke-width="2.4" stroke-linecap="round"/><circle cx="'+cx+'" cy="'+cy+'" r="2.6" fill="'+c+'"/>';
+    if (dir === "up") h += '<path d="M54 40V12M47 19L54 11L61 19" fill="none" stroke="'+c+'" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>';
+    if (dir === "down") h += '<path d="M54 12V40M47 33L54 41L61 33" fill="none" stroke="'+c+'" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>';
+    h += '<text x="'+(dir === "ok" ? 54 : 70)+'" y="21" style="font-size:11px;font-weight:600;fill:'+c+'">'+label+'</text><text x="'+(dir === "ok" ? 54 : 70)+'" y="35" style="font-size:9.5px;fill:var(--dim)">'+sub+'</text>';
+    return h;
+  }
+  function indSVG(k, m){
+    var psi = (k === "SAG" || k === "TOPES");
+    if (m.t === "ok") return psi ? psiSVG("ok", 0, "EN PUNTO", "zona objetivo") : knobSVG("ok", 0, "EN PUNTO", "zona objetivo");
+    if (m.t === "psi") return psiSVG(m.d, m.m, m.d === "up" ? "SUBIR PRESIÓN" : "BAJAR PRESIÓN", m.sub);
+    return knobSVG(m.d, m.m, m.d === "cw" ? "CERRAR" : "ABRIR", m.d === "cw" ? "sentido horario" : "sentido antihorario");
+  }
+  var FIX = {
+    SAG:   [["psi","up","SUBIR PRESIÓN","de aire","El aire empuja más: el vástago queda más afuera de la cámara y hay más recorrido útil."], ["psi","down","BAJAR PRESIÓN","de aire","La suspensión se hunde más con tu peso."]],
+    TOPES: [["psi","up","SUBIR PRESIÓN","de aire","Es lo mismo que corrige un SAG alto: la suspensión llega menos al fondo."], ["tok","","+ TOKEN","","Un token ocupa volumen en la cámara de aire y endurece el final del recorrido sin cambiar mucho el inicio."]],
+    HSC:   [["knob","cw","CERRAR","sentido horario","El circuito rápido frena más: los golpes fuertes encuentran más resistencia."], ["knob","ccw","ABRIR","sentido antihorario","El circuito rápido frena menos."]],
+    LSC:   [["knob","cw","CERRAR","sentido horario","Más apoyo: la suspensión se hunde menos al pedalear, en curvas y frenadas."], ["knob","ccw","ABRIR","sentido antihorario","Más suave: sigue mejor el terreno."]],
+    HSR:   [["knob","cw","CERRAR","sentido horario","Después de un golpe fuerte la suspensión vuelve más lento."], ["knob","ccw","ABRIR","sentido antihorario","Vuelve más rápido."]],
+    LSR:   [["knob","cw","CERRAR","sentido horario","Vuelve más lento en los movimientos suaves."], ["knob","ccw","ABRIR","sentido antihorario","Vuelve más rápido."]]
+  };
+  function fixHTML(k){
+    return FIX[k].map(function(f){
+      var svg = f[0] === "tok" ? '<b>'+f[2]+'</b>' : '<svg class="ind" viewBox="0 0 190 48" aria-hidden="true">'+(f[0] === "psi" ? psiSVG(f[1], .5, f[2], f[3], "var(--oro)") : knobSVG(f[1], .4, f[2], f[3], "var(--oro)"))+'</svg>';
+      return '<div class="fx">'+svg+'<p>'+f[4]+'</p></div>';
+    }).join("");
   }
   var grid = $("grid");
   ORDER.forEach(function(k){
     var d = document.createElement("div"); d.className = "gs";
     var rows = ["H","S"].map(function(S){
-      var r = MOCK[k][S], dev = r[0], ok = Math.abs(dev) < .02, col = Math.abs(dev) > .55 ? "var(--bad)" : "var(--oro)";
-      var sv = ok ? "" : (Math.abs(dev) > .55 ? "FUERTE" : Math.abs(dev) > .22 ? "MODERADO" : "LEVE");
+      var m = MOCK[k][S], ok = m.t === "ok", col = (m.m || 0) > .55 ? "var(--bad)" : "var(--oro)";
+      var sv = ok ? "" : ((m.m || 0) > .55 ? "FUERTE" : (m.m || 0) > .22 ? "MODERADO" : "LEVE");
       return '<div class="row"><button class="nm '+(S === "H" ? "c" : "o")+'" type="button" data-k="'+k+'" data-s="'+S+'">'+(S === "H" ? "HORQUILLA" : "SHOCK")+'</button>' +
-        '<div><span class="msg" style="color:'+(ok ? "var(--cian)" : col)+'">'+(ok ? "EN PUNTO" : r[1])+'</span><svg class="dial" viewBox="0 0 260 24" aria-hidden="true">'+dialHTML(dev)+'</svg><span class="sev">'+sv+'</span></div></div>';
+        '<div><span class="msg" style="color:'+(ok ? "var(--cian)" : col)+'">'+(ok ? "Zona objetivo correcta" : m.msg)+'</span><svg class="ind" viewBox="0 0 190 48" aria-hidden="true">'+indSVG(k, m)+'</svg><span class="sev">'+sv+'</span></div></div>';
     }).join("");
     d.innerHTML = '<div class="gs-t"><span class="ic">'+ICON[k]+'</span>'+TITLE[k]+'<button class="info-btn" type="button" data-k="'+k+'" data-s="H" aria-label="Ver cómo funciona: '+TITLE[k]+'">i</button></div>'+rows;
     grid.appendChild(d);
@@ -1193,7 +1247,7 @@ svg .hitT { font-family: var(--font-mono); font-size: 14px; font-weight: 700; fi
   function openPopup(k, S, from){
     mode = k; comp = S === "S" ? "shock" : "fork"; spring = "aire"; popup = true; view = "ctx"; phase = 0; opener = from || null;
     $("pIc").innerHTML = ICON[k]; $("pT").textContent = TITLE[k];
-    $("plainTxt").textContent = PLAIN[k]; $("techTxt").textContent = MODES[k].app; $("topCount").hidden = k !== "TOPES";
+    $("plainTxt").textContent = PLAIN[k]; $("fixBox").innerHTML = fixHTML(k); $("fxNote").hidden = !/^(HSC|LSC|HSR|LSR)$/.test(k); $("techTxt").textContent = MODES[k].app; $("topCount").hidden = k !== "TOPES";
     buildSag(); applyMode();
     $("ov").hidden = false; document.body.style.overflow = "hidden"; $("pX").focus();
   }

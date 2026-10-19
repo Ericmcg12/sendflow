@@ -974,7 +974,7 @@ svg .arrow { fill: none; stroke: var(--flow); stroke-width: 1.8; stroke-linecap:
     if (!n) return { cls:"ok", chip:"EN PUNTO", msg:"Zona objetivo correcta" };
     if (n <= tol) return { cls:"ok", chip:"EN PUNTO", msg:"Zona objetivo correcta (" + n + " tope aislado)" };
     var d = Math.min(1, .35 + (n - tol)*.12);
-    return { cls: d > .55 ? "bad" : "warn", chip: d > .55 ? "FUERTE" : d > .22 ? "MODERADO" : "LEVE", msg:"→ Aumentar soporte (" + n + " bottom-out" + (n > 1 ? "s" : "") + ")" };
+    return { cls: d > .55 ? "bad" : "warn", chip: d > .55 ? "FUERTE" : d > .22 ? "MODERADO" : "LEVE", msg:"Aumentar soporte (" + n + " bottom-out" + (n > 1 ? "s" : "") + "): subir presión de aire o agregar token" };
   }
   document.querySelectorAll("#tolSeg button").forEach(function(b){
     b.addEventListener("click", function(){
