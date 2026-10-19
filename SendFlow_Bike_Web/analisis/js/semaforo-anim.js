@@ -495,81 +495,95 @@
     $("fxNote").textContent = "Se cambia de a un click, desde la posición cerrada hacia la abierta. Si la medición está muy lejos del centro, hacia los extremos de la barra, se cambian dos.";
   }
 
-  // EQUILIBRIO: delantera y trasera pasan el mismo golpe; la trasera vuelve a distinto ritmo según el escenario.
-  var EQT = 5.6, EQ_FRONT = 1.1, EQ_H = 50, EQ_Y = 286;
+  // EQUILIBRIO: una bici de costado (avanza hacia la derecha) pasa tres obstáculos que vienen de frente.
+  // Cada extremo del cuadro es una masa sobre un resorte con amortiguación de compresión y de rebote;
+  // lo único que cambia entre la delantera y la trasera es el rebote.
+  var EQT = 6, EQ_G = 330, EQ_Y = 274, EQ_XF = 550, EQ_XR = 250, EQ_V = 300, EQ_HIT = [.6, 1.5, 2.4], EQ_BH = 40, EQ_BW = 62;
   var eqSeries = null, eqKey = "";
-  function eqSim(treb, over, hits){
-    var N = Math.round(EQT*60), out = [], c = 0, cs = 0, hi = -1, tEnd = 0, start = 0, over1 = over;
+  function eqWheelH(x, t){
+    var h = 0;
+    EQ_HIT.forEach(function(th){ var u = (x - (EQ_XF + EQ_V*(th - t)))/EQ_BW; if (Math.abs(u) < 1) h += EQ_BH*.5*(1 + Math.cos(Math.PI*u)); });
+    return h;
+  }
+  function eqSim(zr, xw){
+    var k = 77, dtt = 1/240, N = Math.round(EQT*60), out = [], z = 0, v = 0, wPrev = 0, cc = 2*.5*Math.sqrt(k), cr = 2*zr*Math.sqrt(k);
     for (var i = 0; i < N; i++){
-      var t = i/60, k = -1;
-      for (var j = 0; j < hits.length; j++) if (t >= hits[j]) k = j;
-      if (k < 0){ out.push(0); continue; }
-      if (k !== hi){ hi = k; cs = c; }
-      var h = hits[k];
-      if (t < h + .5){ c = cs + (1 - cs)*ease((t - h)/.5); }
-      else {
-        var r = Math.min(1, (t - h - .5)/treb);
-        c = 1 - (1 + over1)*ease(r);
-        if (r >= 1){ var dt = t - h - .5 - treb; c = -over1*Math.exp(-4*dt)*Math.cos(14*dt); }
+      for (var q = 0; q < 4; q++){
+        var t = (i*4 + q)*dtt, w = eqWheelH(xw, t), wv = (w - wPrev)/dtt; wPrev = w;
+        var rel = wv - v, c = w - z, a = k*c + (rel > 0 ? cc : cr)*rel;
+        v += a*dtt; z += v*dtt;
       }
-      out.push(c);
+      out.push([z, wPrev]);
     }
     return out;
   }
   function eqBuild(){
     var rt = EQ.esc === "ok" ? 1 : EQ.ratio, key = EQ.esc + rt.toFixed(2);
     if (key === eqKey) return; eqKey = key;
-    var trR = Math.max(.35, Math.min(3, EQ_FRONT/rt)), rápido = rt > 1.05, lento = rt < .95;
-    eqSeries = {
-      treb: [EQ_FRONT, trR],
-      c: [eqSim(EQ_FRONT, 0, [.3]), eqSim(trR, rápido ? Math.min(.45, (rt - 1)*.45) : 0, lento ? [.3, 2.4] : [.3])],
-      hits: [[.3], lento ? [.3, 2.4] : [.3]]
-    };
+    var zF = .75, zR = Math.max(.3, Math.min(1.7, .75/rt));
+    eqSeries = { f: eqSim(zF, EQ_XF), r: eqSim(zR, EQ_XR), zeta: [zF, zR] };
+    $("eqSpF").setAttribute("width", (160*Math.min(1, (.75/zF)/2.2)).toFixed(1));
+    $("eqSpR").setAttribute("width", (160*Math.min(1, (.75/zR)/2.2)).toFixed(1));
+    $("eqMsg").textContent = EQ.esc === "ok" ? "Ya ajustado: las dos suspensiones recuperan al mismo ritmo y la bici sigue pareja."
+      : rt > 1.15 ? "Tu bajada: el shock vuelve más rápido que la horquilla. Se ve cómo la trasera rebota y levanta la bici de atrás."
+      : rt < .85 ? "Tu bajada: el shock vuelve más lento que la horquilla. Con obstáculos seguidos no alcanza a recuperarse y se hunde cada vez más."
+      : "Tu bajada: las dos suspensiones vuelven casi al mismo ritmo.";
+  }
+  function eqDraw(){
     var H = "";
-    [[160, "DELANTERA"], [480, "TRASERA"]].forEach(function(u, n){
-      var cx = u[0];
-      H += '<g id="eqG'+n+'">' +
-        '<text x="'+cx+'" y="22" text-anchor="middle" font-size="13" font-weight="600" letter-spacing="1.5" fill="'+(n ? "var(--oro)" : "var(--cian)")+'">'+u[1]+'</text>' +
-        '<line x1="'+(cx-140)+'" y1="'+EQ_Y+'" x2="'+(cx+140)+'" y2="'+EQ_Y+'" stroke="var(--mute,#5e6b6a)" stroke-width="1.4"/>' +
-        '<path id="eqB'+n+'a" d="M-50 0 Q-18 0 0 -'+EQ_H+' Q18 0 50 0Z" fill="rgba(159,176,179,.14)" stroke="var(--line)" stroke-width="1.4"/>' +
-        '<path id="eqB'+n+'b" d="M-50 0 Q-18 0 0 -'+EQ_H+' Q18 0 50 0Z" fill="rgba(159,176,179,.14)" stroke="var(--line)" stroke-width="1.4"/>' +
-        '<line x1="'+(cx-70)+'" y1="62" x2="'+(cx+70)+'" y2="62" stroke="var(--mute,#5e6b6a)" stroke-dasharray="4 4"/>' +
-        '<text x="'+(cx+76)+'" y="66" font-size="10" fill="var(--dim,#8b9a98)">posición normal</text>' +
-        '<g id="eqBody'+n+'"><rect x="'+(cx-17)+'" y="58" width="34" height="100" rx="3" fill="rgba(17,23,26,.8)" stroke="var(--line)" stroke-width="1.6"/>' +
-        '<path d="M'+(cx-26)+' 58H'+(cx+26)+'" stroke="var(--line)" stroke-width="3" stroke-linecap="round"/></g>' +
-        '<g id="eqWh'+n+'"><rect x="'+(cx-10)+'" y="124" width="20" height="96" rx="2" fill="rgba(159,176,179,.22)" stroke="var(--line)" stroke-width="1.4"/>' +
-        '<line x1="'+cx+'" y1="220" x2="'+cx+'" y2="250" stroke="var(--line)" stroke-width="2"/>' +
-        '<circle cx="'+cx+'" cy="250" r="36" fill="none" stroke="var(--line)" stroke-width="2"/><circle cx="'+cx+'" cy="250" r="6" fill="var(--line)"/>' +
-        '<path d="M'+cx+' 214V286M'+(cx-36)+' 250H'+(cx+36)+'" stroke="var(--mute,#5e6b6a)" stroke-width="1"/></g>' +
-        '<g id="eqAr'+n+'"></g>' +
-        '<text x="'+cx+'" y="318" text-anchor="middle" font-size="10.5" fill="var(--dim,#8b9a98)" letter-spacing=".8">VELOCIDAD DE REBOTE</text>' +
-        '<rect x="'+(cx-80)+'" y="326" width="160" height="7" rx="3" fill="rgba(159,176,179,.18)"/>' +
-        '<rect id="eqSp'+n+'" x="'+(cx-80)+'" y="326" width="0" height="7" rx="3" fill="'+(n ? "var(--oro)" : "var(--cian)")+'"/>' +
-        '</g>';
+    var ln = function(id, w, col){ return '<line id="'+id+'" stroke="'+(col || "var(--line)")+'" stroke-width="'+w+'" stroke-linecap="round"/>'; };
+    H += '<line x1="20" y1="'+EQ_G+'" x2="780" y2="'+EQ_G+'" stroke="var(--mute,#5e6b6a)" stroke-width="1.4"/>';
+    EQ_HIT.forEach(function(th, j){ H += '<path id="eqB'+j+'" d="M-'+EQ_BW+' 0 Q-'+(EQ_BW/2)+' 0 0 -'+EQ_BH+' Q'+(EQ_BW/2)+' 0 '+EQ_BW+' 0Z" fill="rgba(159,176,179,.14)" stroke="var(--line)" stroke-width="1.4"/>'; });
+    // rueda trasera y delantera
+    [["R", EQ_XR], ["F", EQ_XF]].forEach(function(u){
+      var sp = ""; for (var a = 0; a < 6; a++) sp += '<line x1="0" y1="-48" x2="0" y2="48" transform="rotate('+(a*30)+')" stroke="var(--mute,#5e6b6a)" stroke-width="1"/>';
+      H += '<g id="eqW'+u[0]+'"><circle r="56" fill="none" stroke="var(--line)" stroke-width="3"/><circle r="49" fill="none" stroke="var(--mute,#5e6b6a)" stroke-width="1"/><g id="eqS'+u[0]+'">'+sp+'</g><circle r="5" fill="var(--line)"/></g>';
+    });
+    // cuadro (se mueve y se inclina como un solo cuerpo)
+    H += '<g id="eqBody" fill="none" stroke="var(--line)" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round">' +
+      '<path d="M347 158L500 162M503 178L385 282M347 158L385 282"/>' +
+      '<path d="M498 158L506 184" stroke-width="7"/><path d="M498 158L493 132L478 127"/>' +
+      '<path d="M330 148H366M347 158V148"/>' +
+      '<circle cx="385" cy="282" r="7" stroke-width="2"/><circle cx="372" cy="262" r="4" stroke-width="2" fill="var(--bg,#070b0c)"/>' +
+      '</g>';
+    H += '<g id="eqSw"><line id="eqSwL" stroke="var(--line)" stroke-width="5" stroke-linecap="round"/></g>';
+    H += '<g id="eqFk">' + ln("eqFkU", 12, "rgba(159,176,179,.55)") + ln("eqFkL", 7, "var(--line)") + '</g>';
+    H += '<g id="eqShk">' + ln("eqShB", 12, "rgba(159,176,179,.55)") + ln("eqShR", 4, "var(--line)") + '<path id="eqShC" fill="none" stroke="var(--oro)" stroke-width="2.4" stroke-linejoin="round"/></g>';
+    H += '<text x="'+EQ_XR+'" y="78" text-anchor="middle" font-size="13" font-weight="600" letter-spacing="1.5" fill="var(--oro)">TRASERA · SHOCK</text>' +
+      '<text x="'+EQ_XF+'" y="78" text-anchor="middle" font-size="13" font-weight="600" letter-spacing="1.5" fill="var(--cian)">DELANTERA · HORQUILLA</text>' +
+      '<path d="M360 18H440M432 12L440 18L432 24" fill="none" stroke="var(--dim,#8b9a98)" stroke-width="1.6"/><text x="400" y="12" text-anchor="middle" font-size="10" fill="var(--dim,#8b9a98)">sentido de marcha</text>' +
+      '<path d="M770 100H700M708 94L700 100L708 106" fill="none" stroke="var(--dim,#8b9a98)" stroke-width="1.6"/><text x="735" y="90" text-anchor="middle" font-size="10" fill="var(--dim,#8b9a98)">obstáculos</text>';
+    [["R", EQ_XR, "var(--oro)"], ["F", EQ_XF, "var(--cian)"]].forEach(function(u){
+      H += '<text x="'+u[1]+'" y="362" text-anchor="middle" font-size="10.5" fill="var(--dim,#8b9a98)" letter-spacing=".8">VELOCIDAD DE REBOTE</text>' +
+        '<rect x="'+(u[1]-80)+'" y="370" width="160" height="7" rx="3" fill="rgba(159,176,179,.18)"/><rect id="eqSp'+u[0]+'" x="'+(u[1]-80)+'" y="370" width="0" height="7" rx="3" fill="'+u[2]+'"/>';
     });
     $("eqU0").innerHTML = H;
-    [0, 1].forEach(function(n){ $("eqSp"+n).setAttribute("width", (160*Math.min(1, (EQ_FRONT/eqSeries.treb[n])/2.4)).toFixed(1)); });
-    var msg = EQ.esc === "ok" ? "Ya ajustado: las dos vuelven al mismo ritmo y el golpe se absorbe parejo."
-      : rt > 1.15 ? "Tu bajada: la trasera vuelve más rápido que la delantera, rebota y la bici salta de atrás."
-      : rt < .85 ? "Tu bajada: la trasera vuelve más lento: con golpes seguidos no se recupera y se va hundiendo."
-      : "Tu bajada: las dos vuelven casi al mismo ritmo.";
-    $("eqMsg").textContent = msg;
   }
   function updateEq(tt){
+    if (!$("eqBody")) eqDraw();
     eqBuild();
-    var t = (tt % EQT);
-    [0, 1].forEach(function(n){
-      var cx = n ? 480 : 160, c = eqSeries.c[n][Math.min(eqSeries.c[n].length - 1, Math.floor(t*60))] || 0;
-      $("eqWh"+n).setAttribute("transform", "translate(0 " + (-EQ_H*Math.max(c, 0)).toFixed(1) + ")");
-      $("eqBody"+n).setAttribute("transform", "translate(0 " + (EQ_H*Math.min(c, 0)).toFixed(1) + ")");
-      var hits = eqSeries.hits[n], ids = ["a", "b"];
-      ids.forEach(function(id, j){
-        var el = $("eqB"+n+id);
-        if (j >= hits.length){ el.style.display = "none"; return; }
-        el.style.display = "";
-        el.setAttribute("transform", "translate(" + (cx + (hits[j] + .25 - t)*220).toFixed(1) + " " + EQ_Y + ")");
-      });
-    });
+    var t = tt % EQT, i = Math.min(eqSeries.f.length - 1, Math.floor(t*60)), f = eqSeries.f[i], r = eqSeries.r[i];
+    var zf = Math.max(-34, f[0]*2), zr = Math.max(-34, r[0]*2), zm = (zf + zr)/2, pit = Math.atan2(zf - zr, EQ_XF - EQ_XR), a = -pit, ca = Math.cos(a), sa = Math.sin(a);
+    var W = function(x, y){ var dx = x - 400, dy = y - 274; return [400 + dx*ca - dy*sa, 274 + dx*sa + dy*ca - zm]; };
+    $("eqBody").setAttribute("transform", "translate(0 " + (-zm).toFixed(2) + ") rotate(" + (a*180/Math.PI).toFixed(2) + " 400 274)");
+    var wf = [EQ_XF, EQ_Y - f[1]], wr = [EQ_XR, EQ_Y - r[1]], rot = (t*EQ_V/56*180/Math.PI).toFixed(1);
+    $("eqWF").setAttribute("transform", "translate(" + wf[0] + " " + wf[1].toFixed(1) + ")");
+    $("eqWR").setAttribute("transform", "translate(" + wr[0] + " " + wr[1].toFixed(1) + ")");
+    $("eqSF").setAttribute("transform", "rotate(" + rot + ")"); $("eqSR").setAttribute("transform", "rotate(" + rot + ")");
+    var set = function(id, a1, b1){ var e = $(id); e.setAttribute("x1", a1[0].toFixed(1)); e.setAttribute("y1", a1[1].toFixed(1)); e.setAttribute("x2", b1[0].toFixed(1)); e.setAttribute("y2", b1[1].toFixed(1)); };
+    var along = function(a1, b1, d){ var L = Math.hypot(b1[0] - a1[0], b1[1] - a1[1]) || 1; return [a1[0] + (b1[0] - a1[0])*d/L, a1[1] + (b1[1] - a1[1])*d/L]; };
+    var C = W(506, 184);
+    set("eqFkU", C, along(C, wf, 84)); set("eqFkL", wf, along(wf, C, 80));
+    var P = W(372, 262), swA = wr;
+    set("eqSwL", P, swA);
+    var A = W(357, 176), B = [P[0] + (swA[0] - P[0])*.55, P[1] + (swA[1] - P[1])*.55 - 12];
+    set("eqShB", A, along(A, B, 54)); set("eqShR", along(A, B, 54), B);
+    if (spring === "resorte" || PERFIL.S === "resorte"){
+      var L = Math.hypot(B[0] - A[0], B[1] - A[1]), ux = (B[0] - A[0])/L, uy = (B[1] - A[1])/L, d = "M" + A[0].toFixed(1) + " " + A[1].toFixed(1);
+      for (var n = 1; n <= 9; n++){ var s0 = 8 + (L - 16)*n/9, sg = n % 2 ? 1 : -1; d += "L" + (A[0] + ux*s0 - uy*8*sg).toFixed(1) + " " + (A[1] + uy*s0 + ux*8*sg).toFixed(1); }
+      $("eqShC").setAttribute("d", d + "L" + B[0].toFixed(1) + " " + B[1].toFixed(1));
+    } else { $("eqShC").setAttribute("d", ""); }
+    EQ_HIT.forEach(function(th, j){ $("eqB"+j).setAttribute("transform", "translate(" + (EQ_XF + EQ_V*(th - t)).toFixed(1) + " " + EQ_G + ")"); });
   }
   document.querySelectorAll("#eqseg button").forEach(function(b){
     b.addEventListener("click", function(){
@@ -604,5 +618,6 @@
   applyMode();
   if (hp[4] && +hp[4] > 0) EQ.ratio = Math.max(.3, Math.min(3, +hp[4]));
   if (TITLE[hp[0]]){ openPopup(hp[0], hp[1] === "S" ? "S" : "H", null); }
+  if (/^t[0-9.]+$/.test(hp[5] || "")){ phase = +hp[5].slice(1); running = false; frame(performance.now()); }
   requestAnimationFrame(loop);
 })();
