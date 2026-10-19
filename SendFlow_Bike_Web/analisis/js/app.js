@@ -1257,7 +1257,7 @@ function analizarComportamiento(posH, posS, velH, velS, recorridoH, recorridoS, 
   // precarga de resorte, según el tipo de muelle de cada suspensión.
   function evaluarSagMedido(sagMedido, sagObjetivo, tipoResorte){
     if (sagMedido === null || sagMedido === undefined || isNaN(sagMedido)){
-      return { desviacion: 0, mensaje_sugerido: `Sin dato — ajustá tu suspensión a ${(sagObjetivo*100).toFixed(0)}% de SAG en reposo (medido con o-ring, piloto parado y quieto con el equipo puesto) y cargá ese valor en Recorte o en el perfil.`, sinDato: true };
+      return { desviacion: 0, mensaje_sugerido: `Sin dato — ajustá tu suspensión a ${(sagObjetivo*100).toFixed(0)}% de SAG (medido con o-ring, piloto parado y quieto con el equipo puesto) y cargá ese valor en Recorte o en el perfil.`, sinDato: true };
     }
     const desv = sagMedido - sagObjetivo;
     if (Math.abs(desv) < 0.02) return { desviacion: 0, mensaje_sugerido: "Zona objetivo correcta" };
@@ -4705,7 +4705,7 @@ function construirResumenEquipoYPista(){
     ["Modelo", valNotas(p.modeloSuspH)],
     ["Recorrido", valNotas(c.recH," mm")],
     ["Tamaño de rueda", valNotas(p.ruedaTamanoD)],
-    ["SAG en reposo", c.sagMedidoH!=null ? (c.sagMedidoH*100).toFixed(1)+"%" : "—"],
+    ["SAG", c.sagMedidoH!=null ? (c.sagMedidoH*100).toFixed(1)+"%" : "—"],
     ["Resorte / presión", resumenSuspensionNotas(c, c.tipoResorteH, c.durezaResorteH, p.precargaResorteH, c.presSuspH, c.presMedidaH)],
     ["Tokens", valNotas(p.tokensH)],
     ["LSC", valNotas(c.clicksLscH," clicks")],
@@ -4724,7 +4724,7 @@ function construirResumenEquipoYPista(){
     ["Modelo", valNotas(p.modeloSuspS)],
     ["Recorrido real de rueda", valNotas(c.recS," mm")],
     ["Tamaño de rueda", valNotas(p.ruedaTamanoT)],
-    ["SAG en reposo", c.sagMedidoS!=null ? (c.sagMedidoS*100).toFixed(1)+"%" : "—"],
+    ["SAG", c.sagMedidoS!=null ? (c.sagMedidoS*100).toFixed(1)+"%" : "—"],
     ["Resorte / presión", resumenSuspensionNotas(c, c.tipoResorteS, c.durezaResorteS, p.precargaResorteS, c.presSuspS, c.presMedidaS)],
     ["Tokens", valNotas(p.tokensS)],
     ["LSC", valNotas(c.clicksLscS," clicks")],
@@ -6740,10 +6740,10 @@ function construirStatsComparacion(){
 
   let html = "";
   if (A.resIa.sagMedidoH != null && B.resIa.sagMedidoH != null){
-    html += grupo("SAG en reposo horquilla", "%", A.resIa.sagMedidoH*100, B.resIa.sagMedidoH*100, f1);
+    html += grupo("SAG horquilla", "%", A.resIa.sagMedidoH*100, B.resIa.sagMedidoH*100, f1);
   }
   if (A.resIa.sagMedidoS != null && B.resIa.sagMedidoS != null){
-    html += grupo("SAG en reposo shock", "%", A.resIa.sagMedidoS*100, B.resIa.sagMedidoS*100, f1);
+    html += grupo("SAG shock", "%", A.resIa.sagMedidoS*100, B.resIa.sagMedidoS*100, f1);
   }
   html += grupo("Velocidad máxima de suspensión — horquilla", "mm/s", maxAbs(A.vh), maxAbs(B.vh), f0);
   html += grupo("Velocidad máxima de suspensión — shock", "mm/s", maxAbs(A.vs), maxAbs(B.vs), f0);
@@ -7102,8 +7102,8 @@ function construirStats(recH, recS){
   const maxVs = maxAbs(estado.vs).toFixed(0);
 
   const items = [
-    ["SAG EN REPOSO — HORQUILLA", sagH != null ? sagH+"%" : "sin dato", "", "Sag medido a mano con o-ring (no se calcula de la telemetría). Es cuánto se hunde la horquilla solo con el peso del piloto, en reposo."],
-    ["SAG EN REPOSO — SHOCK", sagS != null ? sagS+"%" : "sin dato", "", "Sag medido a mano con o-ring (no se calcula de la telemetría). Es cuánto se hunde el shock solo con el peso del piloto, en reposo."],
+    ["SAG — HORQUILLA", sagH != null ? sagH+"%" : "sin dato", "", "Sag medido a mano con o-ring (no se calcula de la telemetría). Es cuánto se hunde la horquilla solo con el peso del piloto, en reposo."],
+    ["SAG — SHOCK", sagS != null ? sagS+"%" : "sin dato", "", "Sag medido a mano con o-ring (no se calcula de la telemetría). Es cuánto se hunde el shock solo con el peso del piloto, en reposo."],
     ...(estado.sagDin ? [
       ["SAG DINÁMICO MEDIO — H", estado.sagDin.h.valor.toFixed(1)+"%", estado.sagDin.h.estado === "ok" ? "" : "rojo", `Dónde pasó la horquilla la mayor parte del tiempo mientras bajabas. Objetivo para tu estilo: ${estado.sagDin.h.lo.toFixed(0)}–${estado.sagDin.h.hi.toFixed(0)} %.`],
       ["SAG DINÁMICO MEDIO — S", estado.sagDin.s.valor.toFixed(1)+"%", estado.sagDin.s.estado === "ok" ? "" : "rojo", `Dónde pasó el shock la mayor parte del tiempo mientras bajabas. Objetivo para tu estilo: ${estado.sagDin.s.lo.toFixed(0)}–${estado.sagDin.s.hi.toFixed(0)} %.`]
@@ -7126,13 +7126,13 @@ function construirStats(recH, recS){
 // TAB 1: SEMAFOROS + RECOMENDACIONES
 // ============================================================================
 const clavesSemaforo = [
-  ["HORQUILLA_SAG","HORQUILLA · SAG EN REPOSO"],
+  ["HORQUILLA_SAG","HORQUILLA · SAG"],
   ["HORQUILLA_LSC","HORQUILLA · COMPRESIÓN BAJA VEL. (LSC)"],
   ["HORQUILLA_HSC","HORQUILLA · COMPRESIÓN ALTA VEL. (HSC)"],
   ["HORQUILLA_LSR","HORQUILLA · REBOTE BAJA VEL. (LSR)"],
   ["HORQUILLA_HSR","HORQUILLA · REBOTE ALTA VEL. (HSR)"],
   ["HORQUILLA_BOTTOMOUT","HORQUILLA · BOTTOM-OUT"],
-  ["SHOCK_SAG","SHOCK TRASERO · SAG EN REPOSO"],
+  ["SHOCK_SAG","SHOCK TRASERO · SAG"],
   ["SHOCK_LSC","SHOCK TRASERO · COMPRESIÓN BAJA VEL. (LSC)"],
   ["SHOCK_HSC","SHOCK TRASERO · COMPRESIÓN ALTA VEL. (HSC)"],
   ["SHOCK_LSR","SHOCK TRASERO · REBOTE BAJA VEL. (LSR)"],
@@ -7150,7 +7150,7 @@ const ICONO_SEM_BALANCE = '<svg viewBox="0 0 24 24" width="13" height="13" fill=
 const ICONO_SEM_BOTTOMOUT = '<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M4 20h16"/></svg>';
 
 const GRUPOS_SEMAFORO = [
-  { titulo: "SAG EN REPOSO", icono: ICONO_SEM_SAG, claveH: "HORQUILLA_SAG", claveS: "SHOCK_SAG" },
+  { titulo: "SAG", icono: ICONO_SEM_SAG, claveH: "HORQUILLA_SAG", claveS: "SHOCK_SAG" },
   { titulo: "TOPES", icono: ICONO_SEM_BOTTOMOUT, claveH: "HORQUILLA_BOTTOMOUT", claveS: "SHOCK_BOTTOMOUT" },
   { titulo: "COMPRESIÓN ALTA VELOCIDAD (HSC)", icono: ICONO_SEM_HSC, claveH: "HORQUILLA_HSC", claveS: "SHOCK_HSC" },
   { titulo: "COMPRESIÓN BAJA VELOCIDAD (LSC)", icono: ICONO_SEM_LSC, claveH: "HORQUILLA_LSC", claveS: "SHOCK_LSC" },
@@ -7423,9 +7423,9 @@ function construirRecomendaciones(resIa, recH, recS, config){
     const sagHTxt = resIa.sagMedidoH != null ? `${(resIa.sagMedidoH*100).toFixed(1)}%` : `sin dato (objetivo: ${(resIa.perfil.sag_h_opt*100).toFixed(0)}%)`;
     const sagSTxt = resIa.sagMedidoS != null ? `${(resIa.sagMedidoS*100).toFixed(1)}%` : `sin dato (objetivo: ${(resIa.perfil.sag_s_opt*100).toFixed(0)}%)`;
     const sagSRuedaTxt = resIa.sagEnRuedaS != null ? ` (${(resIa.sagEnRuedaS*100).toFixed(1)}% en rueda trasera)` : "";
-    items.push(`SAG en reposo: horquilla <b>${sagHTxt}</b>, shock <b>${sagSTxt}</b>${sagSRuedaTxt}.`);
+    items.push(`SAG: horquilla <b>${sagHTxt}</b>, shock <b>${sagSTxt}</b>${sagSRuedaTxt}.`);
   } else {
-    items.push(`Sin SAG en reposo medido — ajustá presión/precarga a <b>${(resIa.perfil.sag_h_opt*100).toFixed(0)}%</b> (horquilla) y <b>${(resIa.perfil.sag_s_opt*100).toFixed(0)}%</b> (shock), medilo con o-ring, y cargalo en Recorte o en el perfil.`);
+    items.push(`Sin SAG medido — ajustá presión/precarga a <b>${(resIa.perfil.sag_h_opt*100).toFixed(0)}%</b> (horquilla) y <b>${(resIa.perfil.sag_s_opt*100).toFixed(0)}%</b> (shock), medilo con o-ring, y cargalo en Recorte o en el perfil.`);
   }
 
   // --- SAG dinámico (presión/precarga, no un circuito de amortiguación) ---
@@ -7438,7 +7438,7 @@ function construirRecomendaciones(resIa, recH, recS, config){
       items.push(`SAG fuera de ventana en <b>${cual}</b> (${(cuantoOff*100).toFixed(1)} puntos). Ajustar presión de aire o precarga de muelle en ${cual}.`);
       prioridades.push({texto:`Ajustar presión/precarga de ${cual}`, severidad: Math.min(1, cuantoOff*6)});
     } else {
-      items.push("SAG en reposo dentro de la ventana objetivo.");
+      items.push("SAG dentro de la ventana objetivo.");
     }
   }
 

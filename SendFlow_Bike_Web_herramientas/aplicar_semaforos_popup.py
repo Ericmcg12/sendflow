@@ -97,7 +97,17 @@ def parchar_foto(destino):
         '    cont.textContent = ""; { const im = sfImgSegura(estado.fotoTemporalPF, "Foto de perfil"); if (im) cont.appendChild(im); }')
     open(ruta, "w", encoding="utf-8").write(js)
 
+def parchar_nombre_sag(destino):
+    """«SAG en reposo» no existe como concepto: el SAG es lo que se hunde la suspensión con el piloto aboard. Se quita «en reposo» de los textos."""
+    for rel in (os.path.join("js", "app.js"), "index.html"):
+        ruta = os.path.join(destino, rel)
+        t = open(ruta, encoding="utf-8").read()
+        n = t.replace("SAG en reposo", "SAG").replace("SAG EN REPOSO", "SAG")
+        if n != t:
+            open(ruta, "w", encoding="utf-8").write(n)
+
 parchar_app(destino)
 parchar_foto(destino)
+parchar_nombre_sag(destino)
 asegurar_cabeceras(destino)
 print("Semáforos con popup aplicados en", destino)

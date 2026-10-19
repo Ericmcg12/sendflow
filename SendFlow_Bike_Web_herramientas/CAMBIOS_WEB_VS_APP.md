@@ -118,6 +118,9 @@ Pendiente de verificar en producción: `curl -sI https://sendflow.bike/perfil` d
 (el navegador ignoraría la cámara). Es la cámara del sistema, no `getUserMedia`, así que no hay que tocar `Permissions-Policy: camera=()`.
 Falta probar en un celular real (iPhone y Android).
 
+## 2d-bis) Nombre «SAG»
+En la copia web se quitó «en reposo» de todos los textos («SAG en reposo» → «SAG»; títulos de tarjeta, popup, campos de Recorte/Bajada, informe y mensajes), porque el SAG se mide con el piloto sobre la bici. Lo hace `parchar_nombre_sag` en `aplicar_semaforos_popup.py` (reemplazo de texto en `app.js` e `index.html`). La app de escritorio sigue diciendo «SAG en reposo».
+
 ## 2e) Ayuda para medir el SAG y frases de velocidad (ideas tomadas de la revisión de sagly.at; textos propios)
 
 El SAG es un dato que se carga **antes** de analizar una bajada; el semáforo solo confirma si está en zona. Por eso la calculadora **no** va en el popup del semáforo (ahí quedó igual que antes):

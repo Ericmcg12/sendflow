@@ -36,7 +36,7 @@
     AIRE: { title:"RESORTE", sub:"Presión, tokens y curva de fuerza", dir:-1, speed:0, hz:.3, amp:0, v:0, shim:null, ports:null, bleedN:0, portN:0, thr:false,
       what:"El resorte guarda la energía del golpe y empuja la suspensión de vuelta. En aire es aire sellado: al comprimirse sube la presión y la fuerza crece cada vez más rápido (curva progresiva). En espiral crece en línea recta. La presión, o la precarga en espiral, define el SAG. Los tokens ocupan volumen y endurecen el final del recorrido, solo en aire.",
       when:"Es lo primero que se ajusta, porque condiciona todo lo demás. Presión para el SAG, en pasos de 5 PSI según el manual. Tokens para tener soporte al final del recorrido. Con más presión hace falta más rebote cerrado (+5 a 10 PSI, +1 a 2 clicks de rebote).",
-      app:"En SAG en reposo compara el SAG medido con el objetivo y pide cambiar la presión de aire. Si el tipo de resorte de la suspensión es «resorte» (espiral), pide precarga. En topes sugiere sumar presión de aire o token. La curva de acá es ilustrativa, no una medición." }
+      app:"En SAG compara el SAG medido con el objetivo y pide cambiar la presión de aire. Si el tipo de resorte de la suspensión es «resorte» (espiral), pide precarga. En topes sugiere sumar presión de aire o token. La curva de acá es ilustrativa, no una medición." }
   };
 
   var comp = "fork", spring = "aire", popup = false;
@@ -442,7 +442,7 @@
     LSR: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M6 15l6-6 6 6"/></svg>'
   };
   var ORDER = ["SAG","TOPES","HSC","LSC","HSR","LSR"];
-  var TITLE = { EQUIL:"EQUILIBRIO ADELANTE / ATRÁS", SAG:"SAG EN REPOSO", TOPES:"TOPES", HSC:"COMPRESIÓN ALTA VELOCIDAD (HSC)", LSC:"COMPRESIÓN BAJA VELOCIDAD (LSC)", HSR:"REBOTE ALTA VELOCIDAD (HSR)", LSR:"REBOTE BAJA VELOCIDAD (LSR)" };
+  var TITLE = { EQUIL:"EQUILIBRIO ADELANTE / ATRÁS", SAG:"SAG", TOPES:"TOPES", HSC:"COMPRESIÓN ALTA VELOCIDAD (HSC)", LSC:"COMPRESIÓN BAJA VELOCIDAD (LSC)", HSR:"REBOTE ALTA VELOCIDAD (HSR)", LSR:"REBOTE BAJA VELOCIDAD (LSR)" };
   /* El perfil (piloto + bici) define qué suspensiones hay y de qué tipo de resorte. Acá es un ejemplo. */
   var PERFIL = { H:"aire", S:"resorte" };
   var PLAIN = {
