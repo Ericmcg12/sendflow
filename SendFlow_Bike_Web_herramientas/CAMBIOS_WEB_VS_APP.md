@@ -118,17 +118,15 @@ Pendiente de verificar en producción: `curl -sI https://sendflow.bike/perfil` d
 (el navegador ignoraría la cámara). Es la cámara del sistema, no `getUserMedia`, así que no hay que tocar `Permissions-Policy: camera=()`.
 Falta probar en un celular real (iPhone y Android).
 
-## 2e) Ayuda para medir y ajustar (ideas tomadas de la revisión de sagly.at; textos propios)
+## 2e) Ayuda para medir el SAG y frases de velocidad (ideas tomadas de la revisión de sagly.at; textos propios)
 
-Todo en `piezas/semaforo-anim.*` y `piezas/semaforos-popup.*` (web), sin tocar la lógica de análisis de `app.js`:
-- **Calculadora de SAG** en el popup de SAG: recorrido (precargado de la bajada: `config.recH` para la horquilla, `config.sensS` para el shock) y movimiento del o-ring → SAG % y mm del objetivo (`perfil.sag_h_opt` / `sag_s_opt`).
-  «Usar este valor en el análisis» manda el valor (por `postMessage`) a los campos `…SagMedidoH/S` que estén abiertos en Recorte o en el perfil; la bajada hay que volver a analizarla a mano.
-  El popup recibe `?rh=&rs=&oh=&os=` en la URL (además del hash).
-- **«Cómo medir bien el SAG»** (5 pasos) y **aviso de seguridad** (presión, tokens y precarga máximos del fabricante; fuga, juego anormal o falta de extensión) en los popups de SAG, TOPES y EQUILIBRIO.
-- **Regla de psi**: cada 5–10 psi que se suben, cerrar 1–2 clicks de rebote (y al revés) en las indicaciones de presión de SAG y TOPES, y en una nota corta bajo la indicación de cada tarjeta (`.sf-nota`).
-  **Pendiente validar con los manuales de Eric** antes de darla por buena; la fuente externa la da como regla general de forks de aire.
-- **Frases de velocidad**: «alta/baja velocidad» habla de la velocidad del vástago, no de la bici; y «no hay una cantidad de clicks universal».
-Se descartó copiar el buscador de presión por peso (tablas oficiales de SRAM con derechos de autor, y es un dato de seguridad).
+El SAG es un dato que se carga **antes** de analizar una bajada; el semáforo solo confirma si está en zona. Por eso la calculadora **no** va en el popup del semáforo (ahí quedó igual que antes):
+- **Calculadora de SAG en el perfil de bici** (`piezas/sag-calculadora.js`): botón «Calcular» junto a cada campo «SAG medido (%)» (`pfSagMedidoH/S`). Abre una ventanita con el recorrido (toma `pfRecH` / `pfSensS`) y cuánto se corrió el o-ring → % de SAG; «Usar este valor» lo escribe en el campo (entero, como el resto del perfil). Incluye «Cómo medir el SAG» (4 pasos). No toca ninguna bajada ya analizada. La app de escritorio no la tiene.
+- **Frases de velocidad** (popups de HSC, LSC, HSR, LSR): «alta/baja velocidad» habla de la velocidad del vástago, no de la bici; y «no hay una cantidad de clicks universal».
+- **Aviso de seguridad** (presión, tokens y precarga máximos del fabricante; fuga o juego anormal) solo en los popups de TOPES y EQUILIBRIO.
+- **Textos de los popups justificados** y a todo el ancho de la ventana (`semaforo-anim.css`).
+- Se probó y se **descartó**: la regla «±5–10 psi ↔ 1–2 clicks de rebote» y las notas de máximo del fabricante bajo las indicaciones de las tarjetas.
+- Se descartó copiar el buscador de presión por peso (tablas oficiales de SRAM con derechos de autor, y es un dato de seguridad).
 
 ## 3) Diseño
 

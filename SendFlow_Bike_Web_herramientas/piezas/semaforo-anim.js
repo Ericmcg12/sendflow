@@ -468,10 +468,10 @@
   function fixItems(k, S){
     var sp = PERFIL[S];
     if (k === "SAG") return sp === "aire"
-      ? [["psi","up","SUBIR PRESIÓN","de aire","El aire empuja más: el vástago queda más afuera de la cámara y hay más recorrido útil. Por cada 5–10 psi que subas, cerrá 1–2 clicks de rebote."], ["psi","down","BAJAR PRESIÓN","de aire","La suspensión se hunde más con tu peso. Por cada 5–10 psi que bajes, abrí 1–2 clicks de rebote."]]
+      ? [["psi","up","SUBIR PRESIÓN","de aire","El aire empuja más: el vástago queda más afuera de la cámara y hay más recorrido útil."], ["psi","down","BAJAR PRESIÓN","de aire","La suspensión se hunde más con tu peso."]]
       : [["knob","cw","MÁS PRECARGA","sentido horario","El resorte arranca más comprimido: la suspensión se hunde menos con tu peso."], ["knob","ccw","MENOS PRECARGA","sentido antihorario","La suspensión se hunde más con tu peso."], ["tok","","LA PRECARGA AJUSTA FINO","","Si no alcanza, hay que cambiar el resorte por uno más duro o más blando."]];
     if (k === "TOPES") return sp === "aire"
-      ? [["psi","up","SUBIR PRESIÓN","de aire","Si el SAG está alto: es lo que corrige el SAG y evita el tope. Con más presión, cerrá 1–2 clicks de rebote cada 5–10 psi."], ["tokb","","AGREGAR TOKEN","el SAG está bien","Si el SAG está en zona y sigue haciendo tope: el token endurece el final del recorrido sin cambiar el SAG."]]
+      ? [["psi","up","SUBIR PRESIÓN","de aire","Si el SAG está alto: es lo que corrige el SAG y evita el tope."], ["tokb","","AGREGAR TOKEN","el SAG está bien","Si el SAG está en zona y sigue haciendo tope: el token endurece el final del recorrido sin cambiar el SAG."]]
       : [["knob","cw","MÁS PRECARGA","sentido horario","Si el SAG está fuera de zona: se corrige primero con la precarga."], ["lbs","","RESORTE MÁS DURO","más lbs, no la precarga","Si el SAG está en zona y sigue haciendo tope: cambiar por un resorte de más lbs. Subir la precarga no sirve, cambia el SAG."]];
     if (k === "EQUIL") return [["knob","ccw","ABRIR REBOTE","rebote del shock","Pack down trasero: el shock se recupera más rápido y llega con recorrido al próximo golpe."], ["knob","cw","CERRAR REBOTE","rebote del shock","Si la trasera recupera mucho antes que la delantera, la bici rebota de atrás."], ["psi","up","SUBIR PRESIÓN","o más precarga","Si la trasera usa demasiado recorrido comparada con la delantera: más soporte atrás."], ["psi","down","BAJAR PRESIÓN","o menos precarga","Si usa muy poco recorrido comparada con la delantera."]];
     var close = { HSC:"El circuito rápido frena más: los golpes fuertes encuentran más resistencia.", LSC:"Más apoyo: la suspensión se hunde menos al pedalear, en curvas y frenadas.", HSR:"Después de un golpe fuerte la suspensión vuelve más lento.", LSR:"Vuelve más lento en los movimientos suaves." };
@@ -492,8 +492,7 @@
     $("plainTxt").textContent = plainFor(popK, S); $("fixBox").innerHTML = fixHTML(popK, S); $("barEx").innerHTML = barSVG(.45);
     $("barTxt").textContent = "En el semáforo, el centro es el valor recomendado. Cuanto más lejos del centro está el punto, más fuera de zona está la medición. Abajo ves qué hacer para volver al centro.";
     $("fxNote").hidden = !/^(HSC|LSC|HSR|LSR|EQUIL)$/.test(popK);
-    $("safeNote").hidden = !/^(SAG|TOPES|EQUIL)$/.test(popK);
-    sagToolsSync();
+    $("safeNote").hidden = !/^(TOPES|EQUIL)$/.test(popK);
     $("fxNote").textContent = "Se cambia de a un click, desde la posición cerrada hacia la abierta. Si la medición está muy lejos del centro, hacia los extremos de la barra, se cambian dos. No hay una cantidad de clicks que sirva para todos los modelos: depende de la marca y del año.";
   }
 
@@ -642,36 +641,6 @@
     });
   });
 
-  // Calculadora de SAG (en el popup de SAG). Lee del hash/consulta el recorrido y el objetivo de la bajada abierta.
-  var QS = (function(){ var o = {}; (location.search || "").replace(/^\?/, "").split("&").forEach(function(kv){ var a = kv.split("="); if (a[0]) o[a[0]] = decodeURIComponent(a[1] || ""); }); return o; })();
-  var SG = { rh: +QS.rh || 0, rs: +QS.rs || 0, oh: +QS.oh || 18, os: +QS.os || 28 };
-  function sgNum(id){ var v = parseFloat(String($(id).value).replace(",", ".")); return isFinite(v) ? v : NaN; }
-  function sgS(){ return comp === "shock" ? "S" : "H"; }
-  function sagToolsSync(){
-    var on = popK === "SAG"; $("sagTools").hidden = !on; if (!on) return;
-    var shock = comp === "shock";
-    $("sgTravelU").textContent = shock ? "de la carrera del shock (mm, de ojal a ojal)" : "de la horquilla (mm)";
-    var pre = shock ? SG.rs : SG.rh; if (!$("sgTravel").dataset.tocado || $("sgTravel").dataset.comp !== sgS()){ $("sgTravel").value = pre ? pre : ""; $("sgTravel").dataset.comp = sgS(); $("sgTravel").dataset.tocado = ""; }
-    $("sgMove").value = ""; $("sgMsg").hidden = true; sgCalc();
-  }
-  function sgCalc(){
-    var T = sgNum("sgTravel"), m = sgNum("sgMove"), obj = sgS() === "S" ? SG.os : SG.oh, out = $("sgOut"), use = $("sgUse");
-    use.hidden = true;
-    if (!(T > 0)) { out.textContent = "Poné el recorrido (mm)."; return; }
-    var tg = (obj/100*T).toFixed(1).replace(".", ",");
-    if (!(m >= 0) || $("sgMove").value === "") { out.innerHTML = "Tu objetivo es <b>" + obj.toFixed(0) + " %</b>: el o-ring tendría que correrse unos <b>" + tg + " mm</b>."; return; }
-    var sag = 100*m/T, d = sag - obj, cls = Math.abs(d) <= 2 ? "ok" : Math.abs(d) <= 5 ? "med" : "mal";
-    var txt = Math.abs(d) <= 2 ? "Está en zona." : d > 0 ? "Está blando: se hunde más de lo que buscás." : "Está duro: se hunde menos de lo que buscás.";
-    out.innerHTML = 'Tu SAG: <b class="' + cls + '">' + sag.toFixed(1).replace(".", ",") + ' %</b> (objetivo ' + obj.toFixed(0) + ' %, ' + tg + ' mm). ' + txt;
-    use.hidden = !(sag > 0 && sag < 100); use.dataset.valor = sag.toFixed(1);
-  }
-  ["sgTravel", "sgMove"].forEach(function(id){ $(id).addEventListener("input", function(){ if (id === "sgTravel") $(id).dataset.tocado = "1"; sgCalc(); }); });
-  $("sgUse").addEventListener("click", function(){ try { parent.postMessage({ sf: "sag", S: sgS(), valor: parseFloat($("sgUse").dataset.valor) }, location.origin); } catch (e) {} });
-  window.addEventListener("message", function(e){
-    if (e.origin !== location.origin || !e.data || e.data.sf !== "sag-ok") return;
-    var m = $("sgMsg"); m.hidden = false;
-    m.textContent = e.data.n ? "Cargado en " + e.data.n + (e.data.n === 1 ? " campo" : " campos") + " de SAG. Volvé a analizar la bajada para que los semáforos lo usen." : "No hay un campo de SAG abierto ahora. Cargá " + $("sgUse").dataset.valor.replace(".", ",") + " % en Recorte o en tu perfil.";
-  });
   var opener = null;
   $("pCtl").appendChild($("compseg"));
   var EQ = { ratio: 1.7, esc: "hoy" };
