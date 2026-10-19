@@ -8,14 +8,21 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Chakra+Petch:wght@500;600&family=IBM+Plex+Sans:wght@400;500;600&family=Roboto+Mono:wght@400;500&display=swap">
 <style>
-/* Layout: maqueta de la sección de semáforos de Ajustes (6 grupos, fila Horquilla y fila Shock) con un botón ⓘ en cada
-   grupo que abre un popup con una animación corta de lo que mide ese semáforo. Tokens tomados de la app. */
+/* Maqueta v2: cada grupo de semáforo abre un popup con las animaciones de la horquilla y del shock.
+   Layout original: tarjeta única con el lenguaje de la app SendFlow (fondo casi negro verdoso, cian de marca,
+   oro para lo activo, bordes finos, radios 6/8/12). Arriba pestañas; abajo horquilla en transparencia
+   a la izquierda y corte del pistón a la derecha. */
 :root {
   --bg: #070b0c; --panel: #11171a; --panel2: #151b1c; --borde: #232b2c; --borde2: #2e393a;
   --txt: #f2f5f4; --dim: #8b9a98; --mute: #5e6b6a;
-  --cian: #4fe3c2; --oro: #ffbd00; --azul: #4a9eff; --rojo: #ff6b5e;
-  --line: #9fb0b3; --port: #0a1012;
-  --glow: rgba(79,227,194,.10); --sombra: 0 10px 40px rgba(0,0,0,.55); --scrim: rgba(3,6,7,.72);
+  --cian: #4fe3c2; --oro: #ffbd00; --azul: #4a9eff;
+  --ok: #3ddc84; --bad: #ff6b5e;
+  --glass: #b9d6dc; --glassline: rgba(200,228,236,.55);
+  --line: #9fb0b3; --crown-a: #1b2326; --crown-b: #3b484d;
+  --steel-hi: #e3edf0; --steel-lo: #4f6168; --port: #0a1012; --oil: #ffbd00;
+  --flow-c: var(--oro); --flow-r: var(--azul); --flow: var(--flow-c);
+  --glow: rgba(79,227,194,.10);
+  --sombra: 0 10px 40px rgba(0,0,0,.45);
   --font-brand: "Chakra Petch", system-ui, sans-serif;
   --font-body: "IBM Plex Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "Roboto Mono", ui-monospace, Menlo, Consolas, monospace;
@@ -25,111 +32,1118 @@
   :root:not([data-theme="dark"]) {
     --bg: #e8eeed; --panel: #ffffff; --panel2: #f3f7f6; --borde: #c6d3d1; --borde2: #a9bab8;
     --txt: #0e1b19; --dim: #52676a; --mute: #8a9b9a;
-    --cian: #0b9a7e; --oro: #b57600; --azul: #1f6fd1; --rojo: #c8372d;
-    --line: #3f5559; --port: #dbe6e8; --glow: rgba(11,154,126,.10); --sombra: 0 10px 30px rgba(20,40,40,.2); --scrim: rgba(20,32,34,.55);
+    --cian: #0b9a7e; --oro: #b57600; --azul: #1f6fd1; --ok: #1f9d5c; --bad: #c8372d;
+    --glass: #4f6f78; --glassline: rgba(40,70,80,.55);
+    --line: #3f5559; --crown-a: #7f9298; --crown-b: #c3d0d3;
+    --steel-hi: #ffffff; --steel-lo: #6d8086; --port: #dbe6e8; --oil: #c98b00;
+    --glow: rgba(11,154,126,.10); --sombra: 0 10px 30px rgba(20,40,40,.15);
     color-scheme: light;
   }
 }
 :root[data-theme="light"] {
   --bg: #e8eeed; --panel: #ffffff; --panel2: #f3f7f6; --borde: #c6d3d1; --borde2: #a9bab8;
   --txt: #0e1b19; --dim: #52676a; --mute: #8a9b9a;
-  --cian: #0b9a7e; --oro: #b57600; --azul: #1f6fd1; --rojo: #c8372d;
-  --line: #3f5559; --port: #dbe6e8; --glow: rgba(11,154,126,.10); --sombra: 0 10px 30px rgba(20,40,40,.2); --scrim: rgba(20,32,34,.55);
+  --cian: #0b9a7e; --oro: #b57600; --azul: #1f6fd1; --ok: #1f9d5c; --bad: #c8372d;
+  --glass: #4f6f78; --glassline: rgba(40,70,80,.55);
+  --line: #3f5559; --crown-a: #7f9298; --crown-b: #c3d0d3;
+  --steel-hi: #ffffff; --steel-lo: #6d8086; --port: #dbe6e8; --oil: #c98b00;
+  --glow: rgba(11,154,126,.10); --sombra: 0 10px 30px rgba(20,40,40,.15);
   color-scheme: light;
 }
 [hidden] { display: none !important; }
-body { background: var(--bg); color: var(--txt); font-family: var(--font-body); font-size: 15px; line-height: 1.5; -webkit-font-smoothing: antialiased;
-  padding-block: 24px 40px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
-.wrap { max-width: 980px; margin: 0 auto; display: flex; flex-direction: column; gap: 16px; }
-h1 { font-family: var(--font-brand); font-weight: 600; font-size: 28px; line-height: 1.1; margin: 0; text-wrap: balance; }
-.brand { font: 500 13px/1 var(--font-brand); letter-spacing: .08em; color: var(--cian); margin: 0 0 6px; }
-.sub { margin: 6px 0 0; color: var(--dim); font-size: 14px; max-width: 70ch; }
+body {
+  background: var(--bg); color: var(--txt);
+  font-family: var(--font-body); font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased;
+  padding-block: 24px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px; }
+header { display: flex; gap: 14px; align-items: center; }
+header svg { width: 54px; height: auto; flex: none; }
+.brand { font-family: var(--font-brand); font-weight: 500; font-size: 13px; letter-spacing: .08em; color: var(--cian); margin: 0; }
+h1 { font-family: var(--font-brand); font-weight: 600; font-size: 30px; line-height: 1.1; margin: 0; text-wrap: balance; }
+.sub { margin: 4px 0 0; color: var(--dim); max-width: 64ch; font-size: 14px; }
+
+.tabs { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+.tab {
+  font: 600 13px/1 var(--font-body); color: var(--txt); background: var(--panel); border: 1px solid var(--borde2);
+  padding: 10px 16px; cursor: pointer; border-radius: 8px; transition: border-color .2s, color .2s, transform .2s;
+}
+.tab:hover { border-color: var(--oro); color: var(--oro); }
+.tab[aria-selected="true"] { border-color: var(--oro); color: var(--oro); background: rgba(255,189,0,.09); }
+.tab:active { transform: scale(.97); }
+.tab:focus-visible, .play:focus-visible, .seg button:focus-visible { outline: 2px solid var(--oro); outline-offset: 2px; }
+.play { margin-left: auto; font: 500 12px/1 var(--font-body); background: transparent; color: var(--dim); border: 1px solid var(--borde2); padding: 10px 14px; cursor: pointer; border-radius: 8px; }
+.play:hover { color: var(--txt); }
+
+.sheet {
+  position: relative; overflow: hidden; border: 1px solid var(--borde); border-radius: 12px; padding: 18px;
+  background: radial-gradient(520px circle at 85% 0%, var(--glow), transparent 55%), linear-gradient(180deg, var(--panel2), var(--panel));
+  box-shadow: var(--sombra);
+  display: grid; gap: 18px; grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+}
+@media (max-width: 720px) { .sheet { grid-template-columns: minmax(0, 1fr); } }
+.modehead { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 2px 14px; align-items: baseline; }
+.modehead b { font-family: var(--font-brand); font-weight: 600; font-size: 28px; color: var(--oro); }
+.modehead span { color: var(--dim); font-size: 14px; }
+.leftcol { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.seg { display: flex; }
+.seg button { font: 500 12px/1 var(--font-body); padding: 8px 12px; background: transparent; color: var(--dim); border: 1px solid var(--borde2); cursor: pointer; }
+.seg button:first-child { border-radius: 6px 0 0 6px; } .seg button:last-child { border-radius: 0 6px 6px 0; border-left: 0; }
+.seg button[aria-pressed="true"] { color: var(--cian); border-color: var(--cian); background: rgba(79,227,194,.08); }
+figure { margin: 0; display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+figure svg { width: 100%; height: auto; max-width: 100%; display: block; }
+figcaption { font: 400 11px/1.3 var(--font-mono); letter-spacing: .04em; color: var(--mute); border-top: 1px solid var(--borde); padding-top: 6px; }
+.fig-ctx svg, .fig-shock svg { max-width: 460px; margin: 0 auto; }
+.selrow { display: flex; flex-wrap: wrap; gap: 10px; }
+.sagbox.one { grid-template-columns: minmax(0, 320px); justify-content: center; }
+
+/* trazos y rellenos de los dibujos */
+svg .l { fill: none; stroke: var(--line); stroke-width: 1.2; stroke-linejoin: round; stroke-linecap: round; }
+svg .f { fill: var(--panel2); stroke: var(--line); stroke-width: 1.2; stroke-linejoin: round; }
+svg .thin { fill: none; stroke: var(--mute); stroke-width: .8; }
+svg .dash { fill: none; stroke: var(--mute); stroke-width: .8; stroke-dasharray: 5 4; }
+svg .lab { font-family: var(--font-mono); font-size: 10.5px; fill: var(--txt); }
+svg .labd { font-family: var(--font-mono); font-size: 10px; fill: var(--dim); }
+svg .glassf { fill: url(#gGlass); stroke: var(--glassline); stroke-width: 1.2; stroke-linejoin: round; }
+svg .tealf { fill: url(#gTeal); stroke: var(--cian); stroke-width: 1.2; stroke-linejoin: round; }
+svg .metalf { fill: url(#gMetal); stroke: var(--line); stroke-width: 1; stroke-linejoin: round; }
+svg .steelf { fill: url(#gSteel); stroke: var(--line); stroke-width: 1; stroke-linejoin: round; }
+svg .steelt { fill: url(#gSteelT); stroke: var(--line); stroke-width: 1; stroke-linejoin: round; }
+svg .goldf { fill: url(#gGold); stroke: #7a5a00; stroke-width: 1; }
+svg .spec { fill: none; stroke: #fff; stroke-opacity: .35; stroke-width: 1; stroke-linecap: round; }
+svg .on { stroke: var(--flow); stroke-width: 1.9; }
+svg .part-on { stroke: var(--flow); stroke-width: 1.6; }
+svg .p { fill: var(--flow); stroke: none; }
+svg #parts, svg #partsB { filter: drop-shadow(0 0 3px var(--flow)); }
+svg .arrow { fill: none; stroke: var(--flow); stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+.info { grid-column: 1 / -1; display: grid; gap: 14px; grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 720px) { .info { grid-template-columns: minmax(0, 1fr); } }
+.card { border: 1px solid var(--borde); border-radius: 8px; padding: 12px 14px; background: rgba(255,255,255,.015); }
+.card h2 { font: 500 11px/1.2 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--cian); margin: 0 0 6px; }
+.card p { margin: 0; font-size: 14px; max-width: 60ch; }
+.note { grid-column: 1 / -1; font-size: 12.5px; color: var(--dim); max-width: 84ch; margin: 0; }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font: 400 11px/1 var(--font-mono); color: var(--dim); }
+.legend i { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 5px; vertical-align: -1px; }
+
+.sagbox { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+@media (max-width: 720px) { .sagbox { grid-template-columns: minmax(0, 1fr); } .sagbox svg { max-width: 260px; margin: 0 auto; } }
+.sagcap { border-top: 1px solid var(--borde); padding-top: 8px; display: flex; flex-direction: column; gap: 2px; }
+.sagcap b { font-family: var(--font-brand); font-weight: 600; font-size: 21px; }
+.sagcap .r { font: 400 12px/1.3 var(--font-mono); }
+.sagcap.ok b, .sagcap.ok .r { color: var(--ok); }
+.sagcap.bad b, .sagcap.bad .r { color: var(--bad); }
+.sagcap p { margin: 0; font-size: 13.5px; color: var(--dim); }
+.topbox { grid-column: 1 / -1; display: grid; grid-template-columns: minmax(0, 4fr) minmax(0, 7fr); gap: 16px; }
+.airbox { display: block; min-width: 0; }
+@media (max-width: 720px) { .topbox { grid-template-columns: minmax(0, 1fr); } }
+.figT1 svg { max-width: 220px; margin: 0 auto; }
+.figA1 svg { max-width: 330px; margin: 0 auto; }
+.ctl { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; font: 500 12px/1.2 var(--font-body); color: var(--dim); }
+.ctl .grp { display: inline-flex; align-items: center; gap: 6px; }
+.ctl button { font: 600 12px/1 var(--font-body); color: var(--txt); background: var(--panel); border: 1px solid var(--borde2); border-radius: 6px; padding: 8px 11px; cursor: pointer; }
+.ctl button:hover { border-color: var(--oro); color: var(--oro); }
+.ctl button:focus-visible { outline: 2px solid var(--oro); outline-offset: 2px; }
+.ctl .seg button { border-radius: 0; color: var(--dim); }
+.ctl .seg button:first-child { border-radius: 6px 0 0 6px; } .ctl .seg button:last-child { border-radius: 0 6px 6px 0; border-left: 0; }
+.ctl .seg button[aria-pressed="true"] { color: var(--cian); border-color: var(--cian); }
+.ctl b { color: var(--txt); font: 500 13px/1 var(--font-mono); min-width: 5ch; text-align: center; display: inline-block; }
+.semrow { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; border: 1px solid var(--borde); border-radius: 8px; padding: 10px 12px; font-size: 13.5px; }
+.semrow b { font: 500 14px/1 var(--font-mono); }
+.chip { font: 600 11px/1 var(--font-mono); letter-spacing: .06em; padding: 5px 8px; border-radius: 6px; border: 1px solid currentColor; }
+.chip.ok { color: var(--cian); } .chip.warn { color: var(--oro); } .chip.bad { color: var(--bad); }
+.wrap > .selrow, .wrap > .tabs, .wrap > .gauge { display: none; }
+svg .hit { stroke: var(--bad); stroke-width: 3; filter: drop-shadow(0 0 6px var(--bad)); }
+svg .hitT { font-family: var(--font-mono); font-size: 14px; font-weight: 700; fill: var(--bad); paint-order: stroke; stroke: var(--panel); stroke-width: 3px; stroke-linejoin: round; }
 .grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
 @media (max-width: 760px) { .grid { grid-template-columns: minmax(0, 1fr); } }
 .gs { background: linear-gradient(180deg, var(--panel2), var(--panel)); border: 1px solid var(--borde); border-radius: 12px; padding: 16px 18px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
 .gs-t { display: flex; align-items: center; gap: 10px; font: 600 12px/1.3 var(--font-body); letter-spacing: .04em; }
 .gs-t .ic { color: var(--cian); display: inline-flex; }
-.info-btn { margin-left: auto; width: 34px; height: 34px; border-radius: 50%; border: 1px solid var(--borde2); background: transparent; color: var(--dim); cursor: pointer; font: 600 14px/1 var(--font-mono); display: inline-flex; align-items: center; justify-content: center; flex: none; }
+.info-btn { margin-left: auto; width: 36px; height: 36px; border-radius: 50%; border: 1px solid var(--borde2); background: transparent; color: var(--dim); cursor: pointer; font: 600 14px/1 var(--font-mono); display: inline-flex; align-items: center; justify-content: center; flex: none; }
 .info-btn:hover { border-color: var(--oro); color: var(--oro); }
-.info-btn:focus-visible, .nm:focus-visible, .x:focus-visible, .seg button:focus-visible { outline: 2px solid var(--oro); outline-offset: 2px; }
+.info-btn:focus-visible, .nm:focus-visible, .x:focus-visible, .plain summary:focus-visible { outline: 2px solid var(--oro); outline-offset: 2px; }
 .row { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 12px; align-items: center; }
-.nm { background: none; border: 0; padding: 0; text-align: left; font: 600 10.5px/1.2 var(--font-body); letter-spacing: .06em; cursor: pointer; }
+.nm { background: none; border: 0; padding: 6px 0; text-align: left; font: 600 10.5px/1.2 var(--font-body); letter-spacing: .06em; cursor: pointer; }
 .nm.c { color: var(--cian); } .nm.o { color: var(--oro); }
 .nm:hover { text-decoration: underline; }
 .msg { display: block; font-size: 11.5px; text-align: center; min-height: 16px; margin-bottom: 4px; }
 .sev { display: block; font: 400 9px/1 var(--font-mono); letter-spacing: .08em; color: var(--dim); text-align: center; margin-top: 4px; min-height: 10px; }
 .dial { width: 100%; height: 24px; display: block; }
 .dial .tk { fill: none; stroke: var(--mute); stroke-width: 1; }
-
-.ov { position: fixed; inset: 0; z-index: 20; background: var(--scrim); display: flex; align-items: center; justify-content: center; padding: 16px; }
-.mod { width: min(760px, 100%); max-height: calc(100% - 8px); overflow: auto; background: linear-gradient(180deg, var(--panel2), var(--panel)); border: 1px solid var(--borde2); border-radius: 12px; box-shadow: var(--sombra); display: flex; flex-direction: column; }
-@media (max-width: 600px) { .ov { padding: 0; align-items: flex-end; } .mod { max-height: 94%; border-radius: 12px 12px 0 0; } }
-.mh { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--borde); position: sticky; top: 0; background: var(--panel); z-index: 1; }
+.ov { position: fixed; inset: 0; z-index: 20; background: rgba(3,6,7,.72); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.mod { width: min(980px, 100%); max-height: calc(100% - 8px); overflow: auto; background: linear-gradient(180deg, var(--panel2), var(--panel)); border: 1px solid var(--borde2); border-radius: 12px; box-shadow: var(--sombra); }
+@media (max-width: 700px) { .ov { padding: 0; align-items: flex-end; } .mod { max-height: 94%; border-radius: 12px 12px 0 0; } }
+.mh { display: flex; align-items: center; gap: 10px; padding: 14px 16px; border-bottom: 1px solid var(--borde); position: sticky; top: 0; background: var(--panel); z-index: 2; }
 .mh .ic { color: var(--cian); display: inline-flex; }
 .mh h2 { margin: 0; font: 600 14px/1.3 var(--font-body); letter-spacing: .04em; }
 .x { margin-left: auto; width: 36px; height: 36px; border-radius: 8px; border: 1px solid var(--borde2); background: transparent; color: var(--txt); font-size: 18px; line-height: 1; cursor: pointer; flex: none; }
 .mb { padding: 14px 16px 18px; display: flex; flex-direction: column; gap: 14px; }
-.ctl { display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center; font: 500 12px/1.2 var(--font-body); color: var(--dim); }
-.seg { display: inline-flex; }
-.seg button { font: 600 12px/1 var(--font-body); padding: 9px 12px; background: transparent; color: var(--dim); border: 1px solid var(--borde2); cursor: pointer; }
-.seg button:first-child { border-radius: 6px 0 0 6px; } .seg button:last-child { border-radius: 0 6px 6px 0; } .seg button + button { border-left: 0; }
-.seg button[aria-pressed="true"] { color: var(--cian); border-color: var(--cian); background: rgba(79,227,194,.08); }
-.stage { width: 100%; height: auto; display: block; background: var(--port); background: color-mix(in srgb, var(--port) 55%, transparent); border: 1px solid var(--borde); border-radius: 8px; }
-.stage .l { fill: none; stroke: var(--line); stroke-width: 1.2; stroke-linecap: round; stroke-linejoin: round; }
-.stage .t { fill: none; stroke: var(--mute); stroke-width: .8; }
-.stage .d { fill: none; stroke: var(--mute); stroke-width: .8; stroke-dasharray: 5 4; }
-.stage text { font-family: var(--font-mono); font-size: 11px; fill: var(--dim); }
-.stage text.b { fill: var(--txt); }
-.stage text { paint-order: stroke; stroke: var(--panel); stroke-width: 3px; stroke-linejoin: round; }
-.res { border: 1px solid var(--borde); border-radius: 8px; padding: 10px 12px; display: grid; grid-template-columns: minmax(0, 260px) minmax(0, 1fr); gap: 8px 16px; align-items: center; }
-@media (max-width: 600px) { .res { grid-template-columns: minmax(0, 1fr); } }
-.chip { display: inline-block; font: 600 11px/1 var(--font-mono); letter-spacing: .06em; padding: 5px 8px; border-radius: 6px; border: 1px solid currentColor; margin-right: 8px; }
-.chip.ok { color: var(--cian); } .chip.warn { color: var(--oro); } .chip.bad { color: var(--rojo); }
-.txt { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
-@media (max-width: 600px) { .txt { grid-template-columns: minmax(0, 1fr); } }
-.card { border: 1px solid var(--borde); border-radius: 8px; padding: 10px 12px; }
-.card h3 { margin: 0 0 4px; font: 500 11px/1.2 var(--font-mono); letter-spacing: .1em; text-transform: uppercase; color: var(--cian); }
-.card p { margin: 0; font-size: 13.5px; }
-.foot { font-size: 12px; color: var(--dim); margin: 0; }
-@media (prefers-reduced-motion: reduce) { * { scroll-behavior: auto; } }
+.mod .sheet { border: 0; box-shadow: none; padding: 0; background: none; overflow: visible; }
+.mod .modehead, .mod .info, .mod .note, .mod #viewseg, .mod .topbox, .mod .airbox { display: none !important; }
+.nolabels svg text:not(.hitT), .nolabels svg line.thin { display: none; }
+.plain { display: flex; flex-direction: column; gap: 10px; }
+.plain p { margin: 0; font-size: 15px; max-width: 70ch; }
+.plain .topc { font-size: 14px; border: 1px solid var(--borde); border-radius: 8px; padding: 10px 12px; }
+.plain .topc b { font: 500 16px/1 var(--font-mono); color: var(--bad); }
+.plain details { border: 1px solid var(--borde); border-radius: 8px; padding: 8px 12px; }
+.plain summary { cursor: pointer; font: 500 12px/1.4 var(--font-mono); letter-spacing: .08em; text-transform: uppercase; color: var(--cian); }
+.plain details p { margin-top: 8px; font-size: 13.5px; color: var(--dim); }
+.gauge { width: 100%; max-width: 100%; height: auto; display: block; background: var(--panel); border: 1px solid var(--borde); border-radius: 8px; }
+@media (prefers-reduced-motion: reduce) { .play { display: none; } }
 </style>
 </head>
 <body>
 
 
+<svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false">
+  <defs>
+    <linearGradient id="gGlass" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" style="stop-color:var(--glass);stop-opacity:.05"/><stop offset=".22" style="stop-color:var(--glass);stop-opacity:.30"/>
+      <stop offset=".5" style="stop-color:var(--glass);stop-opacity:.10"/><stop offset=".8" style="stop-color:var(--glass);stop-opacity:.22"/>
+      <stop offset="1" style="stop-color:var(--glass);stop-opacity:.05"/>
+    </linearGradient>
+    <linearGradient id="gTeal" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" style="stop-color:var(--cian);stop-opacity:.10"/><stop offset=".25" style="stop-color:var(--cian);stop-opacity:.42"/>
+      <stop offset=".5" style="stop-color:var(--cian);stop-opacity:.16"/><stop offset=".78" style="stop-color:var(--cian);stop-opacity:.30"/>
+      <stop offset="1" style="stop-color:var(--cian);stop-opacity:.10"/>
+    </linearGradient>
+    <linearGradient id="gMetal" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" style="stop-color:var(--crown-a)"/><stop offset=".35" style="stop-color:var(--crown-b)"/><stop offset=".7" style="stop-color:var(--crown-a)"/><stop offset="1" style="stop-color:var(--crown-b)"/>
+    </linearGradient>
+    <linearGradient id="gSteel" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" style="stop-color:var(--steel-lo)"/><stop offset=".4" style="stop-color:var(--steel-hi)"/><stop offset="1" style="stop-color:var(--steel-lo)"/>
+    </linearGradient>
+    <linearGradient id="gSteelT" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" style="stop-color:var(--steel-lo);stop-opacity:.45"/><stop offset=".4" style="stop-color:var(--steel-hi);stop-opacity:.55"/><stop offset="1" style="stop-color:var(--steel-lo);stop-opacity:.45"/>
+    </linearGradient>
+    <linearGradient id="gGold" x1="0" x2="1" y1="0" y2="0">
+      <stop offset="0" stop-color="#7a5a00"/><stop offset=".4" stop-color="#ffd24d"/><stop offset="1" stop-color="#7a5a00"/>
+    </linearGradient>
+    <pattern id="gasDots" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="var(--panel)"/><circle cx="2" cy="2" r="1" fill="var(--dim)"/><circle cx="6" cy="6" r="1" fill="var(--dim)"/></pattern>
+    <linearGradient id="gOilV" x1="0" x2="0" y1="0" y2="1">
+      <stop offset="0" style="stop-color:var(--oil);stop-opacity:.04"/><stop offset="1" style="stop-color:var(--oil);stop-opacity:.12"/>
+    </linearGradient>
+  </defs>
+</svg>
+
 <div class="wrap">
   <header>
-    <p class="brand">SENDFLOW BIKE · MAQUETA</p>
-    <h1>Semáforos con popup</h1>
-    <p class="sub">Así se vería la sección de semáforos con un botón ⓘ por grupo. Toca el ⓘ, o el nombre HORQUILLA o SHOCK de una fila, para ver una animación corta de qué mide ese semáforo. Los estados de las tarjetas son de ejemplo.</p>
+    <svg viewBox="0 0 200 120" role="img" aria-label="SendFlow"><path d="M10,100 L40,60 L60,85 L85,28 L110,80 L130,55 L160,95 L190,100" fill="none" stroke="#4fe3c2" stroke-width="10" stroke-linejoin="round" stroke-linecap="round"/><circle cx="85" cy="28" r="9" fill="#ffffff"/></svg>
+    <div>
+      <p class="brand">SENDFLOW BIKE · MAQUETA</p>
+      <h1 id="h1">Semáforos con popup</h1>
+      <p class="sub" id="subtitle">Así se vería la sección de semáforos. Toca el ⓘ de un grupo, o el nombre HORQUILLA o SHOCK de una fila, y se abre la animación de lo que pasa por dentro. Los estados de las tarjetas son de ejemplo.</p>
+    </div>
   </header>
+
   <div class="grid" id="grid"></div>
+
+  <div class="selrow">
+    <div class="seg" id="compseg" role="group" aria-label="Suspensión">
+      <button type="button" data-c="fork" aria-pressed="true">Horquilla</button>
+      <button type="button" data-c="shock" aria-pressed="false">Shock</button>
+    </div>
+    <div class="seg" id="springseg" role="group" aria-label="Tipo de resorte">
+      <button type="button" data-s="aire" aria-pressed="true">Resorte de aire</button>
+      <button type="button" data-s="resorte" aria-pressed="false">Resorte espiral</button>
+    </div>
+  </div>
+
+  <div class="tabs" role="tablist" aria-label="Función">
+    <button class="tab" role="tab" id="t-HSC" data-m="HSC" aria-selected="true">HSC</button>
+    <button class="tab" role="tab" id="t-LSC" data-m="LSC" aria-selected="false">LSC</button>
+    <button class="tab" role="tab" id="t-HSR" data-m="HSR" aria-selected="false">HSR</button>
+    <button class="tab" role="tab" id="t-LSR" data-m="LSR" aria-selected="false">LSR</button>
+    <button class="tab" role="tab" id="t-SAG" data-m="SAG" aria-selected="false">SAG</button>
+    <button class="tab" role="tab" id="t-TOPES" data-m="TOPES" aria-selected="false">TOPES</button>
+    <button class="tab" role="tab" id="t-AIRE" data-m="AIRE" aria-selected="false">RESORTE</button>
+    <button class="play" id="play" type="button">Pausar</button>
+  </div>
+
+  <svg viewBox="0 0 400 66" role="img" id="gaugeSvg" class="gauge" aria-label="Escala de velocidad del vástago con el valor de ejemplo de la zona elegida">
+    <line class="l" x1="20" y1="30" x2="380" y2="30"/>
+    <g class="labd" id="gTicks"></g>
+    <line id="gThr" class="dash" x1="20" y1="14" x2="20" y2="38" style="stroke:var(--oro)"/>
+    <text id="gThrT" class="lab" x="20" y="10" style="fill:var(--oro)"></text>
+    <circle id="gDot" class="p" cx="20" cy="30" r="5"/>
+    <text id="gVal" class="lab" x="20" y="60"></text>
+  </svg>
 </div>
 
-<div class="ov" id="ov" hidden role="dialog" aria-modal="true" aria-labelledby="mT">
+<div class="ov" id="ov" hidden role="dialog" aria-modal="true" aria-labelledby="pT">
   <div class="mod" id="mod">
-    <div class="mh"><span class="ic" id="mIc"></span><h2 id="mT"></h2><button class="x" id="mX" type="button" aria-label="Cerrar">×</button></div>
+    <div class="mh"><span class="ic" id="pIc"></span><h2 id="pT"></h2><button class="x" id="pX" type="button" aria-label="Cerrar">×</button></div>
     <div class="mb">
-      <div class="ctl">
-        <span class="seg" id="suspSeg" role="group" aria-label="Suspensión"><button type="button" data-s="H" aria-pressed="true">Horquilla</button><button type="button" data-s="S" aria-pressed="false">Shock</button></span>
-        <span id="stLab">Ejemplo</span><span class="seg" id="stateSeg" role="group" aria-label="Ejemplo"></span>
+      <div class="ctl" id="pCtl"></div>
+  <div class="sheet" id="sheet">
+    <div class="modehead"><b id="mTitle">HSC</b><span id="mSub">Compresión rápida</span></div>
+
+    <div class="leftcol" id="leftcol">
+      <div class="seg" id="viewseg" role="group" aria-label="Vista">
+        <button type="button" data-v="ctx" aria-pressed="true">En la horquilla</button>
+        <button type="button" data-v="fork" aria-pressed="false">Explosionada</button>
       </div>
-      <svg class="stage" id="stage" viewBox="0 0 480 240" role="img" aria-label="Animación del semáforo"></svg>
-      <div class="res">
-        <svg class="dial" id="mDial" viewBox="0 0 260 24" role="img" aria-label="Barra del semáforo"></svg>
-        <div><span class="chip ok" id="mChip">EN PUNTO</span><span id="mMsg"></span></div>
+
+      <figure class="fig-shockair" hidden>
+        <svg viewBox="0 0 460 600" role="img" aria-label="Shock de aire con piggyback, visto de frente, con la carcasa de aire y la reserva en transparencia. Arriba está el ojal del vástago móvil, que entra en la carcasa de aire grande. Debajo del pistón queda la cámara positiva y arriba la cámara negativa. La reserva del piggyback va junto a la carcasa, a la altura de la cámara positiva, con la válvula de compresión marcada con la letra B. El pistón del amortiguador está marcado con la letra A.">
+          <ellipse cx="190" cy="592" rx="120" ry="6" fill="#000" opacity=".18"/>
+          <!-- parte fija: carcasa de aire, reserva y ojal inferior -->
+          <rect class="tealf" x="110" y="262" width="160" height="250" rx="6"/>
+          <path class="spec" d="M120 272V506"/>
+          <rect id="saTok" class="steelt" x="116" y="512" width="148" height="0"/>
+          <g id="saDots"></g>
+          <rect class="metalf" x="104" y="254" width="172" height="12" rx="3"/>
+          <rect class="metalf" x="104" y="512" width="172" height="12" rx="3"/>
+          <rect class="metalf" x="270" y="272" width="14" height="14" rx="2"/>
+          <rect class="tealf" x="292" y="332" width="48" height="170" rx="8"/>
+          <rect x="296" y="338" width="40" height="52" fill="url(#gasDots)"/>
+          <rect x="296" y="400" width="40" height="52" fill="url(#gOilV)"/>
+          <g id="saIfp"><rect class="steelf" x="296" y="391" width="40" height="9" rx="2"/></g>
+          <rect class="steelf" x="296" y="458" width="40" height="20" rx="1"/>
+          <rect x="302" y="458" width="5" height="20" fill="var(--port)"/><rect x="325" y="458" width="5" height="20" fill="var(--port)"/>
+          <rect class="tealf" x="270" y="486" width="22" height="14"/>
+          <circle cx="316" cy="468" r="27" fill="none" style="stroke:var(--oro);stroke-width:1.3;stroke-dasharray:4 3"/>
+          <rect class="metalf" x="172" y="524" width="36" height="20"/>
+          <circle class="metalf" cx="190" cy="566" r="24"/><circle cx="190" cy="566" r="10" fill="var(--port)" stroke="var(--line)"/><circle class="steelf" cx="190" cy="566" r="6.5"/>
+          <g id="saHitG" style="display:none"><circle cx="190" cy="476" r="36" fill="none" class="hit"/><text x="190" y="428" class="hitT" text-anchor="middle">TOPE</text></g>
+          <!-- parte móvil: ojal, vástago y pistones; baja al comprimir -->
+          <g id="saTop">
+            <rect class="metalf" x="172" y="58" width="36" height="22"/>
+            <circle class="metalf" cx="190" cy="40" r="24"/><circle cx="190" cy="40" r="10" fill="var(--port)" stroke="var(--line)"/><circle class="steelf" cx="190" cy="40" r="6.5"/>
+            <rect class="tealf" x="166" y="76" width="48" height="262"/>
+            <path class="spec" d="M172 84V330"/>
+            <rect class="goldf part-on" x="172" y="316" width="36" height="12" rx="1"/>
+            <rect class="steelf" x="116" y="338" width="148" height="12" rx="2"/>
+            <circle cx="190" cy="322" r="24" fill="none" style="stroke:var(--oro);stroke-width:1.3;stroke-dasharray:4 3"/>
+            <line class="thin" x1="166" y1="322" x2="102" y2="322" style="stroke:var(--oro)"/><text class="lab" x="98" y="319" text-anchor="end" style="fill:var(--oro)">A  pistón</text><text class="lab" x="98" y="333" text-anchor="end" style="fill:var(--oro)">(rebote)</text>
+            <line class="thin" x1="116" y1="346" x2="102" y2="346"/><text class="lab" x="98" y="357" text-anchor="end">pistón de aire</text>
+          </g>
+          <!-- flecha de movimiento -->
+          <g class="arrow"><path id="saArrowPath" d="M34 100V140M28 132L34 140L40 132"/></g>
+          <text class="labd" x="6" y="92" id="saArrowTxt">comprime</text>
+          <!-- etiquetas izquierda -->
+          <g>
+            <line class="thin" x1="166" y1="40" x2="128" y2="40"/><text class="lab" x="124" y="43" text-anchor="end">ojal superior</text>
+            <line class="thin" x1="166" y1="170" x2="128" y2="170"/><text class="lab" x="124" y="167" text-anchor="end">vástago</text><text class="lab" x="124" y="181" text-anchor="end">(se mueve)</text>
+            <line class="thin" x1="116" y1="296" x2="102" y2="296"/><text class="lab" x="98" y="293" text-anchor="end">cámara</text><text class="lab" x="98" y="307" text-anchor="end">negativa</text>
+            <line class="thin" x1="116" y1="430" x2="102" y2="430"/><text class="lab" x="98" y="427" text-anchor="end">cámara</text><text class="lab" x="98" y="441" text-anchor="end">positiva</text>
+            <line class="thin" x1="166" y1="566" x2="128" y2="566"/><text class="lab" x="124" y="569" text-anchor="end">ojal inferior</text>
+          </g>
+          <!-- etiquetas derecha -->
+          <g>
+            <line class="thin" x1="284" y1="279" x2="346" y2="279"/><text class="lab" x="350" y="282">válvula de aire</text>
+            <line class="thin" x1="270" y1="308" x2="346" y2="308"/><text class="lab" x="350" y="311">carcasa de aire</text>
+            <line class="thin" x1="340" y1="358" x2="346" y2="358"/><text class="lab" x="350" y="355">nitrógeno</text>
+            <line class="thin" x1="340" y1="396" x2="346" y2="396"/><text class="lab" x="350" y="393">pistón flotante</text>
+            <line class="thin" x1="343" y1="428" x2="346" y2="428"/><text class="lab" x="350" y="425">reserva</text><text class="lab" x="350" y="439">(piggyback)</text>
+            <line class="thin" x1="343" y1="468" x2="346" y2="468" style="stroke:var(--oro)"/><text class="lab" x="350" y="465" style="fill:var(--oro)">B  válvula de</text><text class="lab" x="350" y="479" style="fill:var(--oro)">compresión</text>
+            <line class="thin" x1="281" y1="500" x2="346" y2="512"/><text class="lab" x="350" y="515">pasaje de aceite</text>
+          </g>
+        </svg>
+        <figcaption>Shock de aire por dentro · carcasa y reserva en transparencia</figcaption>
+      </figure>
+
+      <figure class="fig-shock" hidden>
+        <svg viewBox="0 0 460 600" role="img" aria-label="Shock de espiral con reserva visto de frente, con cuerpo y reserva en transparencia. La reserva va junto al cuerpo y se une a él por arriba, del lado del ojal superior, con un pasaje de aceite. La válvula de compresión, marcada con la letra B, está dentro de la reserva. Dentro del cuerpo está el pistón, marcado con la letra A. El resorte va debajo del cuerpo, rodeando el vástago.">
+          <ellipse cx="190" cy="592" rx="120" ry="6" fill="#000" opacity=".18"/>
+          <!-- parte fija: ojal superior, cuerpo, reserva -->
+          <rect class="metalf" x="172" y="58" width="36" height="22"/>
+          <circle class="metalf" cx="190" cy="40" r="24"/><circle cx="190" cy="40" r="10" fill="var(--port)" stroke="var(--line)"/><circle class="steelf" cx="190" cy="40" r="6.5"/>
+          <rect class="tealf" x="160" y="76" width="60" height="214" rx="6"/>
+          <rect x="164" y="98" width="52" height="188" fill="url(#gOilV)"/>
+          <path class="spec" d="M168 84V284"/>
+          <rect class="tealf" x="252" y="96" width="44" height="176" rx="8"/>
+          <rect x="256" y="102" width="36" height="110" fill="url(#gOilV)"/>
+          <rect x="256" y="224" width="36" height="42" fill="url(#gasDots)"/>
+          <g id="shIfp"><rect class="steelf" x="256" y="212" width="36" height="9" rx="2"/></g>
+          <rect class="tealf" x="220" y="102" width="32" height="14"/>
+          <rect class="steelf" x="256" y="130" width="36" height="20" rx="1"/>
+          <rect x="262" y="130" width="5" height="20" fill="var(--port)"/><rect x="281" y="130" width="5" height="20" fill="var(--port)"/>
+          <rect class="metalf" x="156" y="290" width="68" height="14" rx="3"/>
+          <rect id="shCollar" class="metalf" x="142" y="304" width="96" height="12" rx="4"/>
+          <g id="spG" fill="none" style="stroke:var(--line)" stroke-linecap="round"></g>
+          <circle cx="274" cy="140" r="27" fill="none" style="stroke:var(--oro);stroke-width:1.3;stroke-dasharray:4 3"/>
+          <g id="shHitG" style="display:none"><circle cx="190" cy="318" r="34" fill="none" class="hit"/><text x="190" y="276" class="hitT" text-anchor="middle">TOPE</text></g>
+          <!-- parte móvil: pistón, vástago, asiento inferior y ojal -->
+          <g id="lowG">
+            <rect class="steelf" x="186" y="228" width="8" height="284"/>
+            <path class="l" d="M173 220H207M175 217H205"/>
+            <rect class="goldf part-on" id="shPiston" x="170" y="222" width="40" height="14" rx="1"/>
+            <path class="l" d="M173 239H207M175 242H205"/>
+            <circle cx="190" cy="229" r="26" fill="none" style="stroke:var(--oro);stroke-width:1.3;stroke-dasharray:4 3"/>
+            <rect id="shSeat" class="metalf" x="138" y="474" width="104" height="12" rx="4"/>
+            <rect class="metalf" x="172" y="512" width="36" height="20"/>
+            <circle class="metalf" cx="190" cy="558" r="24"/><circle cx="190" cy="558" r="10" fill="var(--port)" stroke="var(--line)"/><circle class="steelf" cx="190" cy="558" r="6.5"/>
+          </g>
+          <!-- flecha de movimiento -->
+          <g class="arrow"><path id="shArrowPath" d="M34 140V100M28 108L34 100L40 108"/></g>
+          <text class="labd" x="6" y="92" id="shArrowTxt">comprime</text>
+          <!-- etiquetas izquierda -->
+          <g>
+            <line class="thin" x1="166" y1="40" x2="128" y2="40"/><text class="lab" x="124" y="43" text-anchor="end">ojal superior</text>
+            <line class="thin" x1="160" y1="170" x2="128" y2="170"/><text class="lab" x="124" y="167" text-anchor="end">cuerpo</text><text class="lab" x="124" y="181" text-anchor="end">(aceite)</text>
+            <line class="thin" x1="164" y1="229" x2="128" y2="229" style="stroke:var(--oro)"/><text class="lab" x="124" y="226" text-anchor="end" style="fill:var(--oro)">A  pistón</text><text class="lab" x="124" y="240" text-anchor="end" style="fill:var(--oro)">(rebote)</text>
+            <g id="shLabNut"><line class="thin" x1="142" y1="310" x2="128" y2="310"/><text class="lab" x="124" y="300" text-anchor="end">tuerca de</text><text class="lab" x="124" y="314" text-anchor="end">precarga</text></g>
+            <g id="shLabCoil"><line class="thin" x1="148" y1="395" x2="128" y2="395"/><text class="lab" x="124" y="398" text-anchor="end">resorte</text></g>
+            <line class="thin" x1="186" y1="522" x2="128" y2="522"/><text class="lab" x="124" y="525" text-anchor="end">vástago</text>
+            <line class="thin" x1="166" y1="558" x2="128" y2="558"/><text class="lab" x="124" y="561" text-anchor="end">ojal inferior</text>
+          </g>
+          <!-- etiquetas derecha -->
+          <g>
+            <line class="thin" x1="301" y1="140" x2="316" y2="140" style="stroke:var(--oro)"/><text class="lab" x="320" y="137" style="fill:var(--oro)">B  válvula de</text><text class="lab" x="320" y="151" style="fill:var(--oro)">compresión</text>
+            <line class="thin" x1="252" y1="107" x2="316" y2="84"/><text class="lab" x="320" y="87">pasaje de aceite</text>
+            <line class="thin" x1="296" y1="182" x2="316" y2="182"/><text class="lab" x="320" y="179">reserva</text><text class="lab" x="320" y="193">(piggyback)</text>
+            <line class="thin" x1="296" y1="217" x2="316" y2="217"/><text class="lab" x="320" y="214">pistón</text><text class="lab" x="320" y="228">flotante</text>
+            <line class="thin" x1="296" y1="248" x2="316" y2="248"/><text class="lab" x="320" y="258">nitrógeno</text>
+          </g>
+        </svg>
+        <figcaption>El shock por dentro · cuerpo y reserva en transparencia</figcaption>
+      </figure>
+
+      <figure class="fig-ctx">
+        <svg viewBox="0 0 460 600" role="img" aria-label="Horquilla de frente con patas y tubos en transparencia. Dentro de la pata izquierda se ve el cartucho del amortiguador, el vástago que baja desde la corona y el pistón, marcado con la letra A. La otra pata lleva el resorte.">
+          <defs>
+            <clipPath id="clipLegL"><path d="M116 332H178V516Q178 556 147 556Q116 556 116 516Z"/></clipPath>
+          </defs>
+          <!-- sombra de apoyo -->
+          <ellipse cx="230" cy="582" rx="150" ry="8" fill="#000" opacity=".18"/>
+          <!-- patas inferiores: vidrio -->
+          <path class="glassf" d="M116 332H178V516Q178 556 147 556Q116 556 116 516Z"/>
+          <path class="glassf" d="M282 332H344V516Q344 556 313 556Q282 556 282 516Z"/>
+          <path class="glassf" d="M178 404V368Q230 338 282 368V404Q230 376 178 404Z"/>
+          <path class="glassf" d="M116 436H102Q98 436 98 440V474Q98 478 102 478H116Z"/>
+          <!-- aceite en la pata izquierda -->
+          <g clip-path="url(#clipLegL)">
+            <rect x="110" y="456" width="74" height="106" fill="url(#gOilV)"/>
+            <path d="M116 456Q131 450 147 456T178 456" fill="none" style="stroke:var(--oil);stroke-opacity:.55" stroke-width="1.2"/>
+          </g>
+          <path class="spec" d="M123 350V510M289 350V510"/>
+          <!-- buje y eje -->
+          <rect class="steelf" x="178" y="518" width="104" height="22" rx="4"/>
+          <circle class="steelf" cx="147" cy="529" r="12"/><circle class="steelf" cx="313" cy="529" r="12"/>
+          <circle cx="147" cy="529" r="4.5" fill="var(--port)" stroke="var(--line)"/><circle cx="313" cy="529" r="4.5" fill="var(--port)" stroke="var(--line)"/>
+          <!-- cartucho (fijo a la pata) -->
+          <rect class="steelt" x="134" y="360" width="26" height="168"/>
+          <path class="l" d="M134 360H160" style="stroke-width:2.6"/>
+          <path d="M138 410H156M138 440H156M138 470H156" class="thin" stroke-dasharray="3 3"/>
+          <rect class="steelf" x="130" y="506" width="34" height="22" rx="2"/>
+          <circle cx="139" cy="517" r="2.2" fill="var(--port)"/><circle cx="155" cy="517" r="2.2" fill="var(--port)"/>
+          <!-- retenes (fijos a la pata) -->
+          <rect class="metalf" x="114" y="326" width="66" height="12" rx="3"/>
+          <rect class="metalf" x="280" y="326" width="66" height="12" rx="3"/>
+          <!-- parte que baja al comprimir -->
+          <g id="upG">
+            <rect class="tealf" x="130" y="120" width="34" height="300"/>
+            <rect class="tealf" x="296" y="120" width="34" height="300"/>
+            <path class="spec" d="M136 126V414M302 126V414"/>
+            <path class="thin" d="M134 120V420M160 120V420M300 120V420M326 120V420"/>
+            <polyline id="fkCoil" fill="none" style="stroke:var(--steel-hi);stroke-opacity:.85" stroke-width="2" stroke-linejoin="round" points="304,150 322,160 304,170 322,180 304,190 322,200 304,210 322,220 304,230 322,240 304,250 322,260 304,270 322,280 304,290 322,300 304,310 322,320"/>
+            <rect class="metalf" x="214" y="16" width="32" height="60"/>
+            <path class="l" d="M214 34H246M214 54H246" style="stroke-opacity:.6"/>
+            <rect class="metalf" x="207" y="8" width="46" height="10" rx="3"/>
+            <rect class="metalf" x="98" y="74" width="264" height="50" rx="15"/>
+            <path class="spec" d="M112 84H348"/>
+            <circle cx="112" cy="100" r="5" class="steelf"/><circle cx="348" cy="100" r="5" class="steelf"/>
+            <g id="fkValve"><rect class="steelf" x="309" y="48" width="8" height="10" rx="1"/><rect class="metalf" x="305" y="58" width="16" height="16" rx="2"/></g>
+          </g>
+          <!-- resorte de aire de la otra pata: el pistón queda fijo a la pata y el tubo baja sobre él -->
+          <g id="fkAirG">
+            <rect class="steelf" x="310" y="312" width="6" height="210"/>
+            <rect class="steelf" x="299" y="300" width="28" height="12" rx="2"/>
+            <rect id="fkTok" class="steelt" x="302" y="126" width="22" height="0"/>
+            <g id="fkDots"></g>
+          </g>
+          <g id="fkHitG" style="display:none"><circle cx="147" cy="500" r="26" fill="none" class="hit"/><text x="147" y="462" class="hitT" text-anchor="middle">TOPE</text></g>
+          <!-- vástago y pistón (bajan con la corona) -->
+          <g id="upG2">
+            <rect class="steelf" x="144" y="124" width="6" height="250"/>
+            <path d="M138 369H156M138 372H156" class="l" style="stroke-opacity:.9"/>
+            <rect class="goldf part-on" id="ctxPiston" x="136" y="374" width="22" height="14" rx="1"/>
+            <path d="M138 391H156M139 394H155" class="l" style="stroke-opacity:.9"/>
+            <circle cx="147" cy="381" r="27" fill="none" style="stroke:var(--oro);stroke-width:1.3;stroke-dasharray:4 3"/>
+          </g>
+          <!-- flecha de movimiento -->
+          <g class="arrow"><path id="ctxArrowPath" d="M34 44V84M28 76L34 84L40 76"/></g>
+          <text class="labd" x="6" y="34" id="ctxArrowTxt">comprime</text>
+          <!-- etiquetas izquierda -->
+          <g>
+            <line class="thin" x1="147" y1="190" x2="106" y2="190"/><text class="lab" x="102" y="193" text-anchor="end">vástago</text>
+            <line class="thin" x1="130" y1="250" x2="106" y2="250"/><text class="lab" x="102" y="247" text-anchor="end">tubo</text><text class="lab" x="102" y="261" text-anchor="end">superior</text>
+            <line class="thin" x1="120" y1="381" x2="106" y2="381" style="stroke:var(--oro)"/><text class="lab" x="102" y="378" text-anchor="end" style="fill:var(--oro)">A  pistón</text><text class="lab" x="102" y="392" text-anchor="end" style="fill:var(--oro)">+ laminillas</text>
+            <line class="thin" x1="134" y1="420" x2="106" y2="420" style="display:none"/>
+            <line class="thin" x1="134" y1="494" x2="106" y2="494" style="display:none"/>
+          </g>
+          <g>
+            <line class="thin" x1="150" y1="540" x2="150" y2="540" style="display:none"/>
+          </g>
+          <!-- etiquetas derecha -->
+          <g>
+            <line class="thin" x1="362" y1="100" x2="376" y2="100"/><text class="lab" x="380" y="103">corona</text>
+            <g id="fkLabCoil"><line class="thin" x1="322" y1="220" x2="376" y2="220"/><text class="lab" x="380" y="217">resorte</text><text class="lab" x="380" y="231">(otra pata)</text></g>
+            <g id="fkLabAir">
+              <line class="thin" x1="321" y1="54" x2="376" y2="54"/><text class="lab" x="380" y="57">válvula</text>
+              <line class="thin" x1="326" y1="190" x2="376" y2="190"/><text class="lab" x="380" y="187">cámara</text><text class="lab" x="380" y="201">positiva</text>
+              <line class="thin" x1="328" y1="306" x2="376" y2="306"/><text class="lab" x="380" y="303">pistón</text><text class="lab" x="380" y="317">de aire</text>
+              <line class="thin" x1="326" y1="370" x2="376" y2="370"/><text class="lab" x="380" y="367">cámara</text><text class="lab" x="380" y="381">negativa</text>
+            </g>
+            <g id="fkLabTok"><line class="thin" x1="326" y1="136" x2="376" y2="136"/><text class="lab" x="380" y="139">token</text></g>
+            <line class="thin" x1="344" y1="440" x2="376" y2="440"/><text class="lab" x="380" y="437">pata</text><text class="lab" x="380" y="451">inferior</text>
+            <line class="thin" x1="326" y1="529" x2="376" y2="529"/><text class="lab" x="380" y="526">eje de</text><text class="lab" x="380" y="540">rueda</text>
+          </g>
+          <!-- etiquetas inferior izquierda: cartucho y válvula -->
+          <g>
+            <line class="thin" x1="134" y1="410" x2="64" y2="410"/><text class="lab" x="60" y="413" text-anchor="end">cartucho</text>
+            <line class="thin" x1="130" y1="517" x2="64" y2="517"/><text class="lab" x="60" y="514" text-anchor="end">válvula</text><text class="lab" x="60" y="528" text-anchor="end">de base</text>
+          </g>
+        </svg>
+        <figcaption>La horquilla por dentro · patas y tubos en transparencia</figcaption>
+      </figure>
+
+      <figure class="fig-fork">
+        <svg viewBox="0 0 250 560" role="img" aria-label="Vista explosionada de una horquilla en corte lateral: tapa con ajustes, tubo superior, vástago con pistón, cartucho, válvula de base y pata inferior, alineados sobre un eje.">
+          <line class="dash" x1="90" y1="4" x2="90" y2="556"/>
+          <rect class="metalf" x="80" y="4" width="20" height="9"/>
+          <rect class="metalf" x="62" y="14" width="56" height="18" rx="3"/>
+          <rect class="tealf" x="55" y="46" width="70" height="130"/>
+          <path class="spec" d="M64 52V170"/>
+          <g id="shaftG">
+            <rect class="steelf" x="84" y="190" width="12" height="72"/>
+            <rect class="goldf" id="fkPiston" x="66" y="262" width="48" height="18" rx="1"/>
+            <path class="l" id="fkShimT" d="M68 259.5H80M100 259.5H112M68 257.5H79M101 257.5H112"/>
+            <path class="l" id="fkShimB" d="M72 282.5H84M96 282.5H108M73 284.5H83M97 284.5H107"/>
+          </g>
+          <rect class="steelt" x="64" y="300" width="52" height="140"/>
+          <path class="thin" d="M74 330H106M74 352H106M74 374H106M74 396H106M74 418H106" stroke-dasharray="3 3"/>
+          <rect class="steelf" x="70" y="452" width="40" height="22" rx="2"/>
+          <circle class="l" cx="80" cy="463" r="3"/><circle class="l" cx="100" cy="463" r="3"/>
+          <path class="glassf" d="M48 492H132V540Q132 548 124 548H56Q48 548 48 540Z"/>
+          <circle class="steelf" cx="90" cy="528" r="9"/><circle cx="90" cy="528" r="3" fill="var(--port)"/>
+          <path class="dash" d="M90 32V46M90 176V190M90 284V300M90 440V452M90 474V492"/>
+          <g>
+            <line class="thin" x1="118" y1="23" x2="146" y2="23"/><text class="lab" x="150" y="26">tapa + ajustes</text>
+            <line class="thin" x1="125" y1="110" x2="146" y2="110"/><text class="lab" x="150" y="113">tubo superior</text>
+            <line class="thin" x1="114" y1="271" x2="146" y2="271"/><text class="lab" x="150" y="268">vástago</text><text class="lab" x="150" y="281">+ pistón</text>
+            <line class="thin" x1="116" y1="370" x2="146" y2="370"/><text class="lab" x="150" y="373">cartucho</text>
+            <line class="thin" x1="110" y1="463" x2="146" y2="463"/><text class="lab" x="150" y="460">válvula</text><text class="lab" x="150" y="473">de base</text>
+            <line class="thin" x1="132" y1="520" x2="146" y2="520"/><text class="lab" x="150" y="523">pata + eje</text>
+          </g>
+          <g id="shaftArrow" class="arrow"><path id="arrowPath" d="M30 210V250M24 242L30 250L36 242"/></g>
+          <text class="labd" x="12" y="204" id="arrowTxt">vástago</text>
+        </svg>
+        <figcaption>Vista explosionada</figcaption>
+      </figure>
+    </div>
+
+    <figure class="fig-detail">
+      <svg viewBox="0 0 400 420" role="img" id="detailSvg" aria-label="Corte del pistón del amortiguador con puertos, laminillas, orificio de purga y aguja. Las partículas muestran por dónde pasa el aceite en la zona elegida.">
+        <circle cx="22" cy="26" r="11" fill="var(--panel)" style="stroke:var(--oro);stroke-width:1.4"/>
+        <text x="22" y="30" text-anchor="middle" class="lab" style="fill:var(--oro)">A</text>
+        <!-- aceite en las cámaras -->
+        <rect x="60" y="40" width="200" height="360" fill="url(#gOilV)"/>
+        <!-- paredes del cartucho -->
+        <rect class="steelf" x="50" y="40" width="10" height="360"/><rect class="steelf" x="260" y="40" width="10" height="360"/>
+        <path class="dash" d="M40 8H280"/>
+        <text class="labd" x="66" y="62">cám. superior</text>
+        <text class="labd" x="66" y="392">cám. inferior</text>
+        <!-- vástago hueco -->
+        <rect class="steelf" x="146" y="0" width="28" height="192"/>
+        <rect x="154" y="120" width="12" height="72" fill="var(--port)"/>
+        <g id="boreWalls"><path class="l" id="bore" d="M154 120V192M166 120V192"/></g>
+        <path class="thin" d="M154 130H146M166 130H174"/>
+        <!-- aguja -->
+        <g id="needleG"><path class="l" id="needle" d="M160 6V138M158.5 138L160 150L161.5 138" style="stroke-width:1.6"/></g>
+        <!-- pistón -->
+        <rect class="steelf" x="62" y="192" width="196" height="36" rx="2"/>
+        <path class="spec" d="M66 198H254"/>
+        <g id="portsA">
+          <rect x="89" y="192" width="12" height="36" fill="var(--port)"/><path class="l" id="pA1" d="M89 192V228M101 192V228"/>
+          <rect x="219" y="192" width="12" height="36" fill="var(--port)"/><path class="l" id="pA2" d="M219 192V228M231 192V228"/>
+        </g>
+        <g id="portsB">
+          <rect x="119" y="192" width="12" height="36" fill="var(--port)"/><path class="l" id="pB1" d="M119 192V228M131 192V228"/>
+          <rect x="189" y="192" width="12" height="36" fill="var(--port)"/><path class="l" id="pB2" d="M189 192V228M201 192V228"/>
+        </g>
+        <rect x="154" y="192" width="12" height="36" fill="var(--port)"/><path class="l" id="holeP" d="M154 192V228M166 192V228"/>
+        <!-- laminillas de compresión (cara superior, sobre puertos A) -->
+        <g id="shT1" transform="rotate(0 106 187)"><path class="l" id="shT1p" d="M84 185.5H106M86 188H106M88 190.5H106" style="stroke-width:1.6"/></g>
+        <g id="shT2" transform="rotate(0 214 187)"><path class="l" id="shT2p" d="M214 185.5H236M214 188H234M214 190.5H232" style="stroke-width:1.6"/></g>
+        <!-- laminillas de rebote (cara inferior, sobre puertos B) -->
+        <g id="shB1" transform="rotate(0 136 233)"><path class="l" id="shB1p" d="M114 229.5H136M116 232H136M118 234.5H136" style="stroke-width:1.6"/></g>
+        <g id="shB2" transform="rotate(0 184 233)"><path class="l" id="shB2p" d="M184 229.5H206M184 232H204M184 234.5H202" style="stroke-width:1.6"/></g>
+        <!-- partículas -->
+        <g id="parts"></g>
+        <!-- etiquetas -->
+        <g>
+          <line class="thin" x1="160" y1="50" x2="290" y2="50"/><text class="lab" x="294" y="53">aguja</text>
+          <line class="thin" x1="174" y1="130" x2="290" y2="130"/><text class="lab" x="294" y="127">orificio</text><text class="lab" x="294" y="139">de purga</text>
+          <line class="thin" x1="236" y1="186" x2="290" y2="186"/><text class="lab" id="lamC1" x="294" y="183">laminillas</text><text class="lab" id="lamC2" x="294" y="195">compresión</text>
+          <line class="thin" x1="258" y1="210" x2="290" y2="210"/><text class="lab" x="294" y="213">pistón</text>
+          <line class="thin" x1="206" y1="233" x2="290" y2="233"/><text class="lab" x="294" y="236">laminillas</text><text class="lab" x="294" y="248">rebote</text>
+          <line class="thin" x1="231" y1="204" x2="250" y2="270" stroke-dasharray="2 3"/><text class="lab" x="282" y="282">puertos</text>
+        </g>
+      </svg>
+      <figcaption id="cap2">Detalle A · corte del pistón</figcaption>
+    </figure>
+
+    <figure class="fig-detailB" hidden>
+      <svg viewBox="0 0 460 420" role="img" id="detailBSvg" aria-label="Corte de la válvula de compresión en la base de la reserva del shock, con puertos, laminillas, orificio de purga, aguja, pistón flotante y nitrógeno. Las partículas muestran por dónde pasa el aceite desde el cuerpo hacia la reserva.">
+        <circle cx="22" cy="26" r="11" fill="var(--panel)" style="stroke:var(--oro);stroke-width:1.4"/>
+        <text x="22" y="30" text-anchor="middle" class="lab" style="fill:var(--oro)">B</text>
+        <!-- aceite y gas -->
+        <rect x="14" y="50" width="116" height="340" fill="url(#gOilV)"/>
+        <rect x="190" y="50" width="64" height="340" fill="url(#gOilV)"/>
+        <rect x="262" y="50" width="38" height="340" fill="url(#gasDots)"/>
+        <text class="labd" x="22" y="74">desde el cuerpo</text>
+        <text class="labd" x="196" y="74">reserva</text>
+        <!-- carcasa -->
+        <rect class="steelf" x="6" y="42" width="8" height="356"/><rect class="steelf" x="300" y="42" width="8" height="356"/>
+        <rect class="steelf" x="14" y="42" width="286" height="8"/><rect class="steelf" x="14" y="390" width="286" height="8"/>
+        <!-- bloque de válvula -->
+        <rect class="steelf" x="130" y="50" width="60" height="340"/>
+        <rect x="130" y="124" width="60" height="12" fill="var(--port)"/><path class="l" id="bPort1" d="M130 124H190M130 136H190"/>
+        <rect x="130" y="304" width="60" height="12" fill="var(--port)"/><path class="l" id="bPort2" d="M130 304H190M130 316H190"/>
+        <rect x="130" y="216" width="60" height="8" fill="var(--port)"/><path class="l" id="bBleed" d="M130 216H190M130 224H190"/>
+        <!-- aguja -->
+        <rect class="metalf" x="150" y="2" width="20" height="12" rx="2"/>
+        <g id="bNeedleG"><path class="l" id="bNeedle" d="M160 14V210M158.5 210L160 222L161.5 210" style="stroke-width:1.6"/></g>
+        <!-- laminillas de compresión sobre los puertos -->
+        <g id="bShU" transform="rotate(0 193 144)"><path class="l" id="bShUp" d="M193 116V144M195.5 118V144M198 120V144" style="stroke-width:1.6"/></g>
+        <g id="bShL" transform="rotate(0 193 296)"><path class="l" id="bShLp" d="M193 296V324M195.5 296V322M198 296V320" style="stroke-width:1.6"/></g>
+        <!-- pistón flotante -->
+        <g id="bIfp"><rect class="steelf" x="254" y="50" width="8" height="340"/></g>
+        <g id="partsB"></g>
+        <!-- etiquetas -->
+        <g>
+          <line class="thin" x1="172" y1="8" x2="312" y2="8"/><text class="lab" x="316" y="11">aguja</text>
+          <line class="thin" x1="190" y1="130" x2="312" y2="130" style="display:none"/>
+          <line class="thin" x1="200" y1="120" x2="312" y2="120"/><text class="lab" x="316" y="117">laminillas</text><text class="lab" x="316" y="131">compresión</text>
+          <line class="thin" x1="190" y1="220" x2="312" y2="220"/><text class="lab" x="316" y="217">orificio</text><text class="lab" x="316" y="231">de purga</text>
+          <line class="thin" x1="190" y1="312" x2="206" y2="340" stroke-dasharray="2 3"/><text class="lab" x="198" y="354">puertos</text>
+          <line class="thin" x1="262" y1="96" x2="312" y2="96" style="display:none"/>
+          <line class="thin" x1="262" y1="300" x2="312" y2="300"/><text class="lab" x="316" y="297">pistón</text><text class="lab" x="316" y="311">flotante</text>
+          <line class="thin" x1="300" y1="350" x2="312" y2="350"/><text class="lab" x="316" y="353">nitrógeno</text>
+        </g>
+      </svg>
+      <figcaption id="cap3">Detalle B · válvula de compresión en la reserva</figcaption>
+    </figure>
+
+    <div class="sagbox" id="sagBox" hidden></div>
+
+    <div class="topbox" id="topBox" hidden>
+      <figure class="figT1">
+        <svg viewBox="0 0 200 360" role="img" aria-label="Barra de recorrido usado con la marca del 97 %. La barra sube y se pone roja cuando pasa esa marca.">
+          <rect class="f" x="70" y="20" width="60" height="300"/>
+          <rect x="70" y="20" width="60" height="9" fill="var(--bad)" fill-opacity=".35"/>
+          <rect id="tgFill" x="72" y="320" width="56" height="0" fill="var(--cian)" fill-opacity=".55"/>
+          <line x1="62" y1="29" x2="138" y2="29" style="stroke:var(--bad);stroke-width:1.4;stroke-dasharray:4 3"/>
+          <text class="lab" x="142" y="26" style="fill:var(--bad)">97 %</text>
+          <line class="thin" x1="64" y1="320" x2="70" y2="320"/><text class="labd" x="60" y="323" text-anchor="end">0 %</text>
+          <line class="thin" x1="64" y1="170" x2="70" y2="170"/><text class="labd" x="60" y="173" text-anchor="end">50 %</text>
+          <line class="thin" x1="64" y1="20" x2="70" y2="20"/><text class="labd" x="60" y="17" text-anchor="end">100 %</text>
+          <circle id="tgDot" class="p" cx="100" cy="320" r="5" style="fill:var(--cian)"/>
+          <text id="tgVal" class="lab" x="100" y="348" text-anchor="middle" style="font-size:14px">0 %</text>
+        </svg>
+        <figcaption>Recorrido usado ahora</figcaption>
+      </figure>
+      <figure class="figT2">
+        <svg viewBox="0 0 520 300" role="img" aria-label="Gráfico de la posición de la suspensión en el tiempo en una bajada de ejemplo. Una banda roja marca el tramo sobre el 97 % del recorrido. Cada pico que entra en esa banda cuenta como un tope.">
+          <rect x="44" y="20" width="456" height="7.5" fill="var(--bad)" fill-opacity=".30"/>
+          <line x1="44" y1="27.5" x2="500" y2="27.5" style="stroke:var(--bad);stroke-width:1;stroke-dasharray:4 3"/>
+          <text class="lab" x="498" y="16" text-anchor="end" style="fill:var(--bad)">97 %</text>
+          <path class="thin" d="M44 270H500M44 145H500"/>
+          <text class="labd" x="38" y="273" text-anchor="end">0</text><text class="labd" x="38" y="148" text-anchor="end">50</text><text class="labd" x="38" y="23" text-anchor="end">100</text>
+          <text class="labd" x="44" y="12">recorrido usado (%)</text>
+          <path id="tcPath" fill="none" style="stroke:var(--cian)" stroke-width="2.2" stroke-linejoin="round"/>
+          <g id="tcMarks"></g>
+          <line id="tcHead" x1="44" y1="20" x2="44" y2="270" class="dash"/>
+          <circle id="tcDot" cx="44" cy="270" r="5" style="fill:var(--cian)"/>
+          <g class="labd" id="tcTicks"></g>
+        </svg>
+        <div class="ctl"><span class="grp">Topes que acepta el perfil <span class="seg" id="tolSeg"><button type="button" data-n="0" aria-pressed="false">0</button><button type="button" data-n="1" aria-pressed="true">1</button></span></span></div>
+        <div class="semrow"><span>Topes en la bajada <b id="tcN">0</b></span><span class="chip ok" id="tcChip">EN PUNTO</span><span id="tcMsg"></span></div>
+        <figcaption>Posición en el tiempo · bajada de ejemplo, datos inventados</figcaption>
+      </figure>
+    </div>
+
+    <div class="airbox" id="airBox" hidden>
+      <figure class="figA2">
+        <svg viewBox="0 0 520 320" role="img" aria-label="Curva de fuerza del resorte contra el recorrido usado. La curva de aire sube cada vez más rápido. La línea horizontal es la carga del piloto parado: donde la corta la curva está el SAG.">
+          <rect id="aBand" x="0" y="20" width="0" height="250" fill="var(--cian)" fill-opacity=".10"/>
+          <path class="thin" id="aGrid" d=""/>
+          <line id="a97" x1="0" y1="20" x2="0" y2="270" style="stroke:var(--bad);stroke-width:1;stroke-dasharray:4 3"/>
+          <text id="a97T" class="lab" x="0" y="14" text-anchor="middle" style="fill:var(--bad)">97 %</text>
+          <line x1="54" y1="228.3" x2="494" y2="228.3" style="stroke:var(--oro);stroke-width:1;stroke-dasharray:5 4"/>
+          <text class="lab" x="490" y="221" text-anchor="end" style="fill:var(--oro)">carga del piloto parado</text>
+          <path id="aCurveC" fill="none" style="stroke:var(--oro)" stroke-width="2"/>
+          <path id="aCurveA" fill="none" style="stroke:var(--cian)" stroke-width="2.6"/>
+          <line id="aSagL" x1="0" y1="228.3" x2="0" y2="270" style="stroke:var(--txt);stroke-width:1.2"/>
+          <circle id="aSagC" cx="0" cy="228.3" r="4.5" fill="var(--panel)" style="stroke:var(--txt);stroke-width:1.6"/>
+          <text id="aSagT" class="lab" x="0" y="262">SAG</text>
+          <circle id="aDot" cx="54" cy="270" r="5" style="fill:var(--cian);stroke:var(--panel);stroke-width:1.5"/>
+          <g class="labd" id="aTicks"></g>
+          <text class="labd" x="54" y="12">fuerza del resorte (× carga del piloto)</text>
+          <text class="labd" x="274" y="312" text-anchor="middle">recorrido usado</text>
+          <text class="lab" x="76" y="40" style="fill:var(--cian)">aire</text><text class="lab" x="76" y="54" style="fill:var(--oro)">espiral</text>
+        </svg>
+        <div class="ctl">
+          <span class="grp" id="pCtl">Presión <button type="button" id="pMinus" aria-label="Bajar 5 PSI">−5</button><b id="pVal">80 psi</b><button type="button" id="pPlus" aria-label="Subir 5 PSI">+5</button></span>
+          <span class="grp" id="tCtl">Tokens <button type="button" id="tMinus" aria-label="Quitar un token">−</button><b id="tVal">0</b><button type="button" id="tPlus" aria-label="Agregar un token">+</button></span>
+          <span class="grp" id="rCtl" hidden>Precarga <button type="button" id="rMinus" aria-label="Menos precarga">−</button><b id="rVal">2 vueltas</b><button type="button" id="rPlus" aria-label="Más precarga">+</button></span>
+        </div>
+        <div class="semrow"><span>SAG <b id="sagVal">25 %</b></span><span>objetivo <b id="sagObj">18 %</b></span><span class="chip warn" id="sagChip">FUERA</span><span id="sagMsg"></span></div>
+        <div class="semrow"><span>Soporte al 97 % del recorrido <b id="f97">×4</b> la carga</span></div>
+        <figcaption>Curvas ilustrativas, no medidas · carga y presiones de ejemplo</figcaption>
+      </figure>
+    </div>
+
+    <div class="info">
+      <div class="card"><h2>Qué pasa</h2><p id="iWhat"></p></div>
+      <div class="card"><h2>Cuándo trabaja</h2><p id="iWhen"></p></div>
+      <div class="card"><h2>Qué mira SendFlow</h2><p id="iApp"></p></div>
+    </div>
+    <div class="legend" id="legend"><span><i style="background:var(--oro)"></i>aceite en compresión</span><span><i style="background:var(--azul)"></i>aceite en rebote</span><span><i style="background:var(--cian)"></i>tubos (transparentes)</span></div>
+    <p class="note" id="noteMain">Esquema genérico para explicar el principio. Cada fabricante ubica los circuitos en lugares distintos (pistón, válvula de base, cartucho aparte) y las velocidades del recuadro son ejemplos, no mediciones. Los límites de 10 % y 30 % del SAG son una referencia general; el objetivo de SendFlow sale del perfil del piloto.</p>
+    <p class="note" id="noteShock" hidden>Shock de espiral con reserva (piggyback), como en muchas bicis de descenso. Acá la compresión se regula en una válvula de la reserva y el rebote en el pistón. En un shock sin reserva, la compresión también va en el pistón, como en el detalle de la horquilla.</p>
+  </div>
+      <div class="plain">
+        <p id="plainTxt"></p>
+        <p id="topCount" class="topc" hidden>Topes en esta pasada: <b id="topN">0</b>. <span id="topMsg"></span></p>
+        <details><summary>Qué mira SendFlow</summary><p id="techTxt"></p></details>
       </div>
-      <p class="foot">Barra del semáforo: el centro es la zona objetivo. A la derecha el texto pide cerrar o más soporte, a la izquierda abrir o menos soporte. Cuanto más lejos del centro, más fuerte la desviación.</p>
-      <div class="txt"><div class="card"><h3>Qué mide</h3><p id="mWhat"></p></div><div class="card"><h3>Si sale fuera de zona</h3><p id="mFix"></p></div></div>
-      <p class="foot" id="mFoot"></p>
     </div>
   </div>
 </div>
 
 <script>
 (function(){
-  "use strict";
-  var $ = function(id){ return document.getElementById(id); }, NS = "http://www.w3.org/2000/svg";
+  var NS = "http://www.w3.org/2000/svg";
+  var $ = function(id){ return document.getElementById(id); };
+
+  var MODES = {
+    HSC: { sub:"Compresión rápida", dir:-1, speed:170, hz:1.3, amp:7, v:520, shim:"top", ports:"A", bleedN:4, portN:9, thr:true,
+      what:"Un golpe fuerte empuja el vástago muy rápido. El orificio de purga ya no da abasto, la presión sube y abre las laminillas de compresión. El aceite pasa por los puertos del pistón. La rigidez del paquete de laminillas define cuánto frena.",
+      when:"Piedras, escalones, raíces, aterrizajes y cualquier impacto en que el vástago se mueve rápido.",
+      app:"Entre las muestras en que el vástago comprime (más de 5 mm/s), cuenta qué porcentaje superó el umbral rápido (230 mm/s en el perfil base, corregido por peso, estado de pista y estilo). Si pasa del límite del perfil, sugiere «Cerrar 1 click HSC». Si casi no lo usa pero hubo picos fuertes, sugiere «Abrir 1 click HSC»." },
+    LSC: { sub:"Compresión lenta", dir:-1, speed:45, hz:.45, amp:5, v:80, shim:null, ports:null, bleedN:7, portN:0, thr:true, needle:true,
+      what:"El vástago entra despacio y el aceite alcanza a pasar por el orificio de purga que regula la aguja. Las laminillas siguen cerradas. Cerrar clicks achica el orificio: más apoyo y menos hundimiento.",
+      when:"Peso del piloto, frenadas, apoyo en curvas, compresiones de terreno suave y pedaleo.",
+      app:"Toma las compresiones más lentas que ese umbral (necesita al menos 5) y promedia hasta dónde llegan. Si pasan del SAG objetivo más un margen del perfil, sugiere «Cerrar 1 click LSC»." },
+    HSR: { sub:"Rebote rápido", dir:1, speed:170, hz:1.3, amp:7, v:480, shim:"bot", ports:"B", bleedN:4, portN:9, thr:false,
+      what:"Tras un golpe grande el resorte devuelve el vástago rápido. El aceite baja por los puertos del otro lado y abre las laminillas de rebote. Muy libre: la rueda salta y el vástago pega arriba. Muy cerrado: la horquilla no recupera entre golpes seguidos y se queda comprimida (packing).",
+      when:"Salida de golpes grandes, saltos, secciones rotas con impactos seguidos.",
+      app:"Compara la velocidad de rebote rápida (percentil 95) con la de compresión rápida de la misma suspensión. Rebote mucho más rápido que la compresión: «Cerrar rebote». Mucho más lento: «Abrir rebote». La ventana depende del perfil y necesita al menos 20 muestras de cada una." },
+    LSR: { sub:"Rebote lento", dir:1, speed:45, hz:.45, amp:5, v:70, shim:null, ports:null, bleedN:7, portN:0, thr:false, needle:true,
+      what:"La horquilla vuelve despacio a su posición. El aceite baja por el orificio de purga, controlado por la aguja de rebote. Las laminillas no se abren.",
+      when:"Recuperación tras la compresión de una curva, rodar sobre terreno ondulado suave.",
+      app:"Compara la velocidad de rebote típica (mediana) con la de compresión (mediana) de la misma suspensión. Rebote mucho más rápido: «Cerrar rebote». Mucho más lento: «Abrir rebote». El balance entre delantera y trasera es otro semáforo." },
+    SAG: { sub:"Hundimiento con el peso del piloto", dir:-1, speed:0, hz:.3, amp:0, v:0, shim:null, ports:null, bleedN:0, portN:0, thr:false,
+      what:"El SAG es cuánto se hunde la suspensión con el piloto parado en posición de ataque, antes de rodar. Se ve en el o-ring: la pata lo empuja hacia arriba por el tubo hasta donde entró. Se lee como porcentaje del recorrido total.",
+      when:"Siempre. Es el punto de partida de todo ajuste: define cuánto recorrido queda para absorber golpes y cuánto para extender sobre los huecos. Se mide parado (estático) y rodando (dinámico).",
+      app:"No sale de la telemetría: es el SAG que se carga a mano, medido con el o-ring y el piloto parado. Se compara con el objetivo del perfil (18 % horquilla y 28 % shock en el perfil base) y está en zona si queda a menos de 2 puntos. Si no, el texto pide cambiar la presión de aire o, con resorte, la precarga." },
+    TOPES: { sub:"Compresiones que llegan al fondo", dir:-1, speed:0, hz:.3, amp:0, v:0, shim:null, ports:null, bleedN:0, portN:0, thr:false,
+      what:"Un tope (bottom-out) es una compresión que llega a más del 97 % del recorrido. Un golpe fuerte puede terminar el recorrido y la suspensión choca contra su final. SendFlow cuenta cuántos hubo en la bajada, por separado en la horquilla y en el shock.",
+      when:"Aterrizajes largos, golpes grandes de frente y tramos rotos con la suspensión muy comprimida. Tocar fondo de vez en cuando en los golpes más grandes es normal, según el manual.",
+      app:"Cero topes, o los que acepta tu perfil (0 o 1 según estilo y peso), es zona objetivo. Más que eso pide «Aumentar soporte» y el texto sugiere sumar presión de aire o un token. El manual de ajuste fino propone primero 1 click de HSC, después un token y después presión. No es lo mismo que el «tiempo en tope» del Panel, que mide el porcentaje de la bajada pasado del 97 %." },
+    AIRE: { title:"RESORTE", sub:"Presión, tokens y curva de fuerza", dir:-1, speed:0, hz:.3, amp:0, v:0, shim:null, ports:null, bleedN:0, portN:0, thr:false,
+      what:"El resorte guarda la energía del golpe y empuja la suspensión de vuelta. En aire es aire sellado: al comprimirse sube la presión y la fuerza crece cada vez más rápido (curva progresiva). En espiral crece en línea recta. La presión, o la precarga en espiral, define el SAG. Los tokens ocupan volumen y endurecen el final del recorrido, solo en aire.",
+      when:"Es lo primero que se ajusta, porque condiciona todo lo demás. Presión para el SAG, en pasos de 5 PSI según el manual. Tokens para tener soporte al final del recorrido. Con más presión hace falta más rebote cerrado (+5 a 10 PSI, +1 a 2 clicks de rebote).",
+      app:"En SAG en reposo compara el SAG medido con el objetivo y pide cambiar la presión de aire. Si el tipo de resorte de la suspensión es «resorte» (espiral), pide precarga. En topes sugiere sumar presión de aire o token. La curva de acá es ilustrativa, no una medición." }
+  };
+
+  var comp = "fork", spring = "aire", popup = false;
+  var SHOCK_WHAT = {
+    HSC: "Un golpe fuerte empuja el vástago hacia el cuerpo y desplaza aceite hacia la reserva. A esa velocidad el orificio de purga no da abasto: la presión abre las laminillas de la válvula de compresión y el aceite pasa por los puertos.",
+    LSC: "El vástago entra despacio y el aceite pasa a la reserva por el orificio de purga que regula la aguja. Las laminillas siguen cerradas. Cerrar clicks achica el orificio: más apoyo y menos hundimiento.",
+    HSR: "El resorte devuelve el vástago rápido. El aceite vuelve de la reserva al otro lado del pistón y abre las laminillas de rebote, en el pistón. Muy libre: la rueda salta. Muy cerrado: el shock no recupera entre golpes seguidos (packing).",
+    LSR: "El shock vuelve despacio a su posición. El aceite pasa por el orificio de purga del pistón, controlado por la aguja de rebote. Las laminillas no se abren.",
+    SAG: "El SAG del shock es cuánto se hunde con el piloto en posición de ataque, antes de rodar. Se mide en el vástago con el o-ring y se lee como porcentaje del recorrido.",
+    TOPES: "Un tope es una compresión que llega a más del 97 % del recorrido del shock. SendFlow los cuenta por bajada. Tocar fondo de vez en cuando en los golpes más grandes es normal.",
+    AIRE: "En el shock de aire el vástago entra en la carcasa de aire grande. Debajo del pistón de aire queda la cámara positiva, que se comprime al bajar el vástago; arriba queda la negativa. El piggyback va junto a la carcasa, a la altura de la cámara positiva. La presión define el SAG y los tokens endurecen el final del recorrido."
+  };
+  var P = {
+    bC1: [[24,130],[130,130],[192,130],[202,120],[226,104]],
+    bC2: [[24,310],[130,310],[192,310],[202,320],[226,336]],
+    bCb: [[24,220],[130,220],[190,220],[238,220]],
+    bleedUp:  [[160,330],[160,130],[176,130],[200,104]],
+    bleedDown: [[200,104],[176,130],[160,130],[160,330]],
+    aUp1: [[95,330],[95,192],[101,181],[118,158]],
+    aUp2: [[225,330],[225,192],[219,181],[202,158]],
+    bDn1: [[125,104],[125,230],[112,240],[98,262],[98,330]],
+    bDn2: [[195,104],[195,230],[208,240],[222,262],[222,330]]
+  };
+  function plen(pts){ var L=[0], t=0; for (var i=1;i<pts.length;i++){ t+=Math.hypot(pts[i][0]-pts[i-1][0],pts[i][1]-pts[i-1][1]); L.push(t);} return {L:L,t:t}; }
+  Object.keys(P).forEach(function(k){ P[k] = {pts:P[k], m:plen(P[k])}; });
+  function at(p, d){
+    var m=p.m, pts=p.pts; d = Math.max(0, Math.min(m.t, d));
+    for (var i=1;i<m.L.length;i++){ if (d<=m.L[i]){ var s=(d-m.L[i-1])/(m.L[i]-m.L[i-1]); return [pts[i-1][0]+(pts[i][0]-pts[i-1][0])*s, pts[i-1][1]+(pts[i][1]-pts[i-1][1])*s]; } }
+    return pts[pts.length-1];
+  }
+
+  var parts = $("parts"), dots = [];
+  for (var i=0;i<40;i++){ var c=document.createElementNS(NS,"circle"); c.setAttribute("r","2.8"); c.setAttribute("class","p"); c.setAttribute("cx","-20"); c.setAttribute("cy","-20"); parts.appendChild(c); dots.push(c); }
+
+  var mode = "HSC", running = true, tPrev = performance.now(), phase = 0, streams = [];
+  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (reduce) running = false;
+
+  function buildStreams(){
+    var M = MODES[mode], s = [], di = 0;
+    function add(path, n, speed){ for (var k=0;k<n;k++){ s.push({p:path, off:k/n, speed:speed, el:dots[di++]}); } }
+    var B = comp === "shock";
+    var tgt = (B && M.dir < 0 && mode !== "SAG") ? $("partsB") : $("parts");
+    dots.forEach(function(d){ tgt.appendChild(d); });
+    if (mode==="HSC" && B){ add(P.bC1, M.portN/2+1|0, M.speed); add(P.bC2, M.portN/2+1|0, M.speed); add(P.bCb, M.bleedN, M.speed); }
+    else if (mode==="HSC"){ add(P.aUp1, M.portN/2+1|0, M.speed); add(P.aUp2, M.portN/2+1|0, M.speed); add(P.bleedUp, M.bleedN, M.speed); }
+    if (mode==="LSC"){ add(B ? P.bCb : P.bleedUp, M.bleedN, M.speed); }
+    if (mode==="HSR"){ add(P.bDn1, M.portN/2+1|0, M.speed); add(P.bDn2, M.portN/2+1|0, M.speed); add(P.bleedDown, M.bleedN, M.speed); }
+    if (mode==="LSR"){ add(P.bleedDown, M.bleedN, M.speed); }
+    dots.forEach(function(d){ d.style.display = "none"; });
+    s.forEach(function(q){ q.el.style.display = ""; });
+    streams = s;
+  }
+
+  function mark(ids, on){ ids.forEach(function(id){ var e=$(id); if(e) e.classList.toggle("on", on); }); }
+  function applyMode(){
+    var M = MODES[mode];
+    $("mTitle").textContent = M.title || mode; $("mSub").textContent = M.sub;
+    $("iWhat").textContent = M.what; $("iWhen").textContent = M.when; $("iApp").textContent = M.app;
+    ["bore","needle","pA1","pA2","pB1","pB2","shT1p","shT2p","shB1p","shB2p","fkPiston","holeP"].forEach(function(id){ var e=$(id); e.classList.remove("on","part-on"); });
+    mark(["bore","needle","holeP"], M.needle || mode==="HSC" || mode==="HSR");
+    if (!M.needle && (mode==="HSC"||mode==="HSR")){ mark(["needle"], false); }
+    mark(["pA1","pA2","shT1p","shT2p"], mode==="HSC");
+    mark(["pB1","pB2","shB1p","shB2p"], mode==="HSR");
+    $("fkPiston").classList.add("part-on");
+    $("arrowPath").setAttribute("d", M.dir<0 ? "M30 210V250M24 242L30 250L36 242" : "M30 250V210M24 218L30 210L36 218");
+    $("arrowTxt").textContent = M.dir<0 ? "comprime" : "extiende";
+    $("cap2").textContent = "Detalle A · corte del pistón · " + mode;
+    var isSag = mode === "SAG";
+    $("sheet").style.setProperty("--flow", isSag ? "var(--cian)" : (M.dir<0 ? "var(--flow-c)" : "var(--flow-r)"));
+    var shock = comp === "shock", isTop = mode === "TOPES", isAir = mode === "AIRE", special = isSag || isTop || isAir, useB = shock && M.dir < 0 && !special;
+    $("leftcol").hidden = (isTop && !popup) || (isSag && !shock);
+    document.querySelector(".fig-detail").hidden = special || useB;
+    document.querySelector(".fig-detailB").hidden = !useB;
+    $("noteShock").hidden = !shock;
+    if (shock){
+      $("iWhat").textContent = SHOCK_WHAT[mode];
+      $("cap2").textContent = "Detalle A · pistón del shock (rebote) · " + mode;
+      $("cap3").textContent = "Detalle B · válvula de compresión en la reserva, vista girada · " + mode;
+    }
+    $("lamC1").textContent = shock ? "paso libre" : "laminillas"; $("lamC2").textContent = shock ? "(compresión)" : "compresión";
+    $("shArrowPath").setAttribute("d", M.dir<0 ? "M34 140V100M28 108L34 100L40 108" : "M34 100V140M28 132L34 140L40 132");
+    $("shArrowTxt").textContent = M.dir<0 ? "comprime" : "extiende";
+    $("saArrowPath").setAttribute("d", M.dir<0 ? "M34 100V140M28 132L34 140L40 132" : "M34 140V100M28 108L34 100L40 108");
+    $("saArrowTxt").textContent = M.dir<0 ? "comprime" : "extiende";
+    ["bPort1","bPort2","bShUp","bShLp","bBleed","bNeedle"].forEach(function(id){ $(id).classList.remove("on"); });
+    mark(["bPort1","bPort2","bShUp","bShLp"], mode==="HSC");
+    mark(["bBleed","bNeedle"], mode==="LSC" || mode==="HSC");
+    $("shPiston").classList.add("part-on");
+    $("ctxArrowPath").setAttribute("d", M.dir<0 ? "M34 44V84M28 76L34 84L40 76" : "M34 84V44M28 52L34 44L40 52");
+    $("ctxArrowTxt").textContent = M.dir<0 ? "comprime" : "extiende";
+    if (isAir || popup) view = "ctx";
+    $("leftcol").classList.toggle("nolabels", isTop && popup);
+    applyView();
+    applySpring();
+    $("gaugeSvg").hidden = special;
+    $("legend").hidden = special;
+    $("sagBox").hidden = !isSag;
+    $("topBox").hidden = !isTop || popup;
+    $("airBox").hidden = !isAir;
+    if (isTop || isAir) phase = 0;
+    $("noteMain").hidden = isTop || isAir;
+    if (isAir) drawAir();
+    if (isSag) phase = 2;
+    buildStreams();
+    var gx = function(v){ return 20 + 360 * v / 800; };
+    $("gThr").style.display = M.thr ? "" : "none"; $("gThrT").style.display = M.thr ? "" : "none";
+    if (M.thr){ $("gThr").setAttribute("x1", gx(230)); $("gThr").setAttribute("x2", gx(230)); $("gThrT").setAttribute("x", gx(230)-4); $("gThrT").textContent = "umbral LSC/HSC 230"; }
+    $("gVal").textContent = "velocidad de vástago, ejemplo: " + M.v + " mm/s";
+    $("gDot").setAttribute("cx", gx(M.v));
+    document.querySelectorAll(".tab").forEach(function(b){ b.setAttribute("aria-selected", b.dataset.m===mode ? "true":"false"); });
+    frame(performance.now());
+  }
+
+  var ticks = $("gTicks");
+  [0,200,400,600,800].forEach(function(v){
+    var x = 20 + 360*v/800;
+    var l = document.createElementNS(NS,"line"); l.setAttribute("x1",x); l.setAttribute("x2",x); l.setAttribute("y1",26); l.setAttribute("y2",34); l.setAttribute("class","thin"); ticks.appendChild(l);
+    var t = document.createElementNS(NS,"text"); t.setAttribute("x",x); t.setAttribute("y",46); t.setAttribute("text-anchor","middle"); t.textContent = v; ticks.appendChild(t);
+  });
+
+  function frame(now){
+    var dt = Math.min(.05, (now - tPrev)/1000); tPrev = now;
+    if (running){ phase += dt; }
+    var M = MODES[mode], tt = phase;
+    streams.forEach(function(q){
+      var d = ((tt*q.speed + q.off*q.p.m.t) % q.p.m.t);
+      var xy = at(q.p, d); q.el.setAttribute("cx", xy[0].toFixed(1)); q.el.setAttribute("cy", xy[1].toFixed(1));
+    });
+    var s = .78 + .22*Math.sin(tt*M.hz*6.28);
+    var ang = (M.shim ? 17*s : 0);
+    $("shT1").setAttribute("transform", "rotate(" + (M.shim==="top" ?  ang : 0) + " 106 187)");
+    $("shT2").setAttribute("transform", "rotate(" + (M.shim==="top" ? -ang : 0) + " 214 187)");
+    $("shB1").setAttribute("transform", "rotate(" + (M.shim==="bot" ? -ang : 0) + " 136 233)");
+    $("shB2").setAttribute("transform", "rotate(" + (M.shim==="bot" ?  ang : 0) + " 184 233)");
+    $("needleG").setAttribute("transform", "translate(0 " + (M.needle ? (6*Math.sin(tt*1.1)).toFixed(1) : 0) + ")");
+    var tpT = mode === "TOPES" ? topT(tt*1.1) : 0, posTop = mode === "TOPES" ? posAt(tpT)/100 : 0;
+    var xa = .5 - .5*Math.cos(tt*2*Math.PI/9), up = (mode === "AIRE" ? xa*70 : mode === "TOPES" ? posTop*75 : M.amp*1.4*(.5 + .5*Math.sin(tt*M.hz*6.28))).toFixed(1);
+    $("upG").setAttribute("transform", "translate(0 " + up + ")");
+    $("upG2").setAttribute("transform", "translate(0 " + up + ")");
+    $("shaftG").setAttribute("transform", "translate(0 " + (M.amp*Math.sin(tt*M.hz*6.28)).toFixed(1) + ")");
+    // shock: sube el vástago, se acorta el resorte, el pistón flotante sigue al aceite
+    var sw = .5 + .5*Math.sin(tt*M.hz*6.28), lowU = mode === "AIRE" ? xa*70 : mode === "TOPES" ? posTop*75 : M.amp*2*sw;
+    $("lowG").setAttribute("transform", "translate(0 " + (-lowU).toFixed(1) + ")");
+    $("spG").setAttribute("transform", "translate(0 316) scale(1 " + (((474 - lowU) - 316)/158).toFixed(3) + ") translate(0 -316)");
+    $("shIfp").setAttribute("transform", "translate(0 " + (sw*9).toFixed(1) + ")");
+    $("bIfp").setAttribute("transform", "translate(" + (sw*16).toFixed(1) + " 0)");
+    $("bShU").setAttribute("transform", "rotate(" + (M.shim==="top" ? ang : 0) + " 193 144)");
+    $("bShL").setAttribute("transform", "rotate(" + (M.shim==="top" ? -ang : 0) + " 193 296)");
+    $("bNeedleG").setAttribute("transform", "translate(0 " + (M.needle ? (6*Math.sin(tt*1.1)).toFixed(1) : 0) + ")");
+    if (mode === "SAG") updateSag(tt);
+    if (mode === "TOPES") updateTop(tt);
+    var hit = mode === "TOPES" && posTop > .97;
+    ["fkHitG", "shHitG", "saHitG"].forEach(function(id){ $(id).style.display = hit ? "" : "none"; });
+    if (mode === "TOPES"){
+      var nT = PULSES.filter(function(p){ return p[1] > 97 && tpT >= p[0]; }).length;
+      $("topN").textContent = nT;
+      $("topMsg").textContent = nT === 0 ? "Todavía sin topes." : nT <= TOPE.tol ? "Uno solo: es normal en un golpe grande." : "Pasa seguido: a la suspensión le falta soporte.";
+    }
+    var dS = mode === "AIRE" ? lowU*1.5 : mode === "TOPES" ? posTop*105 : lowU;
+    $("saTop").setAttribute("transform", "translate(0 " + dS.toFixed(1) + ")");
+    $("saIfp").setAttribute("transform", "translate(0 " + (-sw*9).toFixed(1) + ")");
+    updateSpring(+up, dS, mode === "AIRE" ? Math.min(1, curveF(xa)/6) : .45);
+    if (mode === "AIRE") updateAir(xa);
+    var v = M.v*(1 + .08*Math.sin(tt*M.hz*6.28));
+    $("gDot").setAttribute("cx", (20 + 360*v/800).toFixed(1));
+  }
+  function loop(now){ if (popup) frame(now); else tPrev = now; requestAnimationFrame(loop); }
+
+  document.querySelectorAll(".tab").forEach(function(b){
+    b.addEventListener("click", function(){ mode = b.dataset.m; applyMode(); });
+    b.addEventListener("keydown", function(e){
+      var order = ["HSC","LSC","HSR","LSR","SAG","TOPES","AIRE"], i = order.indexOf(mode);
+      if (e.key==="ArrowRight"){ mode = order[(i+1)%7]; applyMode(); $("t-"+mode).focus(); }
+      if (e.key==="ArrowLeft"){ mode = order[(i+6)%7]; applyMode(); $("t-"+mode).focus(); }
+    });
+  });
+  var view = "ctx";
+  function applyView(){
+    var shock = comp === "shock";
+    document.querySelector(".fig-ctx").hidden = shock || view !== "ctx";
+    document.querySelector(".fig-fork").hidden = shock || view !== "fork";
+    document.querySelector(".fig-shock").hidden = !(shock && spring === "resorte");
+    document.querySelector(".fig-shockair").hidden = !(shock && spring === "aire");
+    $("viewseg").hidden = shock;
+    document.querySelectorAll("#viewseg button").forEach(function(b){ b.setAttribute("aria-pressed", b.dataset.v === view ? "true" : "false"); });
+    document.querySelectorAll("#compseg button").forEach(function(b){ b.setAttribute("aria-pressed", b.dataset.c === comp ? "true" : "false"); });
+  }
+  document.querySelectorAll("#viewseg button").forEach(function(b){ b.addEventListener("click", function(){ view = b.dataset.v; applyView(); }); });
+  document.querySelectorAll("#compseg button").forEach(function(b){ b.addEventListener("click", function(){ comp = b.dataset.c; buildSag(); applyMode(); }); });
+  // spiral del resorte del shock
+  (function(){
+    var h = "";
+    for (var k = 0; k < 8; k++){
+      var y = 316 + k*19.75;
+      h += '<path d="M234 '+(y+9.9)+'L146 '+(y+19.75)+'" stroke-width="2.4" stroke-opacity=".35"/>';
+      h += '<path d="M146 '+y+'L234 '+(y+9.9)+'" stroke-width="3.2" stroke-opacity=".9"/>';
+    }
+    $("spG").innerHTML = h;
+  })();
+  $("play").addEventListener("click", function(){ running = !running; this.textContent = running ? "Pausar" : "Reanudar"; });
+  if (reduce) $("play").textContent = "Reanudar";
+
+  // SAG: tres tubos con la misma escala, el o-ring sube hasta el valor de cada caso
+  var H = 200, Y0 = 250;
+  var SAGS = [
+    { t:.07, cls:"bad", name:"Muy duro", rng:"menos de 10 %", why:"Casi no usa recorrido: la rueda no copia el terreno y pierde tracción." },
+    { t:.18, cls:"ok",  name:"Objetivo", rng:"18 % en SendFlow", why:"Deja recorrido para extender en los huecos y para absorber golpes." },
+    { t:.34, cls:"bad", name:"Muy blando", rng:"más de 30 %", why:"Se hunde antes del primer golpe y llega más seguido al tope." }
+  ];
+  var sagBox = $("sagBox");
+  var SAGS_FORK = SAGS;
+  var SAGS_SHOCK = [
+    { t:.28, cls:"ok", name:"Objetivo del shock", rng:"28 % en SendFlow", why:"Es el valor del perfil base para el shock. La horquilla usa 18 %." }
+  ];
+  function buildSag(){
+  sagBox.innerHTML = "";
+  sagBox.className = "sagbox" + (comp === "shock" ? " one" : "");
+  SAGS = comp === "shock" ? SAGS_SHOCK : SAGS_FORK;
+  SAGS.forEach(function(S, i){
+    var col = S.cls === "ok" ? "var(--ok)" : "var(--bad)", ticks = "";
+    [0,.1,.2,.3,.4].forEach(function(p){
+      var y = Y0 - p*H;
+      ticks += '<line class="l" x1="140" y1="'+y+'" x2="148" y2="'+y+'"/><text class="labd" x="152" y="'+(y+3.5)+'">'+Math.round(p*100)+'%</text>';
+    });
+    var fig = document.createElement("figure");
+    fig.innerHTML =
+      '<svg viewBox="0 0 230 360" role="img" aria-label="Tubo de horquilla con escala de SAG. '+S.name+', '+S.rng+'.">' +
+      '<defs><pattern id="hatch'+i+'" width="6" height="6" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><line x1="0" y1="0" x2="0" y2="6" style="stroke:'+col+';stroke-width:1.3"/></pattern></defs>' +
+      '<rect class="tealf" id="st'+i+'" x="80" y="20" width="60" height="230"/>' +
+      '<line class="spec" x1="90" x2="90" id="sh'+i+'" y1="30" y2="250"/>' +
+      '<g id="cr'+i+'"><rect class="metalf" x="52" y="6" width="116" height="14" rx="4"/></g>' +
+      '<rect id="zn'+i+'" x="82" y="250" width="56" height="0" fill="url(#hatch'+i+')" style="stroke:'+col+';stroke-width:1"/>' +
+      ticks +
+      '<path class="glassf" d="M62 250H158V330Q158 340 148 340H72Q62 340 62 330Z"/><path class="l" d="M92 340V314Q110 298 128 314V340" style="stroke-opacity:.5"/>' +
+      '<rect class="metalf" x="60" y="246" width="100" height="6" rx="2"/>' +
+      '<rect id="or'+i+'" x="76" y="244" width="68" height="6" rx="3" fill="var(--panel)" style="stroke:'+col+';stroke-width:2.4"/>' +
+      '<line id="ld'+i+'" class="thin" x1="34" x2="76" y1="247" y2="247"/>' +
+      '<text id="rd'+i+'" class="lab" x="2" y="251" style="fill:'+col+'">0 %</text>' +
+      '</svg>' +
+      '<div class="sagcap '+S.cls+'"><b>'+(S.cls==="ok" ? "✓ " : "✕ ")+S.name+'</b><span class="r">'+S.rng+'</span><p>'+S.why+'</p></div>';
+    sagBox.appendChild(fig);
+  });
+  }
+  buildSag();
+  function ease(x){ x = Math.max(0, Math.min(1, x)); return x*x*(3 - 2*x); }
+  function updateSag(tt){
+    var u = tt % 5.5;
+    var k = u < .3 ? 0 : u < 1.7 ? ease((u-.3)/1.4) : u < 4.4 ? 1 : u < 5.2 ? 1 - ease((u-4.4)/.8) : 0;
+    SAGS.forEach(function(S, i){
+      var d = S.t*k + (k >= 1 ? .006*Math.sin(tt*2.2) : 0);
+      var dy = d*H;
+      $("or"+i).setAttribute("y", (Y0 - dy - 6).toFixed(1));
+      $("zn"+i).setAttribute("y", (Y0 - dy).toFixed(1)); $("zn"+i).setAttribute("height", dy.toFixed(1));
+      $("cr"+i).setAttribute("transform", "translate(0 " + dy.toFixed(1) + ")");
+      $("st"+i).setAttribute("y", (20 + dy).toFixed(1)); $("st"+i).setAttribute("height", (230 - dy).toFixed(1));
+      $("sh"+i).setAttribute("y1", (30 + dy).toFixed(1));
+      var ly = (Y0 - dy - 3).toFixed(1);
+      $("ld"+i).setAttribute("y1", ly); $("ld"+i).setAttribute("y2", ly);
+      $("rd"+i).setAttribute("y", (Y0 - dy).toFixed(1)); $("rd"+i).textContent = Math.round(d*100) + " %";
+    });
+  }
+  // ---- TOPES: una bajada de ejemplo, cuenta de topes y semáforo con la misma fórmula que la app ----
+  var TOPE = { tol: 1, T: 11 };
+  function topT(tt){ var t = tt % (TOPE.T + 1.5); return t > TOPE.T ? TOPE.T : t; }
+  var PULSES = [[1.0,38],[2.1,62],[3.2,84],[4.4,99.2],[5.5,48],[6.5,74],[7.6,98.4],[8.6,70],[9.6,100]];
+  function posAt(t){
+    var m = 6;
+    PULSES.forEach(function(p){ var d = (t - p[0])/.32, v = 6 + (p[1]-6)*Math.exp(-d*d); if (v > m) m = v; });
+    return Math.min(100, m);
+  }
+  var tcX = function(t){ return 44 + t*(456/TOPE.T); }, tcY = function(v){ return 270 - v*2.5; };
+  (function(){
+    var d = "";
+    for (var t = 0; t <= TOPE.T + .001; t += .05) d += (d ? "L" : "M") + tcX(t).toFixed(1) + " " + tcY(posAt(t)).toFixed(1);
+    $("tcPath").setAttribute("d", d);
+    var m = "";
+    PULSES.forEach(function(p, i){ if (p[1] > 97) m += '<circle id="tcM'+i+'" cx="'+tcX(p[0]).toFixed(1)+'" cy="'+tcY(p[1]).toFixed(1)+'" r="5.5" fill="var(--bad)" fill-opacity="0"/>'; });
+    $("tcMarks").innerHTML = m;
+    var tk = "";
+    for (var s = 0; s <= TOPE.T; s += 2) tk += '<text x="'+tcX(s)+'" y="290" text-anchor="middle">'+s+' s</text>';
+    $("tcTicks").innerHTML = tk;
+  })();
+  function evalTopes(n, tol){
+    if (!n) return { cls:"ok", chip:"EN PUNTO", msg:"Zona objetivo correcta" };
+    if (n <= tol) return { cls:"ok", chip:"EN PUNTO", msg:"Zona objetivo correcta (" + n + " tope aislado)" };
+    var d = Math.min(1, .35 + (n - tol)*.12);
+    return { cls: d > .55 ? "bad" : "warn", chip: d > .55 ? "FUERTE" : d > .22 ? "MODERADO" : "LEVE", msg:"→ Aumentar soporte (" + n + " bottom-out" + (n > 1 ? "s" : "") + ")" };
+  }
+  document.querySelectorAll("#tolSeg button").forEach(function(b){
+    b.addEventListener("click", function(){
+      TOPE.tol = +b.dataset.n;
+      document.querySelectorAll("#tolSeg button").forEach(function(x){ x.setAttribute("aria-pressed", x === b ? "true" : "false"); });
+    });
+  });
+  function updateTop(tt){
+    var t = tt % (TOPE.T + 1.5); if (t > TOPE.T) t = TOPE.T;
+    var v = posAt(t), n = 0;
+    PULSES.forEach(function(p, i){
+      if (p[1] > 97){ var seen = t >= p[0]; if (seen) n++; var e = $("tcM"+i); if (e) e.setAttribute("fill-opacity", seen ? ".9" : "0"); }
+    });
+    var x = tcX(t).toFixed(1);
+    $("tcHead").setAttribute("x1", x); $("tcHead").setAttribute("x2", x);
+    $("tcDot").setAttribute("cx", x); $("tcDot").setAttribute("cy", tcY(v).toFixed(1));
+    $("tcDot").style.fill = v > 97 ? "var(--bad)" : "var(--cian)";
+    $("tgFill").setAttribute("y", (320 - v*3).toFixed(1)); $("tgFill").setAttribute("height", (v*3).toFixed(1));
+    $("tgFill").style.fill = v > 97 ? "var(--bad)" : "var(--cian)";
+    $("tgDot").setAttribute("cy", (320 - v*3).toFixed(1)); $("tgDot").style.fill = v > 97 ? "var(--bad)" : "var(--cian)";
+    $("tgVal").textContent = Math.round(v) + " %";
+    var r = evalTopes(n, TOPE.tol);
+    $("tcN").textContent = n; $("tcChip").textContent = r.chip; $("tcChip").className = "chip " + r.cls; $("tcMsg").textContent = r.msg;
+  }
+
+  // ---- RESORTE: curva de fuerza ilustrativa (aire sellado con n = 1,25) contra un espiral lineal ----
+  var AIR = { P:80, tok:0, pre:2 }, R_TOK = [.81, .88, .95], K_AIR = .7536, N_AIR = 1.25;
+  function airF(x, P, r){ return Math.min(6, K_AIR*(P/80)/Math.pow(1 - r*x, N_AIR)); }
+  function coilF(x, pre){ return Math.min(6, (.28 + .06*pre) + 2.4*x); }
+  function sagAir(P, r){ return Math.max(0, (1 - Math.pow(K_AIR*(P/80), 1/N_AIR))/r); }
+  function sagCoil(pre){ return Math.max(0, (1 - (.28 + .06*pre))/2.4); }
+  function curveF(x){ return spring === "aire" ? airF(x, AIR.P, R_TOK[AIR.tok]) : coilF(x, AIR.pre); }
+  var aX = function(x){ return 54 + x*440; }, aY = function(f){ return 270 - f*41.67; };
+  (function(){
+    var g = "", tk = "";
+    for (var f = 0; f <= 6; f += 2){ g += "M54 "+aY(f)+"H494"; tk += '<text x="48" y="'+(aY(f)+3.5)+'" text-anchor="end">'+f+'×</text>'; }
+    [0,25,50,75,100].forEach(function(p){ tk += '<text x="'+aX(p/100)+'" y="288" text-anchor="middle">'+p+' %</text>'; });
+    $("aGrid").setAttribute("d", g); $("aTicks").innerHTML = tk;
+  })();
+  function drawAir(){
+    var obj = comp === "shock" ? .28 : .18, aire = spring === "aire", da = "", dc = "";
+    for (var i = 0; i <= 60; i++){
+      var x = i/60;
+      da += (i ? "L" : "M") + aX(x).toFixed(1) + " " + aY(airF(x, AIR.P, R_TOK[AIR.tok])).toFixed(1);
+      dc += (i ? "L" : "M") + aX(x).toFixed(1) + " " + aY(coilF(x, AIR.pre)).toFixed(1);
+    }
+    $("aCurveA").setAttribute("d", da); $("aCurveC").setAttribute("d", dc);
+    $("aCurveA").style.opacity = aire ? 1 : .25; $("aCurveC").style.opacity = aire ? .25 : 1;
+    var sag = aire ? sagAir(AIR.P, R_TOK[AIR.tok]) : sagCoil(AIR.pre);
+    $("aSagL").setAttribute("x1", aX(sag)); $("aSagL").setAttribute("x2", aX(sag));
+    $("aSagC").setAttribute("cx", aX(sag)); $("aSagT").setAttribute("x", aX(sag) + 9);
+    $("aSagT").textContent = "SAG " + Math.round(sag*100) + " %";
+    $("aBand").setAttribute("x", aX(obj - .02)); $("aBand").setAttribute("width", 440*.04);
+    $("a97").setAttribute("x1", aX(.97)); $("a97").setAttribute("x2", aX(.97)); $("a97T").setAttribute("x", aX(.97));
+    var desv = sag - obj, ok = Math.abs(desv) < .02;
+    $("sagVal").textContent = Math.round(sag*100) + " %"; $("sagObj").textContent = Math.round(obj*100) + " %";
+    $("sagChip").textContent = ok ? "EN ZONA" : "FUERA"; $("sagChip").className = "chip " + (ok ? "ok" : "warn");
+    var accion = aire ? (desv > 0 ? "Subir presión de aire" : "Bajar presión de aire")
+                      : (desv > 0 ? "Aumentar precarga de resorte" : "Disminuir precarga de resorte");
+    $("sagMsg").textContent = ok ? "Zona objetivo correcta" : accion + " (SAG " + (desv > 0 ? "por encima" : "por debajo") + " del objetivo)";
+    $("f97").textContent = "×" + curveF(.97).toFixed(1).replace(".", ",");
+    $("pVal").textContent = AIR.P + " psi"; $("tVal").textContent = AIR.tok; $("rVal").textContent = AIR.pre + (AIR.pre === 1 ? " vuelta" : " vueltas");
+    $("pCtl").hidden = !aire; $("tCtl").hidden = !aire; $("rCtl").hidden = aire;
+    applySpring();
+  }
+  function updateAir(xa){ var f = curveF(xa); $("aDot").setAttribute("cx", aX(xa).toFixed(1)); $("aDot").setAttribute("cy", aY(f).toFixed(1)); }
+  // aire dentro de las siluetas: la horquilla (otra pata) y el shock (cámara bajo el cuerpo)
+  var fkP = [], fkN = [], shP = [], shN = [];
+  (function(){
+    var seed = 11, rnd = function(){ seed = (seed*9301 + 49297) % 233280; return seed/233280; };
+    function mk(gid, n, cls, arr){ var h = ""; for (var i = 0; i < n; i++) h += '<circle r="1.9" class="'+cls+'"/>'; var g = $(gid); g.insertAdjacentHTML("beforeend", h); g.querySelectorAll("."+cls).forEach(function(el){ arr.push({el:el, u:rnd(), v:rnd()}); }); }
+    var gf = $("fkDots"), gs = $("saDots");
+    gf.innerHTML = ""; gs.innerHTML = "";
+    mk("fkDots", 30, "fp", fkP); mk("fkDots", 10, "fn", fkN); mk("saDots", 44, "sp", shP); mk("saDots", 16, "sn", shN);
+    fkP.concat(shP).forEach(function(g){ g.el.setAttribute("fill", "var(--cian)"); });
+    fkN.concat(shN).forEach(function(g){ g.el.setAttribute("fill", "var(--dim)"); });
+  })();
+  function updateSpring(upF, dS, hi){
+    if (spring !== "aire") return;
+    var tokH = AIR.tok*14, tp = 128 + upF + tokH, bp = 296, pOp = (.35 + .65*hi).toFixed(2), nOp = (.2 + .4*(1 - hi)).toFixed(2);
+    fkP.forEach(function(g){ g.el.setAttribute("cx", (305 + g.u*20).toFixed(1)); g.el.setAttribute("cy", (tp + 4 + g.v*(bp - 4 - (tp + 4))).toFixed(1)); g.el.setAttribute("fill-opacity", pOp); });
+    fkN.forEach(function(g){ g.el.setAttribute("cx", (305 + g.u*20).toFixed(1)); g.el.setAttribute("cy", (320 + g.v*(412 + upF - 320)).toFixed(1)); g.el.setAttribute("fill-opacity", nOp); });
+    $("fkTok").setAttribute("y", (126 + upF).toFixed(1)); $("fkTok").setAttribute("height", tokH);
+    // shock de aire: el pistón baja con el vástago; la cámara positiva queda debajo
+    var pTop = 354 + dS, pBot = 508 - tokH, nTop = 274, nBot = 336 + dS;
+    shP.forEach(function(g){ g.el.setAttribute("cx", (120 + g.u*140).toFixed(1)); g.el.setAttribute("cy", (pTop + g.v*Math.max(2, pBot - pTop)).toFixed(1)); g.el.setAttribute("fill-opacity", pOp); });
+    shN.forEach(function(g){ var x = g.u < .5 ? 120 + g.u*2*42 : 218 + (g.u - .5)*2*42; g.el.setAttribute("cx", x.toFixed(1)); g.el.setAttribute("cy", (nTop + g.v*(nBot - nTop)).toFixed(1)); g.el.setAttribute("fill-opacity", nOp); });
+    $("saTok").setAttribute("y", (512 - tokH).toFixed(1)); $("saTok").setAttribute("height", tokH);
+  }
+  function applySpring(){
+    var air = spring === "aire", tok = air && AIR.tok > 0;
+    [["fkCoil", !air], ["fkAirG", air], ["fkValve", air], ["fkLabCoil", !air], ["fkLabAir", air], ["fkLabTok", tok]].forEach(function(p){ $(p[0]).style.display = p[1] ? "" : "none"; });
+    document.querySelectorAll("#springseg button").forEach(function(b){ b.setAttribute("aria-pressed", b.dataset.s === spring ? "true" : "false"); });
+    applyView();
+  }
+  function bump(key, d, lo, hi){ AIR[key] = Math.max(lo, Math.min(hi, AIR[key] + d)); drawAir(); }
+  $("pMinus").addEventListener("click", function(){ bump("P", -5, 60, 100); });
+  $("pPlus").addEventListener("click", function(){ bump("P", 5, 60, 100); });
+  $("tMinus").addEventListener("click", function(){ bump("tok", -1, 0, 2); });
+  $("tPlus").addEventListener("click", function(){ bump("tok", 1, 0, 2); });
+  $("rMinus").addEventListener("click", function(){ bump("pre", -1, 0, 5); });
+  $("rPlus").addEventListener("click", function(){ bump("pre", 1, 0, 5); });
+  document.querySelectorAll("#springseg button").forEach(function(b){ b.addEventListener("click", function(){ spring = b.dataset.s; drawAir(); }); });
+
+  // ---- maqueta: tarjetas de semáforo y popup ----
   var ICON = {
     SAG: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M6 4v16M18 4v16"/><path d="M6 12h12"/></svg>',
     TOPES: '<svg viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M12 3v12"/><path d="M8 11l4 4 4-4"/><path d="M4 20h16"/></svg>',
@@ -140,255 +1154,65 @@ h1 { font-family: var(--font-brand); font-weight: 600; font-size: 28px; line-hei
   };
   var ORDER = ["SAG","TOPES","HSC","LSC","HSR","LSR"];
   var TITLE = { SAG:"SAG EN REPOSO", TOPES:"TOPES", HSC:"COMPRESIÓN ALTA VELOCIDAD (HSC)", LSC:"COMPRESIÓN BAJA VELOCIDAD (LSC)", HSR:"REBOTE ALTA VELOCIDAD (HSR)", LSR:"REBOTE BAJA VELOCIDAD (LSR)" };
-  function sevTxt(d, ok){ if (ok) return ""; var s = Math.abs(d); return s > .55 ? "FUERTE" : s > .22 ? "MODERADO" : "LEVE"; }
-  function colorOf(d, ok){ return ok ? "var(--cian)" : (Math.abs(d) > .55 ? "var(--rojo)" : "var(--oro)"); }
-  function clamp(v, a, b){ return Math.max(a, Math.min(b, v)); }
-  function ease(x){ x = clamp(x, 0, 1); return x*x*(3 - 2*x); }
-
-  /* ---- estados de ejemplo y evaluación, con la misma lógica de la app ---- */
-  var STATES = {
-    SAG: [["ok","En zona"],["soft","Muy blando"],["hard","Muy duro"]],
-    TOPES: [["ok","1 tope"],["bad","3 topes"]],
-    HSC: [["ok","En zona"],["close","Mucho uso del circuito rápido"],["open","Solo picos aislados"]],
-    LSC: [["ok","En zona"],["close","Usa demasiado recorrido"]],
-    HSR: [["ok","En zona"],["fast","Rebote muy rápido"],["slow","Rebote muy lento"]],
-    LSR: [["ok","En zona"],["fast","Rebote muy rápido"],["slow","Rebote muy lento"]]
-  };
-  function evalKey(k, S, st){
-    var r = { ok:true, dev:0, msg:"Zona objetivo correcta" };
-    if (k === "SAG"){
-      var obj = S === "S" ? .28 : .18, m = st === "ok" ? obj : st === "soft" ? obj + .07 : obj - .06, d = m - obj;
-      r.m = m; r.obj = obj; r.ok = Math.abs(d) < .02; r.dev = r.ok ? 0 : clamp(d*5, -1, 1);
-      r.msg = r.ok ? "Zona objetivo correcta" : d > 0 ? "→ Subir presión de aire (SAG por encima del objetivo)" : "← Bajar presión de aire (SAG por debajo del objetivo)";
-    } else if (k === "TOPES"){
-      var n = st === "ok" ? 1 : 3, tol = 1; r.n = n;
-      if (n <= tol){ r.msg = "Zona objetivo correcta (" + n + " tope aislado)"; }
-      else { r.ok = false; r.dev = Math.min(1, .35 + (n - tol)*.12); r.msg = "→ Aumentar soporte (" + n + " bottom-outs)"; }
-    } else if (k === "HSC"){
-      if (st === "close"){ r.ok = false; r.pct = 40/120*100; r.dev = Math.min(1, .3 + (r.pct - 24)/40); r.msg = "→ Cerrar 1 click HSC (" + (S === "S" ? "hundimiento severo repetido" : "mucho tiempo en el circuito rápido") + ")"; }
-      else if (st === "open"){ r.ok = false; r.pct = 2; r.dev = -.3; r.msg = "← Abrir 1 click HSC (picos aislados sin uso sostenido del circuito)"; }
-      else r.pct = 12;
-    } else if (k === "LSC"){
-      var ref = (S === "S" ? 28 : 18) + 27, avg = (st === "ok" ? 38 : 58) + (S === "S" ? 10 : 0);
-      r.ref = ref; r.avg = avg;
-      if (avg > ref){ r.ok = false; r.dev = Math.min(1, (avg - ref)/25); r.msg = "→ Cerrar 1 click LSC (las transferencias de peso lentas usan demasiado recorrido)"; }
-    } else {
-      var ratio = st === "ok" ? 1.1 : st === "fast" ? 1.9 : .55; r.ratio = ratio;
-      if (ratio > 1.6){ r.ok = false; r.dev = Math.min(1, (ratio - 1.6)*1.2); r.msg = "→ Cerrar rebote (vuelve más rápido de lo que se hundió)"; }
-      else if (ratio < .75){ r.ok = false; r.dev = -Math.min(1, (.75 - ratio)*1.5); r.msg = "← Abrir rebote (no llega a extenderse entre golpes)"; }
-    }
-    return r;
-  }
-
-  /* ---- barra de semáforo, como la de la app: 5 marcas, centro = zona objetivo ---- */
-  function dialHTML(dev, ok, w){
-    var m = 10, au = w - m*2, c = m + au/2, x = c + clamp(dev, -1, 1)*au/2, col = colorOf(dev, ok), h = "";
-    h += '<line x1="'+m+'" y1="12" x2="'+(w-m)+'" y2="12" class="tk"/>';
-    for (var i = 0; i < 5; i++) h += '<circle cx="'+(m + i/4*au)+'" cy="12" r="'+(i === 2 ? 3 : 2.2)+'" class="tk"/>';
-    h += '<line x1="'+c+'" y1="12" x2="'+x+'" y2="12" style="stroke:'+col+';stroke-opacity:.7;stroke-width:2.5"/>';
-    h += '<circle cx="'+x+'" cy="12" r="5" style="fill:'+col+';stroke:var(--bg);stroke-width:1.2"/>';
-    return h;
-  }
-
-  /* ---- tarjetas de la maqueta ---- */
   var MOCK = {
-    SAG:   { H:["ok"], S:["soft"] },
-    TOPES: { H:["ok"], S:["bad"] },
-    HSC:   { H:["close"], S:["ok"] },
-    LSC:   { H:["ok"], S:["close"] },
-    HSR:   { H:["fast"], S:["ok"] },
-    LSR:   { H:["ok"], S:["slow"] }
+    SAG:   { H:[0, ""], S:[.4, "→ Subir presión de aire (SAG por encima del objetivo)"] },
+    TOPES: { H:[0, ""], S:[.59, "→ Aumentar soporte (3 bottom-outs)"] },
+    HSC:   { H:[.45, "→ Cerrar 1 click HSC (mucho tiempo en el circuito rápido)"], S:[0, ""] },
+    LSC:   { H:[0, ""], S:[.3, "→ Cerrar 1 click LSC (las transferencias de peso lentas usan demasiado recorrido)"] },
+    HSR:   { H:[.35, "→ Cerrar rebote (vuelve más rápido de lo que se hundió)"], S:[0, ""] },
+    LSR:   { H:[0, ""], S:[-.4, "← Abrir rebote (no llega a extenderse entre golpes)"] }
   };
+  var PLAIN = {
+    SAG: "El SAG es cuánto se hunde la suspensión solo con tu peso, parado sobre la bici y con el equipo puesto. Se mide con el anillo (o-ring) que queda marcado en el tubo. Si se hunde muy poco, la suspensión está muy dura. Si se hunde mucho, está muy blanda.",
+    TOPES: "Un tope es cuando la suspensión llega al final de su recorrido y no tiene más para dar. Uno de vez en cuando, en un golpe muy grande, es normal. Si pasa seguido, falta soporte: más presión de aire o un token.",
+    HSC: "Cuando la rueda pega fuerte en una piedra, una raíz o un salto, el vástago entra muy rápido y el aceite no alcanza a pasar por el agujerito. Entonces empuja unas láminas finitas, las laminillas, que se abren como una puerta y dejan pasar el aceite. Así se frena el golpe sin que la suspensión se hunda de golpe.",
+    LSC: "Cuando te apoyás en una curva, frenás o pedaleás, la suspensión se mueve despacio. Ahí el aceite pasa solo por un agujerito que regula la aguja. Cerrar clicks achica el agujero: la suspensión se hunde menos y te da más apoyo.",
+    HSR: "Después de un golpe, el resorte devuelve la suspensión rápido a su lugar y el aceite pasa en sentido contrario. Abre las laminillas de rebote, del otro lado del pistón. Si vuelve muy rápido, la rueda salta. Si vuelve muy lento, no llega a recuperarse antes del próximo golpe.",
+    LSR: "Cuando la suspensión vuelve despacio a su lugar, el aceite pasa por un agujerito que regula la aguja de rebote. Las laminillas no se abren. Es el ajuste del rebote de todos los días: con más clicks cerrados, la suspensión vuelve más lenta."
+  };
+  function dialHTML(dev){
+    var w = 260, m = 10, au = w - m*2, c = m + au/2, x = c + Math.max(-1, Math.min(1, dev))*au/2, ok = Math.abs(dev) < .02;
+    var col = ok ? "var(--cian)" : (Math.abs(dev) > .55 ? "var(--bad)" : "var(--oro)"), h = '<line x1="'+m+'" y1="12" x2="'+(w-m)+'" y2="12" class="tk"/>';
+    for (var i = 0; i < 5; i++) h += '<circle cx="'+(m + i/4*au)+'" cy="12" r="'+(i === 2 ? 3 : 2.2)+'" class="tk"/>';
+    return h + '<line x1="'+c+'" y1="12" x2="'+x+'" y2="12" style="stroke:'+col+';stroke-opacity:.7;stroke-width:2.5"/><circle cx="'+x+'" cy="12" r="5" style="fill:'+col+';stroke:var(--bg);stroke-width:1.2"/>';
+  }
   var grid = $("grid");
   ORDER.forEach(function(k){
     var d = document.createElement("div"); d.className = "gs";
     var rows = ["H","S"].map(function(S){
-      var r = evalKey(k, S, MOCK[k][S][0]), col = colorOf(r.dev, r.ok);
+      var r = MOCK[k][S], dev = r[0], ok = Math.abs(dev) < .02, col = Math.abs(dev) > .55 ? "var(--bad)" : "var(--oro)";
+      var sv = ok ? "" : (Math.abs(dev) > .55 ? "FUERTE" : Math.abs(dev) > .22 ? "MODERADO" : "LEVE");
       return '<div class="row"><button class="nm '+(S === "H" ? "c" : "o")+'" type="button" data-k="'+k+'" data-s="'+S+'">'+(S === "H" ? "HORQUILLA" : "SHOCK")+'</button>' +
-        '<div><span class="msg" style="color:'+(r.ok ? "var(--cian)" : col)+'">'+(r.ok ? "EN PUNTO" : r.msg)+'</span>' +
-        '<svg class="dial" viewBox="0 0 260 24" aria-hidden="true">'+dialHTML(r.dev, r.ok, 260)+'</svg><span class="sev">'+sevTxt(r.dev, r.ok)+'</span></div></div>';
+        '<div><span class="msg" style="color:'+(ok ? "var(--cian)" : col)+'">'+(ok ? "EN PUNTO" : r[1])+'</span><svg class="dial" viewBox="0 0 260 24" aria-hidden="true">'+dialHTML(dev)+'</svg><span class="sev">'+sv+'</span></div></div>';
     }).join("");
-    d.innerHTML = '<div class="gs-t"><span class="ic">'+ICON[k]+'</span>'+TITLE[k]+'<button class="info-btn" type="button" data-k="'+k+'" data-s="H" aria-label="Ver qué mide: '+TITLE[k]+'">i</button></div>'+rows;
+    d.innerHTML = '<div class="gs-t"><span class="ic">'+ICON[k]+'</span>'+TITLE[k]+'<button class="info-btn" type="button" data-k="'+k+'" data-s="H" aria-label="Ver cómo funciona: '+TITLE[k]+'">i</button></div>'+rows;
     grid.appendChild(d);
   });
-
-  /* ---- textos de cada popup ---- */
-  var TXT = {
-    SAG: { what:"El SAG en reposo se mide con el o-ring, con el piloto parado y quieto con el equipo puesto, y se carga a mano: no sale de la telemetría. El punto compara ese valor con el objetivo del perfil (18 % en horquilla y 28 % en shock en el perfil base) y está en zona a menos de 2 puntos.",
-      fix:"SAG por encima del objetivo, suspensión muy blanda: sube la presión de aire, o la precarga si es resorte espiral. Por debajo, muy dura: baja la presión. El manual propone pasos de 5 PSI." },
-    TOPES: { what:"Un tope es una compresión que llega a más del 97 % del recorrido. SendFlow cuenta los de la bajada, por suspensión. Cero, o los que acepta el perfil (0 o 1 según estilo y peso), es zona objetivo. Cada tope de más empuja el punto hacia el lado de pedir soporte.",
-      fix:"Pide aumentar soporte: el texto sugiere presión de aire o token. El manual propone primero 1 click de HSC, después un token y después presión. Tocar fondo de vez en cuando, en los golpes más grandes, es normal." },
-    HSC: { what:"Entre las muestras en que el vástago comprime (más de 5 mm/s), mide qué porcentaje supera el umbral de alta velocidad: 230 mm/s en el perfil base, corregido por peso, pista y estilo. Lo compara con el límite del perfil (24 % en el estilo prolijo).",
-      fix:"Si pasa del límite: «Cerrar 1 click HSC». Si casi no usa el circuito pero hubo picos fuertes: «Abrir 1 click HSC». Cuando supera el umbral, las laminillas del circuito rápido son las que trabajan." },
-    LSC: { what:"Toma las compresiones más lentas que el umbral de HSC (hacen falta al menos 5) y promedia hasta dónde llega cada una. Lo compara con el SAG objetivo más un margen del perfil (27 puntos en el estilo prolijo).",
-      fix:"Si el promedio pasa de esa referencia: «Cerrar 1 click LSC». Significa que los cambios de peso lentos usan demasiado recorrido." },
-    HSR: { what:"Compara la velocidad de rebote con la de compresión de la misma suspensión, en los movimientos rápidos (percentil 95 de cada una). El cociente debe quedar dentro de la ventana del perfil (de 0,75 a 1,60 en el estilo prolijo). Necesita al menos 20 muestras de cada una.",
-      fix:"Cociente sobre la ventana: «Cerrar rebote». Bajo la ventana: «Abrir rebote». Si es muy rápido la rueda salta. Si es muy lento, la suspensión se queda comprimida entre golpes (packing)." },
-    LSR: { what:"Compara la velocidad de rebote con la de compresión de la misma suspensión, en los movimientos típicos (mediana de cada una). El cociente debe quedar dentro de la ventana del perfil (de 0,75 a 1,60 en el estilo prolijo). Necesita al menos 20 muestras de cada una.",
-      fix:"Cociente sobre la ventana: «Cerrar rebote». Bajo la ventana: «Abrir rebote». El balance entre delantera y trasera es otro semáforo." }
-  };
-
-  /* ---- escenarios de animación ---- */
-  var stage = $("stage");
-  function T(x, y, s, cls, anchor){ return '<text x="'+x+'" y="'+y+'"'+(cls ? ' class="'+cls+'"' : '')+(anchor ? ' text-anchor="'+anchor+'"' : '')+'>'+s+'</text>'; }
-  function rndFn(seed){ return function(){ seed = (seed*9301 + 49297) % 233280; return seed/233280; }; }
-
-  function buildSag(S, st, r){
-    var x0 = 40, sc = 8; // 1 % = 8 px, hasta 50 %
-    var h = '<rect x="'+x0+'" y="100" width="400" height="30" rx="3" fill="var(--panel)" stroke="var(--line)"/>';
-    h += '<rect x="'+(x0 + (r.obj - .02)*100*sc)+'" y="100" width="'+(.04*100*sc)+'" height="30" fill="var(--cian)" fill-opacity=".25"/>';
-    for (var p = 0; p <= 50; p += 10) h += '<line x1="'+(x0 + p*sc)+'" y1="130" x2="'+(x0 + p*sc)+'" y2="138" class="t"/>' + T(x0 + p*sc, 152, p + " %", "", "middle");
-    h += T(x0 + r.obj*100*sc, 90, "objetivo " + Math.round(r.obj*100) + " % ± 2", "b", "middle");
-    h += T(x0, 40, "recorrido usado con el piloto parado", "");
-    h += '<g id="sgR"><rect x="-6" y="92" width="12" height="46" rx="5" fill="var(--panel)" style="stroke:var(--oro);stroke-width:2.2"/></g>';
-    h += '<text id="sgT" x="0" y="192" text-anchor="middle" class="b" style="font-size:14px">0 %</text>';
-    stage.innerHTML = h;
-    var ring = $("sgR"), tx = $("sgT");
-    return function(t){ var p = ease((t - .3)/1.4), v = r.m*100*p, x = x0 + v*sc; ring.setAttribute("transform", "translate("+x.toFixed(1)+" 0)"); tx.setAttribute("x", x.toFixed(1)); tx.textContent = Math.round(v) + " %"; return p; };
+  var opener = null;
+  $("pCtl").appendChild($("compseg"));
+  function openPopup(k, S, from){
+    mode = k; comp = S === "S" ? "shock" : "fork"; spring = "aire"; popup = true; view = "ctx"; phase = 0; opener = from || null;
+    $("pIc").innerHTML = ICON[k]; $("pT").textContent = TITLE[k];
+    $("plainTxt").textContent = PLAIN[k]; $("techTxt").textContent = MODES[k].app; $("topCount").hidden = k !== "TOPES";
+    buildSag(); applyMode();
+    $("ov").hidden = false; document.body.style.overflow = "hidden"; $("pX").focus();
   }
-
-  var PUL = { ok: [[1,38],[2.4,62],[3.8,84],[5.2,99.2],[6.4,50],[7.6,74],[8.8,70]], bad: [[1,38],[2.2,62],[3.4,84],[4.6,99.2],[5.7,48],[6.7,74],[7.8,98.4],[8.8,70],[9.7,100]] };
-  function buildTopes(S, st, r){
-    var pl = PUL[st], TT = 11, X = function(t){ return 40 + t*(400/TT); }, Y = function(v){ return 200 - v*1.7; };
-    function pos(t){ var m = 6; pl.forEach(function(p){ var d = (t - p[0])/.32, v = 6 + (p[1] - 6)*Math.exp(-d*d); if (v > m) m = v; }); return Math.min(100, m); }
-    var d = "", i;
-    for (var t = 0; t <= TT + .001; t += .05) d += (d ? "L" : "M") + X(t).toFixed(1) + " " + Y(pos(t)).toFixed(1);
-    var h = '<rect x="40" y="'+Y(100)+'" width="400" height="'+(3*1.7)+'" fill="var(--rojo)" fill-opacity=".3"/><line x1="40" y1="'+Y(97)+'" x2="440" y2="'+Y(97)+'" style="stroke:var(--rojo);stroke-width:1;stroke-dasharray:4 3"/>';
-    h += '<path d="M40 200H440M40 '+Y(50)+'H440" class="t"/>' + T(34, 204, "0", "", "end") + T(34, Y(50) + 4, "50", "", "end") + T(34, Y(100) + 4, "100", "", "end");
-    h += T(40, 24, "recorrido usado (%) en una bajada de ejemplo", "") + T(440, 24, "97 %", "", "end");
-    h += '<path d="'+d+'" fill="none" style="stroke:var(--cian);stroke-width:2.2" stroke-linejoin="round"/>';
-    pl.forEach(function(p, j){ if (p[1] > 97) h += '<circle id="tpM'+j+'" cx="'+X(p[0]).toFixed(1)+'" cy="'+Y(p[1]).toFixed(1)+'" r="6" fill="var(--rojo)" fill-opacity="0"/>'; });
-    h += '<line id="tpH" x1="40" y1="30" x2="40" y2="200" class="d"/><circle id="tpD" cx="40" cy="200" r="5" style="fill:var(--cian)"/>';
-    h += T(240, 226, "tiempo (s)", "", "middle") + T(440, 226, "topes: ", "b", "end").replace("</text>", '<tspan id="tpN">0</tspan></text>');
-    stage.innerHTML = h;
-    var hd = $("tpH"), dt = $("tpD"), nn = $("tpN");
-    return function(t){
-      var tt = clamp(t*1.6, 0, TT), v = pos(tt), n = 0;
-      pl.forEach(function(p, j){ if (p[1] > 97){ var seen = tt >= p[0]; if (seen) n++; $("tpM"+j).setAttribute("fill-opacity", seen ? ".9" : "0"); } });
-      var x = X(tt); hd.setAttribute("x1", x); hd.setAttribute("x2", x); dt.setAttribute("cx", x); dt.setAttribute("cy", Y(v)); dt.style.fill = v > 97 ? "var(--rojo)" : "var(--cian)"; nn.textContent = n;
-      return clamp(tt/TT, 0, 1);
-    };
+  function closePopup(){
+    popup = false; $("ov").hidden = true; document.body.style.overflow = "";
+    if (opener) try { opener.focus(); } catch (e) {}
   }
-
-  function buildHsc(S, st, r){
-    var rnd = rndFn(st === "ok" ? 5 : st === "close" ? 9 : 3), N = 120, K = st === "ok" ? 14 : st === "close" ? 40 : 0, v = [], i, hit = {};
-    for (i = 0; i < N; i++) v.push(30 + rnd()*170);
-    while (Object.keys(hit).length < K){ var q = Math.floor(rnd()*N); if (!hit[q]){ hit[q] = 1; v[q] = 250 + rnd()*130; } }
-    if (st === "open") v[70] = 345;
-    var pre = [], above = 0, comp = 0;
-    for (i = 0; i < N; i++){ if (v[i] > 5){ comp++; if (v[i] > 230) above++; } pre.push(100*above/comp); }
-    var X = function(j){ return 40 + j*(330/(N - 1)); }, Y = function(s){ return 170 - s*.33; };
-    var d = ""; for (i = 0; i < N; i++) d += (i ? "L" : "M") + X(i).toFixed(1) + " " + Y(v[i]).toFixed(1);
-    var h = '<line x1="40" y1="'+Y(230)+'" x2="370" y2="'+Y(230)+'" style="stroke:var(--oro);stroke-width:1.2;stroke-dasharray:5 4"/>' + T(44, Y(230) - 6, "umbral 230 mm/s", "");
-    h += '<path d="M40 170H370" class="t"/>' + T(34, 174, "0", "", "end") + T(34, Y(400) + 4, "400", "", "end") + T(40, 24, "velocidad del vástago al comprimir (mm/s)", "");
-    h += '<path d="'+d+'" fill="none" style="stroke:var(--cian);stroke-width:1.6" stroke-linejoin="round"/><line id="hH" x1="40" y1="34" x2="40" y2="170" class="d"/><circle id="hD" cx="40" cy="170" r="4.5" style="fill:var(--cian)"/>';
-    // valvula mini
-    h += '<g transform="translate(402 70)"><rect x="-26" y="0" width="30" height="60" fill="var(--panel)" stroke="var(--line)"/><rect x="-16" y="20" width="10" height="20" fill="var(--port)"/><g id="hS"><path class="l" d="M4 16V44M6.5 17V44M9 18V44" style="stroke-width:1.6"/></g></g>' + T(402, 148, "laminillas", "", "middle");
-    // barra de porcentaje
-    var bx = 40, bw = 400, sc = bw/50;
-    h += '<rect x="'+bx+'" y="196" width="'+bw+'" height="14" rx="3" fill="var(--panel)" stroke="var(--line)"/><rect id="hB" x="'+bx+'" y="196" width="0" height="14" rx="3" fill="var(--cian)" fill-opacity=".6"/>';
-    h += '<line x1="'+(bx + 24*sc)+'" y1="190" x2="'+(bx + 24*sc)+'" y2="216" style="stroke:var(--oro);stroke-width:1.6"/>' + T(bx + 24*sc, 230, "límite del perfil 24 %", "", "middle") + T(bx, 190, "sobre el umbral:", "") + '<text id="hP" x="'+(bx + 135)+'" y="190" class="b">0 %</text>';
-    stage.innerHTML = h;
-    var hh = $("hH"), hd = $("hD"), bb = $("hB"), pp = $("hP"), sh = $("hS");
-    return function(t){
-      var f = clamp(t/4.5, 0, 1), j = Math.min(N - 1, Math.floor(f*(N - 1))), x = X(j);
-      hh.setAttribute("x1", x); hh.setAttribute("x2", x); hd.setAttribute("cx", x); hd.setAttribute("cy", Y(v[j]));
-      var hot = v[j] > 230; hd.style.fill = hot ? "var(--oro)" : "var(--cian)";
-      sh.setAttribute("transform", "rotate(" + (hot ? 16 : 0) + " 4 44)");
-      bb.setAttribute("width", Math.min(bw, pre[j]*sc)); pp.textContent = Math.round(pre[j]) + " %";
-      return f;
-    };
-  }
-
-  function buildLsc(S, st, r){
-    var off = S === "S" ? 10 : 0, base = st === "ok" ? [30,42,36,48,33,40,45,32] : [52,64,58,66,50,60,62,54];
-    var dp = base.map(function(x){ return x + off; }), Y = function(p){ return 200 - p*1.7; }, h = "";
-    h += '<path d="M40 200H440" class="t"/>' + T(34, 204, "0", "", "end") + T(34, Y(100) + 4, "100 %", "", "end") + T(40, 24, "hasta dónde llega cada compresión lenta (%)", "");
-    h += '<line x1="40" y1="'+Y(r.ref)+'" x2="440" y2="'+Y(r.ref)+'" style="stroke:var(--oro);stroke-width:1.4;stroke-dasharray:5 4"/>' + T(440, Y(r.ref) - 6, "SAG objetivo + margen = " + r.ref + " %", "", "end");
-    dp.forEach(function(v, i){ h += '<rect id="lb'+i+'" x="'+(62 + i*46)+'" y="200" width="28" height="0" rx="2" fill="var(--cian)" fill-opacity=".55" stroke="var(--cian)"/>'; });
-    h += '<line id="lA" x1="40" y1="200" x2="440" y2="200" style="stroke:var(--cian);stroke-width:1.6"/><text id="lT" x="40" y="226" class="b">promedio: 0 %</text>';
-    stage.innerHTML = h;
-    var bars = dp.map(function(_, i){ return $("lb"+i); }), la = $("lA"), lt = $("lT");
-    return function(t){
-      var sum = 0, n = 0;
-      dp.forEach(function(v, i){ var g = ease((t - i*.4)/.4), hh = v*1.7*g; bars[i].setAttribute("y", 200 - hh); bars[i].setAttribute("height", hh); if (g >= 1){ sum += v; n++; } });
-      var avg = n ? sum/n : 0; la.setAttribute("y1", Y(avg)); la.setAttribute("y2", Y(avg)); la.style.opacity = n ? 1 : 0;
-      lt.textContent = "promedio: " + Math.round(avg) + " %" + (n ? (avg > r.ref ? "  (pasa la referencia)" : "  (dentro)") : "");
-      return clamp(t/(dp.length*.4 + .4), 0, 1);
-    };
-  }
-
-  function buildReb(k, S, st, r){
-    var ratio = r.ratio, h = "", cw = 90, base = 190, sc = 80;
-    h += T(40, 24, "velocidad pico de cada movimiento (" + (k === "HSR" ? "percentil 95" : "mediana") + ")", "");
-    h += '<path d="M40 '+base+'H250" class="t"/>';
-    h += '<rect id="rC" x="70" y="'+base+'" width="'+cw+'" height="0" rx="2" fill="var(--oro)" fill-opacity=".5" stroke="var(--oro)"/>' + T(115, 208, "compresión", "", "middle");
-    h += '<rect id="rR" x="170" y="'+base+'" width="'+cw+'" height="0" rx="2" fill="var(--azul)" fill-opacity=".5" stroke="var(--azul)"/>' + T(215, 208, "rebote", "", "middle");
-    var mx = 300, mw = 150, X = function(q){ return mx + q/2.2*mw; };
-    h += T(mx, 60, "rebote ÷ compresión", "") + '<rect x="'+mx+'" y="86" width="'+mw+'" height="18" rx="3" fill="var(--panel)" stroke="var(--line)"/>';
-    h += '<rect x="'+X(.75)+'" y="86" width="'+(X(1.6) - X(.75))+'" height="18" fill="var(--cian)" fill-opacity=".3"/>';
-    [0,1,2].forEach(function(q){ h += '<line x1="'+X(q)+'" y1="104" x2="'+X(q)+'" y2="110" class="t"/>' + T(X(q), 124, q, "", "middle"); });
-    h += T(X(1.18), 78, "ventana del perfil", "", "middle");
-    h += '<circle id="rM" cx="'+X(0)+'" cy="95" r="6" style="fill:var(--oro);stroke:var(--bg);stroke-width:1.5"/>' + '<text id="rV" x="'+mx+'" y="160" class="b" style="font-size:16px">1,0</text>';
-    stage.innerHTML = h;
-    var rc = $("rC"), rr = $("rR"), rm = $("rM"), rv = $("rV");
-    return function(t){
-      var tt = Math.min(t, 3.6), a = ease(tt/1.2), b = ease((tt - 1.2)/1.4);
-      rc.setAttribute("y", base - sc*a); rc.setAttribute("height", sc*a);
-      rr.setAttribute("y", base - sc*ratio*b); rr.setAttribute("height", sc*ratio*b);
-      var q = ratio*b; rm.setAttribute("cx", X(q)); rv.textContent = q.toFixed(2).replace(".", ",");
-      var col = q > 1.6 ? "var(--rojo)" : q < .75 && b > .99 ? "var(--oro)" : "var(--cian)"; rm.style.fill = b > .01 ? col : "var(--dim)";
-      return clamp(tt/2.6, 0, 1);
-    };
-  }
-
-  /* ---- popup ---- */
-  var cur = { k:null, S:"H", st:"ok", tick:null, t0:0, raf:0, opener:null, r:null };
-  var reduce = window.matchMedia && matchMedia("(prefers-reduced-motion: reduce)").matches;
-  function render(){
-    var k = cur.k, r = evalKey(k, cur.S, cur.st); cur.r = r;
-    cur.tick = k === "SAG" ? buildSag(cur.S, cur.st, r) : k === "TOPES" ? buildTopes(cur.S, cur.st, r) : k === "HSC" ? buildHsc(cur.S, cur.st, r) : k === "LSC" ? buildLsc(cur.S, cur.st, r) : buildReb(k, cur.S, cur.st, r);
-    $("mChip").textContent = "…"; cur.t0 = performance.now();
-    $("mMsg").textContent = ""; frame(cur.t0 + (reduce ? 20000 : 0));
-  }
-  function frame(now){
-    if (!cur.k) return;
-    var t = (now - cur.t0)/1000, f = cur.tick(t), r = cur.r, e = ease(f);
-    var dev = r.dev*e;
-    $("mDial").innerHTML = dialHTML(dev, r.ok || Math.abs(dev) < .02, 260);
-    var done = f >= .98 || reduce;
-    $("mChip").className = "chip " + (done ? (r.ok ? "ok" : Math.abs(r.dev) > .55 ? "bad" : "warn") : "ok");
-    $("mChip").textContent = done ? (r.ok ? "EN PUNTO" : sevTxt(r.dev, false)) : "…";
-    $("mMsg").textContent = done ? r.msg : "";
-    if (!reduce) cur.raf = requestAnimationFrame(frame);
-  }
-  function open(k, S, opener, st){
-    cur.k = k; cur.S = S || "H"; cur.st = st || "ok"; cur.opener = opener || null;
-    $("mIc").innerHTML = ICON[k]; $("mT").textContent = TITLE[k];
-    $("mWhat").textContent = TXT[k].what; $("mFix").textContent = TXT[k].fix;
-    $("mFoot").textContent = "Datos de ejemplo. Umbrales y ventanas del estilo prolijo del código: cambian con el peso, el estilo y el clima.";
-    $("stateSeg").innerHTML = STATES[k].map(function(s, i){ return '<button type="button" data-st="'+s[0]+'" aria-pressed="'+(s[0] === cur.st)+'">'+s[1]+'</button>'; }).join("");
-    syncSusp();
-    $("ov").hidden = false; document.body.style.overflow = "hidden";
-    render(); $("mX").focus();
-  }
-  function syncSusp(){ document.querySelectorAll("#suspSeg button").forEach(function(b){ b.setAttribute("aria-pressed", b.dataset.s === cur.S ? "true" : "false"); }); }
-  function close(){
-    cancelAnimationFrame(cur.raf); $("ov").hidden = true; document.body.style.overflow = ""; cur.k = null;
-    if (cur.opener) try { cur.opener.focus(); } catch (e) {}
-  }
-  grid.addEventListener("click", function(e){ var b = e.target.closest("button[data-k]"); if (b) open(b.dataset.k, b.dataset.s, b); });
-  $("mX").addEventListener("click", close);
-  $("ov").addEventListener("click", function(e){ if (e.target === $("ov")) close(); });
+  grid.addEventListener("click", function(e){ var b = e.target.closest("button[data-k]"); if (b) openPopup(b.dataset.k, b.dataset.s, b); });
+  $("pX").addEventListener("click", closePopup);
+  $("ov").addEventListener("click", function(e){ if (e.target === $("ov")) closePopup(); });
   document.addEventListener("keydown", function(e){
-    if (!cur.k) return;
-    if (e.key === "Escape") close();
-    if (e.key === "Tab"){ var f = Array.prototype.slice.call($("mod").querySelectorAll("button")), i = f.indexOf(document.activeElement); if (e.shiftKey && i <= 0){ e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && i === f.length - 1){ e.preventDefault(); f[0].focus(); } }
+    if (!popup) return;
+    if (e.key === "Escape") closePopup();
+    if (e.key === "Tab"){ var f = Array.prototype.slice.call($("mod").querySelectorAll("button, summary")).filter(function(x){ return x.offsetParent !== null; }), i = f.indexOf(document.activeElement); if (e.shiftKey && i <= 0){ e.preventDefault(); f[f.length - 1].focus(); } else if (!e.shiftKey && i === f.length - 1){ e.preventDefault(); f[0].focus(); } }
   });
-  $("suspSeg").addEventListener("click", function(e){ var b = e.target.closest("button"); if (!b) return; cur.S = b.dataset.s; syncSusp(); cancelAnimationFrame(cur.raf); render(); });
-  $("stateSeg").addEventListener("click", function(e){ var b = e.target.closest("button"); if (!b) return; cur.st = b.dataset.st; document.querySelectorAll("#stateSeg button").forEach(function(x){ x.setAttribute("aria-pressed", x === b ? "true" : "false"); }); cancelAnimationFrame(cur.raf); render(); });
   var hp = (location.hash || "").replace("#", "").split("-");
-  if (TITLE[hp[0]]){ var okSt = STATES[hp[0]].some(function(x){ return x[0] === hp[1]; }); open(hp[0], hp[2] === "S" ? "S" : "H", null, okSt ? hp[1] : "ok"); }
+  applyMode();
+  if (TITLE[hp[0]]){ openPopup(hp[0], hp[1] === "S" ? "S" : "H", null); var tm = /^t(\d+)$/.exec(hp[2] || ""); if (tm){ phase = +tm[1]; running = false; frame(performance.now()); } }
+  requestAnimationFrame(loop);
 })();
 </script>
 
