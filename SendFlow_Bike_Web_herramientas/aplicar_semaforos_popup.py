@@ -7,7 +7,7 @@ import os, shutil, sys
 
 destino = sys.argv[1]
 aqui = os.path.join(os.path.dirname(os.path.abspath(__file__)), "piezas")
-for f in ("semaforos-iconos.js", "semaforos-popup.js", "semaforo-anim.js", "sag-calculadora.js", "presion-neumaticos.js"):
+for f in ("semaforos-iconos.js", "semaforos-popup.js", "semaforo-anim.js", "sag-calculadora.js", "presion-neumaticos.js", "resorte-coil.js"):
     shutil.copy(os.path.join(aqui, f), os.path.join(destino, "js", f))
 shutil.copy(os.path.join(aqui, "semaforo-anim.css"), os.path.join(destino, "css", "semaforo-anim.css"))
 shutil.copy(os.path.join(aqui, "semaforo-anim.html"), os.path.join(destino, "semaforo-anim.html"))
@@ -34,6 +34,9 @@ if "sag-calculadora.js" not in html:
     open(ruta_html, "w", encoding="utf-8").write(html)
 if "presion-neumaticos.js" not in html:
     html = html.replace('<script src="./js/sag-calculadora.js"></script>', '<script src="./js/sag-calculadora.js"></script>\n<script src="./js/presion-neumaticos.js"></script>')
+    open(ruta_html, "w", encoding="utf-8").write(html)
+if "resorte-coil.js" not in html:
+    html = html.replace('<script src="./js/presion-neumaticos.js"></script>', '<script src="./js/presion-neumaticos.js"></script>\n<script src="./js/resorte-coil.js"></script>')
     open(ruta_html, "w", encoding="utf-8").write(html)
 def parchar_app(destino):
     ruta = os.path.join(destino, "js", "app.js")
