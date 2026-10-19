@@ -567,6 +567,82 @@ function evaluarBalanceRebote(velHRueda, velSRueda){
   return { desviacion, mensaje_sugerido, datos };
 }
 
+// ===== EQUILIBRIO_GEOMETRICO (agregado en la copia web; no está en la app) =====
+// El equilibrio adelante/atrás NO depende de los clics: compara el comportamiento de los dos ejes.
+//  1) Recorrido dinámico: % medio de recorrido usado en marcha y fuera de los saltos. La trasera usa más que la
+//     delantera: objetivo, trasera − delantera entre 8 y 12 puntos (30–35 % contra 20–25 % en DH).
+//  2) Fase de rebote: tiempo que tarda cada eje en recuperar el 80 % de un golpe (Δt = t_delantera − t_trasera).
+//     Δt cerca de 0 o positivo (la trasera vuelve antes) está bien; negativo es "pack down" trasero.
+const EQUIL_SAG_DIF = [8, 12];
+const EQUIL_MIN_PARES = 5;
+function equilT80(pos, tiempos, g, aire){
+  const i0 = buscarIndiceTiempoEn(tiempos, g.t_inicio), i1 = buscarIndiceTiempoEn(tiempos, g.t_fin);
+  if (!(i1 > i0) || (aire && aire[i0])) return null;
+  const objetivo = pos[i0] - 0.8 * (pos[i0] - pos[i1]);
+  for (let k = i0; k <= i1; k++) if (pos[k] <= objetivo) return tiempos[k] - tiempos[i0];
+  return null;
+}
+function equilFase(est, tiempos){
+  const gH = (est.golpesH || []).filter(g => g.tipo === "rebote" && g.profundidad_pct >= 8);
+  const gS = (est.golpesSSusp || []).filter(g => g.tipo === "rebote" && g.profundidad_pct >= 8);
+  const usados = new Set(), dts = [], tF = [];
+  for (const f of gH){
+    let mejor = -1;
+    for (let j = 0; j < gS.length; j++){
+      if (usados.has(j)) continue;
+      const d = gS[j].t_inicio - f.t_inicio;
+      if (d < -0.05) continue;
+      if (d > 0.6) break;
+      mejor = j; break;
+    }
+    if (mejor < 0) continue;
+    const a = equilT80(est.mh, tiempos, f, est.mascaraAire), b = equilT80(est.msVastago, tiempos, gS[mejor], est.mascaraAire);
+    if (a == null || b == null) continue;
+    usados.add(mejor); dts.push(1000 * (a - b)); tF.push(1000 * a);
+  }
+  if (dts.length < EQUIL_MIN_PARES) return { pares: dts.length };
+  const dt = percentil(dts, 50), t = percentil(tF, 50), tol = Math.max(15, 0.12 * t);
+  return { pares: dts.length, dt, tF: t, tol };
+}
+function evaluarEquilibrio(est, viejo, tiempos){
+  if (!viejo) return viejo;
+  const sd = est.sagDin, fase = equilFase(est, tiempos), datos = Object.assign({}, viejo.datos, { fase });
+  let sag = null;
+  if (sd && sd.h && sd.s){
+    const dif = sd.s.valor - sd.h.valor, fuera = dif < EQUIL_SAG_DIF[0] ? EQUIL_SAG_DIF[0] - dif : dif > EQUIL_SAG_DIF[1] ? dif - EQUIL_SAG_DIF[1] : 0;
+    datos.sagDif = dif; datos.sagH = sd.h.valor; datos.sagS = sd.s.valor;
+    if (fuera > 0){
+      const trasHundida = dif > EQUIL_SAG_DIF[1];
+      // el extremo que ya está fuera de su propio rango es el que se corrige; si ninguno lo está, el shock
+      let susp, mas;
+      if (trasHundida){ if (sd.s.estado === "mucho" || sd.h.estado !== "poco"){ susp = "S"; mas = true; } else { susp = "H"; mas = false; } }
+      else { if (sd.s.estado === "poco" || sd.h.estado !== "mucho"){ susp = "S"; mas = false; } else { susp = "H"; mas = true; } }
+      const tipo = (susp === "S" ? est.config.tipoResorteS : est.config.tipoResorteH) === "resorte" ? "precarga" : "presión de aire";
+      const nom = susp === "S" ? "del shock" : "de la horquilla";
+      sag = { desv: (trasHundida ? 1 : -1) * Math.min(1, 0.25 + fuera / 8),
+        msg: `${mas ? "Subir" : "Bajar"} ${tipo} ${nom} (la trasera usa ${Math.abs(dif).toFixed(0)} puntos ${dif < 0 ? "menos" : "más"} recorrido que la delantera en marcha; objetivo ${EQUIL_SAG_DIF[0]}–${EQUIL_SAG_DIF[1]})`,
+        accion: { tipo: "sag", susp, mas } };
+    }
+  }
+  let reb = null;
+  if (fase && fase.dt != null){
+    const { dt, tol } = fase;
+    if (dt < -tol){
+      const grave = dt < -3 * tol;
+      reb = { desv: -Math.min(1, (grave ? 0.55 : 0.25) + (Math.abs(dt) - tol) / (12 * tol)),
+        msg: `Abrir rebote del shock (pack down trasero: la trasera tarda ${Math.abs(dt).toFixed(0)} ms más que la delantera en recuperar el golpe)`,
+        accion: { tipo: "rebote", cierra: false } };
+    } else if (dt > 6 * tol){
+      reb = { desv: Math.min(1, 0.25 + (dt - 6 * tol) / (12 * tol)),
+        msg: `Cerrar rebote del shock (la trasera recupera ${dt.toFixed(0)} ms antes que la delantera)`,
+        accion: { tipo: "rebote", cierra: true } };
+    }
+  }
+  const sel = sag || reb;
+  if (!sel) return { desviacion: 0, mensaje_sugerido: "Zona objetivo correcta", datos };
+  return { desviacion: sel.desv, mensaje_sugerido: sel.msg, accion: sel.accion, secundario: sag && reb ? reb.msg : null, datos };
+}
+
 // SAG dinámico medio (07/10/2026, separado de calcularSagDinamico para poder
 // usarlo también en el historial de set-up, que analiza bajadas guardadas sin
 // pasar por ejecutarAnalisis). Promedio del recorrido usado con la bici en
@@ -6907,6 +6983,7 @@ function ejecutarAnalisis(muestras, nombreBajada){
   estado.topes = detectarTopes(muestras, tiempos);
   estado.terreno = analizarTerreno(muestras, tiempos);
   estado.sagDin = calcularSagDinamico(muestras);
+  if (estado.resIa && estado.resIa.BALANCE_REBOTE) estado.resIa.BALANCE_REBOTE = evaluarEquilibrio(estado, estado.resIa.BALANCE_REBOTE, tiempos); // EQUILIBRIO_GEOMETRICO
   estado.recuperacion = { h: analizarRecuperacion(estado.golpesH, estado.mh, estado.config.recH, tiempos), s: analizarRecuperacion(estado.golpesS, estado.ms, estado.config.recS, tiempos) };
   estado.reparto = analizarReparto(muestras);
   estado.tmd = analizarTmd(muestras);
@@ -7227,8 +7304,8 @@ function construirSemaforos(resIa){
   const b = resIa.BALANCE_REBOTE;
   const grupoBalance = b ? `
     <div class="grupo-semaforo grupo-semaforo-ancho">
-      <div class="titulo-grupo-semaforo"><span class="icono-grupo-semaforo">${ICONO_SEM_BALANCE}</span>BALANCE DE REBOTE ADELANTE / ATRÁS
-        <span class="dato-balance">vel. alta de rebote: delantera ${b.datos.rebH.toFixed(0)} · trasera ${b.datos.rebS.toFixed(0)} mm/s · ${b.datos.ratio.toFixed(2)}</span></div>
+      <div class="titulo-grupo-semaforo"><span class="icono-grupo-semaforo">${ICONO_SEM_BALANCE}</span>EQUILIBRIO ADELANTE / ATRÁS
+        <span class="dato-balance">${b.datos.sagDif != null ? `recorrido en marcha: delantera ${b.datos.sagH.toFixed(0)} % · trasera ${b.datos.sagS.toFixed(0)} % (dif. ${b.datos.sagDif.toFixed(0)}, objetivo 8–12)` : ""}${b.datos.fase && b.datos.fase.dt != null ? ` · Δt rebote ${b.datos.fase.dt.toFixed(0)} ms (${b.datos.fase.pares} golpes)` : ""}</span></div>
       <div class="fila-semaforo">
         <span class="nom-semaforo oro">TRASERA</span>
         <div class="cont-barra-sem">
@@ -7445,10 +7522,10 @@ function construirRecomendaciones(resIa, recH, recS, config){
   const bal = resIa.BALANCE_REBOTE;
   if (bal){
     const d = bal.datos;
-    items.push(`Rebote, velocidad alta sin picos (en rueda): delantera <b>${d.rebH.toFixed(0)}</b> / trasera <b>${d.rebS.toFixed(0)} mm/s</b> — relación <b>${d.ratio.toFixed(2)}</b>${bal.mensaje_sugerido === "Zona objetivo correcta" ? " (balanceado)" : ""}.`);
+    if (d.rebH) items.push(`Rebote, velocidad alta sin picos (en rueda, informativo): delantera <b>${d.rebH.toFixed(0)}</b> / trasera <b>${d.rebS.toFixed(0)} mm/s</b> — relación <b>${d.ratio.toFixed(2)}</b>${bal.mensaje_sugerido === "Zona objetivo correcta" ? " (balanceado)" : ""}.`);
     if (bal.mensaje_sugerido !== "Zona objetivo correcta"){
       const fueraH = ["HORQUILLA_LSR","HORQUILLA_HSR"].some(k => resIa[k] && resIa[k].mensaje_sugerido !== "Zona objetivo correcta");
-      const texto = fueraH
+      const texto = bal.accion && bal.accion.tipo === "sag" ? bal.mensaje_sugerido.replace(/ \(.*\)$/, "") : fueraH
         ? "Ajustar primero el rebote de la horquilla y después igualar el del shock a la delantera"
         : bal.mensaje_sugerido.replace(/ \(.*\)$/, "") + " hasta igualar la delantera";
       prioridades.push({ texto, severidad: Math.min(1, Math.abs(bal.desviacion) + 0.2), etapa: 2 });

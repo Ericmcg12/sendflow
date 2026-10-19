@@ -29,4 +29,27 @@ if "semaforos-popup.js" not in html:
     nuevo = '\n<script src="./js/semaforos-iconos.js"></script>\n<script src="./js/semaforos-popup.js"></script>'
     html = html[:ultimo + len("</script>")] + nuevo + html[ultimo + len("</script>"):]
     open(ruta_html, "w", encoding="utf-8").write(html)
+def parchar_app(destino):
+    ruta = os.path.join(destino, "js", "app.js")
+    js = open(ruta, encoding="utf-8").read()
+    if "EQUILIBRIO_GEOMETRICO" in js:
+        return
+    nuevo = open(os.path.join(aqui, "equilibrio-geometrico.js"), encoding="utf-8").read()
+    def reemplazar(viejo, nuevo_txt):
+        nonlocal js
+        assert js.count(viejo) == 1, "app.js cambió, no se encuentra: " + viejo[:70]
+        js = js.replace(viejo, nuevo_txt)
+    reemplazar("// SAG dinámico medio (07/10/2026, separado", nuevo + "\n// SAG dinámico medio (07/10/2026, separado")
+    reemplazar("  estado.sagDin = calcularSagDinamico(muestras);\n",
+               "  estado.sagDin = calcularSagDinamico(muestras);\n  if (estado.resIa && estado.resIa.BALANCE_REBOTE) estado.resIa.BALANCE_REBOTE = evaluarEquilibrio(estado, estado.resIa.BALANCE_REBOTE, tiempos); // EQUILIBRIO_GEOMETRICO\n")
+    reemplazar('<span class="dato-balance">vel. alta de rebote: delantera ${b.datos.rebH.toFixed(0)} · trasera ${b.datos.rebS.toFixed(0)} mm/s · ${b.datos.ratio.toFixed(2)}</span>',
+               '<span class="dato-balance">${b.datos.sagDif != null ? `recorrido en marcha: delantera ${b.datos.sagH.toFixed(0)} % · trasera ${b.datos.sagS.toFixed(0)} % (dif. ${b.datos.sagDif.toFixed(0)}, objetivo 8–12)` : ""}${b.datos.fase && b.datos.fase.dt != null ? ` · Δt rebote ${b.datos.fase.dt.toFixed(0)} ms (${b.datos.fase.pares} golpes)` : ""}</span>')
+    reemplazar('</span>BALANCE DE REBOTE ADELANTE / ATRÁS\n', '</span>EQUILIBRIO ADELANTE / ATRÁS\n')
+    reemplazar('    items.push(`Rebote, velocidad alta sin picos (en rueda): delantera',
+               '    if (d.rebH) items.push(`Rebote, velocidad alta sin picos (en rueda, informativo): delantera')
+    reemplazar('      const texto = fueraH\n',
+               '      const texto = bal.accion && bal.accion.tipo === "sag" ? bal.mensaje_sugerido.replace(/ \\(.*\\)$/, "") : fueraH\n')
+    open(ruta, "w", encoding="utf-8").write(js)
+
+parchar_app(destino)
 print("Semáforos con popup aplicados en", destino)

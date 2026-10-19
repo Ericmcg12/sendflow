@@ -14,7 +14,7 @@
   };
   var CLAVE_EQUIL = "BALANCE_REBOTE";
   var TITULO = {
-    EQUIL: "BALANCE DE REBOTE ADELANTE / ATRÁS", SAG: "SAG EN REPOSO", TOPES: "TOPES", HSC: "COMPRESIÓN ALTA VELOCIDAD (HSC)", LSC: "COMPRESIÓN BAJA VELOCIDAD (LSC)",
+    EQUIL: "EQUILIBRIO ADELANTE / ATRÁS", SAG: "SAG EN REPOSO", TOPES: "TOPES", HSC: "COMPRESIÓN ALTA VELOCIDAD (HSC)", LSC: "COMPRESIÓN BAJA VELOCIDAD (LSC)",
     HSR: "REBOTE ALTA VELOCIDAD (HSR)", LSR: "REBOTE BAJA VELOCIDAD (LSR)"
   };
   var CLICK_FUERTE = 0.55; // misma desviación que la app marca como FUERTE: a partir de ahí se piden 2 clicks
@@ -32,12 +32,16 @@
   // Qué hacer para una fila: { svg, clicks, sagAlto, aire } o null si no hay nada que corregir.
   function devolucion(E, k, S) {
     if (k === "EQUIL") {
-      var q = E.resIa && E.resIa[CLAVE_EQUIL], mq = (q && q.mensaje_sugerido) || "";
-      if (!q || sinAccion(mq)) return null;
-      var cierra0 = /^Cerrar/.test(mq), abre0 = /^Abrir/.test(mq);
-      if (!cierra0 && !abre0) return null;
-      var fq = Math.abs(q.desviacion) > CLICK_FUERTE, nq = fq ? 2 : 1;
-      return { svg: svg(SFI.knobSVG(cierra0 ? "cw" : "ccw", nq, (cierra0 ? "CERRAR " : "ABRIR ") + nq + (nq === 1 ? " CLICK" : " CLICKS"), "rebote del shock", fq ? "var(--bad)" : "var(--oro)")), clicks: nq };
+      var q = E.resIa && E.resIa[CLAVE_EQUIL], mq = (q && q.mensaje_sugerido) || "", ac = q && q.accion;
+      if (!q || sinAccion(mq) || !ac) return null;
+      var fq = Math.abs(q.desviacion) > CLICK_FUERTE, cq = fq ? "var(--bad)" : "var(--oro)";
+      if (ac.tipo === "sag") {
+        var spq = tipoResorte(E, ac.susp), nomq = ac.susp === "S" ? "del shock" : "de la horquilla";
+        return { svg: svg(spq === "aire" ? SFI.psiSVG(ac.mas ? "up" : "down", ac.mas ? "SUBIR PRESIÓN" : "BAJAR PRESIÓN", nomq, cq)
+          : SFI.knobSVG(ac.mas ? "cw" : "ccw", 1, ac.mas ? "MÁS PRECARGA" : "MENOS PRECARGA", nomq, cq)), aire: spq === "aire", sagAlto: ac.mas };
+      }
+      var nq = fq ? 2 : 1;
+      return { svg: svg(SFI.knobSVG(ac.cierra ? "cw" : "ccw", nq, (ac.cierra ? "CERRAR " : "ABRIR ") + nq + (nq === 1 ? " CLICK" : " CLICKS"), "rebote del shock", cq)), clicks: nq };
     }
     var res = E.resIa, i = S === "S" ? 1 : 0, r = res && res[CLAVES[k][i]];
     if (!r) return null;
@@ -136,8 +140,8 @@
     var E = estado(), p = popup(), f = p.querySelector("iframe");
     var h = E ? tipoResorte(E, "H") : "aire", s = E ? tipoResorte(E, "S") : "aire";
     p.querySelector("#sfPopT").textContent = TITULO[k];
-    var rq = E && E.resIa && E.resIa[CLAVE_EQUIL] && E.resIa[CLAVE_EQUIL].datos;
-    f.src = "./semaforo-anim.html?v=" + Date.now() + "#" + [k, S, h, s].concat(k === "EQUIL" && rq && rq.ratio ? [rq.ratio.toFixed(2)] : []).join("-");
+    var rq = E && E.resIa && E.resIa[CLAVE_EQUIL], ra = rq && rq.accion, rr = ra && ra.tipo === "rebote" ? (ra.cierra ? "1.70" : "0.50") : "1.00";
+    f.src = "./semaforo-anim.html?v=" + Date.now() + "#" + [k, S, h, s].concat(k === "EQUIL" ? [rr] : []).join("-");
     abierto = desde || null; p.hidden = false; document.documentElement.classList.add("sf-pop-abierto");
     p.querySelector(".sf-pop-x").focus();
   }
