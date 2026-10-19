@@ -161,7 +161,7 @@
   });
 
   function frame(now){
-    var dt = Math.min(.05, (now - tPrev)/1000); tPrev = now;
+    var dt = Math.max(0, Math.min(.05, (now - tPrev)/1000)); tPrev = now;
     if (running){ phase += dt; }
     var M = MODES[mode], tt = phase;
     streams.forEach(function(q){
@@ -207,7 +207,7 @@
     var v = M.v*(1 + .08*Math.sin(tt*M.hz*6.28));
     $("gDot").setAttribute("cx", (20 + 360*v/800).toFixed(1));
   }
-  function loop(now){ if (popup) frame(now); else tPrev = now; requestAnimationFrame(loop); }
+  function loop(now){ requestAnimationFrame(loop); if (popup) { try { frame(now); } catch (e) { if (window.console) console.error(e); } } else tPrev = now; }
 
   document.querySelectorAll(".tab").forEach(function(b){
     b.addEventListener("click", function(){ mode = b.dataset.m; applyMode(); });
@@ -596,7 +596,7 @@
   function updateEq(tt){
     if (!$("eqBody")) eqDraw();
     eqBuild();
-    var t = tt % EQT, i = Math.min(eqSeries.f.length - 1, Math.floor(t*60)), f = eqSeries.f[i], r = eqSeries.r[i];
+    var t = ((tt % EQT) + EQT) % EQT, i = Math.max(0, Math.min(eqSeries.f.length - 1, Math.floor(t*60))), f = eqSeries.f[i], r = eqSeries.r[i];
     var zf = f[0], zr = r[0], zm = (zf + zr)/2, a = -Math.atan2(zf - zr, K.XF - K.A0[0]), ca = Math.cos(a), sa = Math.sin(a), MY = K.YA;
     var W = function(p){ var dx = p[0] - K.MX, dy = p[1] - MY; return [K.MX + dx*ca - dy*sa, MY + dx*sa + dy*ca - zm]; };
     $("eqBody").setAttribute("transform", "translate(0 " + (-zm).toFixed(2) + ") rotate(" + (a*180/Math.PI).toFixed(3) + " " + K.MX + " " + MY + ")");
