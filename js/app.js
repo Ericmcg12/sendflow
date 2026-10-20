@@ -467,6 +467,7 @@
       <div class="grilla g3" id="listaPilotos"></div></div>`));
     $("[data-accion=nuevo]", v).addEventListener("click", () => editarPiloto());
     const g = $("#listaPilotos", v);
+    if (window.Grupos) Grupos.seccion($("#listaPilotos", v).parentNode).catch(() => {});   // v55: grupos de pilotos
     if (!pilotos.length) g.replaceWith(html(`<div class="vacio entra">Agregá el primer piloto para empezar a cargar sus análisis.<br>Si ponés su email, cuando cree su cuenta en SendFlow Coach va a ver sus análisis.</div>`));
     pilotos.forEach(p => g.appendChild(tarjetaPiloto(p, analisis.filter(a => a.pilotoId === p.id).length)));
   }

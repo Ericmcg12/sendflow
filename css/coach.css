@@ -1750,3 +1750,14 @@ a.ap-fila:hover{background:rgba(255,255,255,.03);}
 .ap-chip.rojo{color:var(--rojo);border-color:var(--rojo);} .ap-chip.oro{color:var(--oro);border-color:var(--oro);} .ap-chip.ok{color:var(--cian);border-color:transparent;}
 .ap-mejora{color:var(--cian);font-weight:500;} .ap-sube{color:var(--rojo);font-weight:500;}
 @media (max-width:760px){.ap-fila{grid-template-columns:1.4fr .7fr .6fr .9fr;} .ap-fila>span:nth-child(4),.ap-fila>span:nth-child(5){display:none;}}
+.sf-mail-hora{width:auto;min-width:100px;height:34px;margin-top:4px;}
+
+/* v55: grupos de pilotos */
+.grupos-seccion{margin-bottom:18px;}
+.gr-tarjeta{display:flex;flex-direction:column;gap:6px;text-align:left;cursor:pointer;color:inherit;font:inherit;}
+.gr-tarjeta:hover{border-color:var(--borde-2);} .gr-tarjeta small{color:var(--ink-dim);}
+.gr-cab{display:flex;gap:8px;align-items:center;justify-content:space-between;}
+.gr-nuevo{display:flex;align-items:center;justify-content:center;gap:8px;min-height:72px;border-style:dashed;cursor:pointer;color:var(--ink-dim);font:inherit;background:transparent;}
+.gr-nuevo:hover{color:var(--ink);border-color:var(--borde-2);}
+.gr-lista{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow:auto;padding:8px;border:1px solid var(--borde);border-radius:var(--r-md);}
+.gr-op{display:flex;gap:8px;align-items:center;cursor:pointer;font-size:14px;} .gr-op input{accent-color:var(--cian);}
