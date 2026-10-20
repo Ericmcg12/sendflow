@@ -180,6 +180,13 @@ Antes: +2,5 kg fijo con lluvia. Ahora (`parchar_peso_clima` en `parche_defaults.
 - El esfuerzo es por sesión (lo marca el piloto); el de un ejercicio es el promedio de las sesiones hechas donde aparece. Tendencia = primera mitad vs segunda mitad (mínimo 4 sesiones con esfuerzo; ±0,5 puntos).
 - «No la hice» se comporta igual que «Sí, la hice»: queda guardada y bloqueada; solo «Todavía no» la reabre.
 
+## 2d-undecies) Coach · Inicio: atención con tus pilotos (20/10/2026)
+`js/atencion-pilotos.js`, sin cambios en la base (`coach_calendario_datos` + `coach_plan_ver` + `coach_pilotos_listar`). Tarjeta arriba del Inicio del entrenador:
+- Aviso «lleva X días sin responder»: sesiones vencidas sin marcar, desde la última que marcó, a partir de 3 días; solo cuentan los días con sesiones cargadas y sin aviso del piloto en su calendario (fecha con «no entreno», viaje o visita médica).
+- Aviso «esfuerzo por encima de lo planificado»: esfuerzo percibido − intensidad ≥ 2 puntos en las dos últimas semanas con datos.
+- Tabla «Cómo vienen»: cumplimiento 4 semanas, esfuerzo, evolución, última respuesta y estado de cada piloto; se abre su ficha.
+- `coach-web/piezas/app.js` no se actualizó: el engarce en `app.js` (Inicio) y `index.html` está hecho directo sobre `SendFlow_Coach_Web`.
+
 ## 2e) Ayuda para medir el SAG y frases de velocidad (ideas tomadas de la revisión de sagly.at; textos propios)
 
 El SAG es un dato que se carga **antes** de analizar una bajada; el semáforo solo confirma si está en zona. Por eso la calculadora **no** va en el popup del semáforo (ahí quedó igual que antes):
