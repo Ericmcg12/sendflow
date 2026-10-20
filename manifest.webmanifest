@@ -1,0 +1,5 @@
+{
+  "name": "SendFlow Coach", "short_name": "Coach", "start_url": "/inicio", "scope": "/", "display": "standalone",
+  "background_color": "#070b0c", "theme_color": "#070b0c", "lang": "es",
+  "icons": [{ "src": "/img/aviso-192.png", "sizes": "192x192", "type": "image/png" }, { "src": "/img/aviso-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }]
+}
