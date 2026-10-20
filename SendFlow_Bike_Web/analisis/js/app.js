@@ -7096,6 +7096,7 @@ function aplicarCambioModoDatos(){
   if (typeof actualizarLeyendaGraficoGrande === "function" && estado.graficoSeleccionado) actualizarLeyendaGraficoGrande();
   redibujarTodo();
 }
+actualizarPanelModoDatos();
 $("btnModoRueda").addEventListener("click", () => { estado.modoCanalSusp = "rueda"; actualizarPanelModoDatos(); aplicarCambioModoDatos(); });
 $("btnModoSuspension").addEventListener("click", () => { estado.modoCanalSusp = "suspension"; actualizarPanelModoDatos(); aplicarCambioModoDatos(); });
 $("btnModoPct").addEventListener("click", () => { estado.modoUnidadSusp = "pct"; actualizarPanelModoDatos(); aplicarCambioModoDatos(); });

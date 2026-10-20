@@ -17,6 +17,15 @@ def parchar_defaults(destino, aqui):
         js = js.replace(viejo, nuevo, 1)
 
     reemplazar('modoCanalSusp: "rueda", modoUnidadSusp', 'modoCanalSusp: "suspension", modoUnidadSusp')
+    # los botones Rueda/Susp. se sincronizan al arrancar (antes solo cambiaban al tocarlos y quedaba marcado «Rueda»)
+    reemplazar('$("btnModoRueda").addEventListener("click"', 'actualizarPanelModoDatos();\n$("btnModoRueda").addEventListener("click"')
+    rh = os.path.join(destino, "index.html")
+    h = open(rh, encoding="utf-8").read()
+    vh1, vh2 = '<button class="btn-toggle activo" id="btnModoRueda"', '<button class="btn-toggle" id="btnModoSuspension"'
+    if vh1 in h:
+        assert vh2 in h, "index.html cambió: botones de modo"
+        h = h.replace(vh1, '<button class="btn-toggle" id="btnModoRueda"', 1).replace(vh2, '<button class="btn-toggle activo" id="btnModoSuspension"', 1)
+        open(rh, "w", encoding="utf-8").write(h)
 
     if "async function sfSeleccionarPerfil" not in js:
         ini = js.index('$("listaSeleccionarPerfil").addEventListener("click"')
