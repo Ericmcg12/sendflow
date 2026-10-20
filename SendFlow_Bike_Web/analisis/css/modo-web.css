@@ -238,3 +238,12 @@ html.sf-con-profe [data-accion="enviar-coach"] { display: inline-flex !important
 #avisoNube.e { border-color: #e0483f; color: #ffb4ae; }
 #avisoNube.ok { border-color: #4fe3c2; color: #4fe3c2; }
 /* fin semáforos con popup */
+
+/* v54: sin bici no se analiza; lo que mandan los pilotos al entrenador */
+.sf-sinbici { position: fixed; inset: 0; z-index: 9000; display: grid; place-items: center; padding: 16px; background: rgba(8,12,13,.94); }
+.sf-sinbici-caja { width: min(440px, 100%); display: grid; gap: 10px; padding: 22px; border: 1px solid var(--borde, #2a3436); border-radius: 14px; background: var(--panel, #151b1c); text-align: left; }
+.sf-sinbici-caja h2 { margin: 0; font-size: 20px; }
+.sf-sinbici-caja p { margin: 0; line-height: 1.5; color: var(--ink-dim, #9fb0ad); }
+.sf-sinbici-caja .btn { margin: 0; }
+.nube-sec { margin: 14px 0 6px; font: 600 11px/1 var(--mono, monospace); letter-spacing: .08em; text-transform: uppercase; color: var(--oro, #e6b655); }
+.nube-recibidos { display: grid; gap: 6px; }

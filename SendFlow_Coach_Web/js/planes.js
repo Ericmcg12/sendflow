@@ -434,10 +434,10 @@
     p = p || { titulo: "", tipo: "pretemporada", desde: hoyIso(), hasta: sumar(hoyIso(), 83), descripcion: "", fases: [] };
     let mios = []; if (!p.id && window.Biblioteca) { try { mios = await Biblioteca.plantillasListar("plan"); } catch (e) { /* sin v16 */ } }
     // «a:id» = plan armado de SendFlow · «m:id» = plan tipo guardado por el entrenador
-    const plantillaDe = (val, desde) => {
+    const plantillaDe = (val, desde, frec) => {
       if (!val) return null;
-      if (val.startsWith("m:")) { const m = mios.find(x => x.id === val.slice(2)); return m ? { titulo: m.titulo, tipo: m.datos.tipo || "entrenamiento", descripcion: m.datos.descripcion || "", g: Biblioteca.generarPropio(m.datos, desde) } : null; }
-      const pl = Biblioteca.PLANES.find(x => x.id === val.slice(2)); return pl ? { titulo: pl.titulo.replace(/ · .*$/, ""), tipo: pl.tipo, descripcion: pl.descripcion, g: Biblioteca.generarPlan(pl, desde) } : null;
+      if (val.startsWith("m:")) { const m = mios.find(x => x.id === val.slice(2)); return m ? { titulo: m.titulo, tipo: m.datos.tipo || "entrenamiento", descripcion: m.datos.descripcion || "", g: Biblioteca.generarPropio(m.datos, desde, frec) } : null; }
+      const pl = Biblioteca.PLANES.find(x => x.id === val.slice(2)); return pl ? { titulo: pl.titulo.replace(/ · .*$/, ""), tipo: pl.tipo, descripcion: pl.descripcion, g: Biblioteca.generarPlan(pl, desde, frec) } : null;
     };
     const cuerpo = html(`<div class="form-grilla plan-form">
       ${p.id ? "" : `<div class="campo ancho"><label>Alumno</label><select class="input" name="piloto">${vinc.map(x => `<option value="${x.usuarioId}">${esc(x.nombre)}</option>`).join("")}</select></div>`}
@@ -446,6 +446,10 @@
         <small class="ayuda-chica plantilla-ayuda">Las sesiones se reparten solas desde la fecha de inicio y después las podés cambiar una por una.</small></div>`}
       <div class="campo"><label>Título</label><input class="input" name="titulo" maxlength="120" value="${esc(p.titulo)}" placeholder="Pretemporada 2027, Copa Mendoza…"></div>
       <div class="campo"><label>Tipo</label><select class="input" name="tipo">${Object.entries(TIPOS_PLAN).map(([k, x]) => `<option value="${k}" ${k === p.tipo ? "selected" : ""}>${x}</option>`).join("")}</select></div>
+      ${p.id || !window.Biblioteca ? "" : `<div class="campo ancho frec-campo" hidden><label>Días de entrenamiento</label>
+        <select class="input" name="frec"><option value="original">Como viene en el plan</option><option value="todos">Todos los días</option><option value="medio">Día por medio</option><option value="dias">Elegir los días de la semana</option></select>
+        <div class="frec-dias" hidden>${["L", "M", "X", "J", "V", "S", "D"].map((x, k) => `<label class="frec-dia"><input type="checkbox" name="fdia" value="${k}"><span>${x}</span></label>`).join("")}</div>
+        <small class="ayuda-chica">Las sesiones de cada semana del plan se reparten en esos días (si hay más días que sesiones se repiten; si hay menos, se eligen repartidas). El descanso no se carga.</small></div>`}
       <div class="campo"><label>Desde</label><input class="input" type="date" name="desde" value="${esc(p.desde || "")}"></div>
       <div class="campo"><label>Hasta</label><input class="input" type="date" name="hasta" value="${esc(p.hasta || "")}"></div>
       <div class="campo ancho"><label>Objetivo / descripción</label><textarea class="input" name="desc" maxlength="2000" placeholder="Qué buscamos con este plan">${esc(p.descripcion || "")}</textarea></div>
@@ -477,14 +481,21 @@
     });
     // Plan armado: completa título, tipo, fechas, objetivo y fases con lo de la plantilla elegida
     const selPl = $("[name=plantilla]", cuerpo);
-    if (selPl) selPl.addEventListener("change", () => {
+    const frecuencia = () => { const m = $("[name=frec]", cuerpo); return m ? { modo: m.value, dias: $$("[name=fdia]:checked", cuerpo).map(x => +x.value) } : null; };
+    if (selPl) {
+      const campoF = $(".frec-campo", cuerpo), selF = $("[name=frec]", cuerpo);
+      const alCambiar = () => { campoF.hidden = !selPl.value; $(".frec-dias", cuerpo).hidden = selF.value !== "dias"; };
+      selPl.addEventListener("change", alCambiar); selF.addEventListener("change", alCambiar);
+      const soloFrec = () => selPl.dispatchEvent(new CustomEvent("change", { detail: { soloFrec: true } }));
+      selF.addEventListener("change", soloFrec); $$("[name=fdia]", cuerpo).forEach(x => x.addEventListener("change", soloFrec));
+    }
+    if (selPl) selPl.addEventListener("change", (ev) => {
+      const solo = !!(ev.detail && ev.detail.soloFrec);   // cambió la frecuencia: no se pisa lo que el entrenador ya escribió
       const desde = $("[name=desde]", cuerpo).value || hoyIso();
-      const pl = plantillaDe(selPl.value, desde); if (!pl) return;
+      const pl = plantillaDe(selPl.value, desde, frecuencia()); if (!pl) return;
       const g = pl.g;
-      $("[name=titulo]", cuerpo).value = pl.titulo;
-      $("[name=tipo]", cuerpo).value = pl.tipo;
+      if (!solo) { $("[name=titulo]", cuerpo).value = pl.titulo; $("[name=tipo]", cuerpo).value = pl.tipo; $("[name=desc]", cuerpo).value = pl.descripcion; }
       $("[name=desde]", cuerpo).value = desde; $("[name=hasta]", cuerpo).value = g.hasta;
-      $("[name=desc]", cuerpo).value = pl.descripcion;
       lista.innerHTML = ""; g.fases.forEach(filaFase);
       aviso(`${g.sesiones.length} sesiones listas: se cargan al crear el plan.`, "oro");
     });
@@ -495,9 +506,11 @@
       if (!d.titulo) { aviso("Ponele un título al plan.", "error"); return false; }
       if (d.desde && d.hasta && d.hasta < d.desde) { aviso("La fecha de fin es anterior a la de inicio.", "error"); return false; }
       if (!p.id) d.pilotoUsuarioId = $("[name=piloto]", c).value;
+      const fr = !p.id ? frecuencia() : null;
+      if (fr && fr.modo === "dias" && !fr.dias.length && $("[name=plantilla]", c).value) { aviso("Elegí al menos un día de la semana para entrenar.", "error"); return false; }
       const sp = !p.id && window.Biblioteca && $("[name=plantilla]", c) ? $("[name=plantilla]", c).value : "";
       let gen = null;
-      if (sp) { d.desde = d.desde || hoyIso(); const pl = plantillaDe(sp, d.desde); if (pl) { gen = pl.g; d.hasta = gen.hasta; d.fases = gen.fases; } }
+      if (sp) { d.desde = d.desde || hoyIso(); const pl = plantillaDe(sp, d.desde, fr); if (pl) { gen = pl.g; d.hasta = gen.hasta; d.fases = gen.fases; } }
       let r;
       try { r = await rpc("coach_plan_guardar", { p_id: p.id || null, d }); }
       catch (e) { aviso(e.message, "error"); return false; }

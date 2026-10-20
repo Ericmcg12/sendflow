@@ -7,7 +7,7 @@ import os, shutil, sys
 
 destino = sys.argv[1]
 aqui = os.path.join(os.path.dirname(os.path.abspath(__file__)), "piezas")
-for f in ("semaforos-iconos.js", "semaforos-popup.js", "semaforo-anim.js", "calculos-bici.js", "inicio-web.js", "nube-web.js"):
+for f in ("semaforos-iconos.js", "semaforos-popup.js", "semaforo-anim.js", "calculos-bici.js", "inicio-web.js", "nube-web.js", "sin-bici.js"):
     shutil.copy(os.path.join(aqui, f), os.path.join(destino, "js", f))
 shutil.copy(os.path.join(aqui, "semaforo-anim.css"), os.path.join(destino, "css", "semaforo-anim.css"))
 shutil.copy(os.path.join(aqui, "calculos-bici.css"), os.path.join(destino, "css", "calculos-bici.css"))
@@ -36,6 +36,8 @@ for _viejo in ("sag-calculadora", "presion-neumaticos", "resorte-coil"):   # ver
     html = html.replace('\n<script src="./js/' + _viejo + '.js"></script>', "")
 if "calculos-bici.js" not in html:
     html = html.replace('<script src="./js/semaforos-popup.js"></script>', '<script src="./js/semaforos-popup.js"></script>\n<script src="./js/calculos-bici.js"></script>')
+if "sin-bici.js" not in html:
+    html = html.replace('<script src="./js/calculos-bici.js"></script>', '<script src="./js/calculos-bici.js"></script>\n<script src="./js/sin-bici.js"></script>')
 if "nube-web.js" not in html:
     html = html.replace('<script src="./js/calculos-bici.js"></script>', '<script src="./js/calculos-bici.js"></script>\n<script src="./js/nube-web.js"></script>')
 if "inicio-web.js" not in html:

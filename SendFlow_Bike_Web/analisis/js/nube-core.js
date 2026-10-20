@@ -164,8 +164,8 @@
     });
   }
   function bajadasNube() {
-    return usuario().then(function () {
-      return sb().from("bajadas").select("id,fecha,pista,duracion_s,tamano_bytes,notas,metadatos,archivo_clave,subida_en").order("fecha", { ascending: false });
+    return usuario().then(function (u) {
+      return sb().from("bajadas").select("id,fecha,pista,duracion_s,tamano_bytes,notas,metadatos,archivo_clave,subida_en").eq("dueno_id", u.id).order("fecha", { ascending: false });
     }).then(function (q) { if (q.error) throw new Error(msg(q.error)); return q.data || []; });
   }
   function bajarBajada(fila) {

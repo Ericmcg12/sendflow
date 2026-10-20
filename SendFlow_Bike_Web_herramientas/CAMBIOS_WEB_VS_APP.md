@@ -152,6 +152,13 @@ Un solo módulo, `piezas/calculos-bici.js` (+ `calculos-bici.css`), con un «ada
 - Fechas del calendario y de los planes: dd/mm/aaaa. El detalle de un día se abre en una ventana (con «Agregar fecha este día») en vez de aparecer debajo del calendario.
 - Coach: estos cambios están hechos directo sobre `SendFlow_Coach_Web` (el pipeline del PHP original no corre acá); `coach-web/piezas/calendario.js` está al día, el saludo y `planes.js`/`app.js` no.
 
+## 2d-sexies) Bici atada al análisis, sin bici no se analiza, logs de pilotos (20/10/2026)
+- Cada bajada guarda con qué bici se analizó (`perfilId`, `perfilNubeId`, `perfilNombre` en su configuración). Al abrir una bajada guardada (navegador, nube o .sfb) se vuelve a activar esa bici; entre dispositivos se busca por el id de la cuenta. Las bajadas viejas sin ese dato usan la bici activa.
+- En Recorte el selector de bici ya no tiene «sin perfil»: la elegida ahí es la de la bajada y la del Mantenimiento.
+- Sin bici propia no se entra al análisis (`piezas/sin-bici.js`): aviso con botón a Perfil. Un entrenador sin bici ve además «Ver lo que me mandaron» (Recibidos de Coach). Si no se puede consultar la cuenta (sin conexión) no se bloquea.
+- «Desde la nube» lista solo las bajadas propias (la política `bajada_ver` de la base deja VER las de pilotos con permiso; ahora no se listan ahí). Cada bajada tiene «Al profe» (usa el mismo envío de siempre). Un entrenador ve arriba «Enviadas por mis pilotos» (de `coach_envios_listar`), que se abren en Coach.
+- Coach · Nuevo plan: «Días de entrenamiento» (como viene / todos los días / día por medio / elegir días). Reparte las sesiones de cada semana del plan armado o de «Mis planes tipo» en esos días (`Biblioteca.generarPlan/generarPropio(..., frec)`); las carreras siempre entran.
+
 ## 2e) Ayuda para medir el SAG y frases de velocidad (ideas tomadas de la revisión de sagly.at; textos propios)
 
 El SAG es un dato que se carga **antes** de analizar una bajada; el semáforo solo confirma si está en zona. Por eso la calculadora **no** va en el popup del semáforo (ahí quedó igual que antes):

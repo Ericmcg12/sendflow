@@ -1694,3 +1694,10 @@ textarea.sfa-nota { height: auto; min-height: 84px; padding: 10px 12px; resize: 
 .sfa-toast.error { border-left-color: #e0483f; }
 
 .titulo-pagina .saludo-nombre{color:var(--cian);}
+
+.frec-dias{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0;}
+.frec-dia{position:relative;cursor:pointer;}
+.frec-dia input{position:absolute;opacity:0;inset:0;cursor:pointer;}
+.frec-dia span{display:grid;place-items:center;width:38px;height:38px;border:1px solid var(--borde-2);border-radius:var(--r-sm);font:600 13px var(--sans);color:var(--ink-dim);}
+.frec-dia input:checked+span{background:var(--cian);color:var(--on-cian);border-color:transparent;}
+.frec-dia input:focus-visible+span{outline:2px solid var(--cian);outline-offset:2px;}
