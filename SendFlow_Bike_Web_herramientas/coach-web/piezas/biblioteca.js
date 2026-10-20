@@ -133,11 +133,42 @@
   const lunesDe = (s) => { const d = deIso(s); d.setDate(d.getDate() - ((d.getDay() + 6) % 7)); return iso(d); };
 
   // Reparte la plantilla desde `desde`: devuelve las fechas finales, las fases y las sesiones listas para cargar.
-  function generarPlan(plantilla, desde) {
+  // Frecuencia de entrenamiento que elige el entrenador: {modo: "original" | "todos" | "medio" | "dias", dias: [0..6, lunes = 0]}.
+  // «original» respeta los días de la plantilla; las otras reparten las sesiones de cada semana en los días elegidos
+  // (si hay más días que sesiones se repiten en orden; si hay menos, se eligen repartidas; el descanso no se carga).
+  function fechasFrec(desde, hasta, frec) {
+    const out = []; const dias = (frec.dias || []).map(Number);
+    for (let f = desde, i = 0; f <= hasta; f = sumar(f, 1), i++) {
+      if (frec.modo === "todos" || (frec.modo === "medio" && i % 2 === 0) || (frec.modo === "dias" && dias.includes((deIso(f).getDay() + 6) % 7))) out.push(f);
+    }
+    return out;
+  }
+  function repartir(porSemana, lun, desde, hasta, frec) {
+    const fechas = fechasFrec(desde, hasta, frec), out = [];
+    Object.keys(porSemana).forEach(w => {
+      const pool = porSemana[w].filter(x => x && x.tipo !== "descanso"); if (!pool.length) return;
+      const ini = sumar(lun, (w - 1) * 7), fin = sumar(ini, 6);
+      const ds = fechas.filter(f => f >= ini && f <= fin);
+      let sel;
+      if (pool.length > ds.length) {   // menos días que sesiones: las carreras siempre entran; el resto, repartido
+        const idx = pool.map((x, i) => i), fijas = idx.filter(i => pool[i].tipo === "carrera").slice(-ds.length), otros = idx.filter(i => !fijas.includes(i)), n = ds.length - fijas.length;
+        sel = fijas.concat(Array.from({ length: n }, (_, k) => otros[Math.floor((k + 0.5) * otros.length / n)])).sort((a, b) => a - b).map(i => pool[i]);
+      } else sel = ds.map((_, i) => pool[i % pool.length]);
+      ds.forEach((f, i) => out.push(Object.assign({}, sel[i], { fecha: f })));
+    });
+    return out;
+  }
+  const hayFrec = (frec) => !!(frec && frec.modo && frec.modo !== "original" && (frec.modo !== "dias" || (frec.dias || []).length));
+  function generarPlan(plantilla, desde, frec) {
     const lun = lunesDe(desde);
     const hasta = sumar(lun, plantilla.semanas * 7 - 1);
     const fases = plantilla.fases.map(f => ({ nombre: f.nombre, tipo: f.tipo, objetivo: f.objetivo || "",
       desde: sumar(lun, (f.sem[0] - 1) * 7), hasta: sumar(lun, f.sem[1] * 7 - 1) }));
+    if (hayFrec(frec)) {
+      const porSemana = {};
+      plantilla.fases.forEach(f => { for (let w = f.sem[0]; w <= f.sem[1]; w++) porSemana[w] = f.patron.filter(Boolean).map(sesionDe).filter(Boolean); });
+      return { desde, hasta, fases, sesiones: repartir(porSemana, lun, desde, hasta, frec) };
+    }
     const sesiones = [];
     plantilla.fases.forEach(f => {
       for (let w = f.sem[0]; w <= f.sem[1]; w++) {
@@ -287,9 +318,14 @@
     await Promise.allSettled(nuevos.map(e => propioGuardar({ nombre: e.nombre, categoria: "otro", series: e.series, reps: e.reps, carga: e.carga, nota: e.nota })));
   }
   // Plan propio: sesiones con semana/día relativos al lunes de inicio → fechas reales
-  function generarPropio(d, desde) {
+  function generarPropio(d, desde, frec) {
     const lun = lunesDe(desde), semanas = d.semanas || 1;
-    const sesiones = (d.sesiones || []).map(s => Object.assign({}, s, { fecha: sumar(lun, (s.sem - 1) * 7 + s.dia) })).filter(s => s.fecha >= desde);
+    let sesiones;
+    if (hayFrec(frec)) {
+      const porSemana = {};
+      (d.sesiones || []).slice().sort((a, b) => (a.sem - b.sem) || (a.dia - b.dia)).forEach(x => { (porSemana[x.sem] = porSemana[x.sem] || []).push(x); });
+      sesiones = repartir(porSemana, lun, desde, sumar(lun, semanas * 7 - 1), frec);
+    } else sesiones = (d.sesiones || []).map(s => Object.assign({}, s, { fecha: sumar(lun, (s.sem - 1) * 7 + s.dia) })).filter(s => s.fecha >= desde);
     const fases = (d.fases || []).map(f => ({ nombre: f.nombre, tipo: f.tipo, objetivo: f.objetivo || "", desde: sumar(lun, (f.sem[0] - 1) * 7), hasta: sumar(lun, f.sem[1] * 7 - 1) }));
     return { desde, hasta: sumar(lun, semanas * 7 - 1), fases, sesiones };
   }
