@@ -17,13 +17,13 @@
   var FLECHA = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M19 12H5M12 5l-7 7 7 7"/></svg>';
   // Ventana al estilo del sitio: cabecera / cuerpo / pie con los botones a la derecha; se sale con «Volver» (flecha), nunca con una X.
   function dialogo(id, titulo, cuerpo, pieExtra) {
-    var p = el("div", "sfc-fondo"); p.hidden = true;
-    p.innerHTML = '<div class="sfc-caja" role="dialog" aria-modal="true" aria-labelledby="' + id + 'T">' +
-      '<div class="sfc-cab"><h3 id="' + id + 'T">' + titulo + "</h3></div>" + cuerpo +
-      '<div class="sfc-pie"><button type="button" class="sfc-b sfc-volver">' + FLECHA + " Volver</button>" + (pieExtra || "") + "</div></div>";
+    var p = el("div", "sfq-fondo"); p.hidden = true;
+    p.innerHTML = '<div class="sfq-caja" role="dialog" aria-modal="true" aria-labelledby="' + id + 'T">' +
+      '<div class="sfq-cab"><h3 id="' + id + 'T">' + titulo + "</h3></div>" + cuerpo +
+      '<div class="sfq-pie"><button type="button" class="sfq-b sfq-volver">' + FLECHA + " Volver</button>" + (pieExtra || "") + "</div></div>";
     document.body.appendChild(p);
     p.addEventListener("click", function (e) { if (e.target === p) cerrar(); });
-    p.querySelector(".sfc-volver").addEventListener("click", cerrar);
+    p.querySelector(".sfq-volver").addEventListener("click", cerrar);
     return p;
   }
   function cerrar() { if (panel) panel.hidden = true; panel = null; if (opener && opener.focus) opener.focus(); }
@@ -46,15 +46,15 @@
   function abrirSag(S, desde) {
     if (!pSag) {
       pSag = dialogo("sfc", "Calcular SAG",
-        '<label class="sfc-l"><span id="sfcRecL"></span><input id="sfcRec" type="text" inputmode="decimal" autocomplete="off"></label>' +
-        '<label class="sfc-l"><span>Cuánto se corrió el o-ring (mm)</span><input id="sfcMov" type="text" inputmode="decimal" autocomplete="off"></label>' +
-        '<p class="sfc-out" id="sfcOut" aria-live="polite"></p>' +
+        '<label class="sfq-l"><span id="sfcRecL"></span><input id="sfcRec" type="text" inputmode="decimal" autocomplete="off"></label>' +
+        '<label class="sfq-l"><span>Cuánto se corrió el o-ring (mm)</span><input id="sfcMov" type="text" inputmode="decimal" autocomplete="off"></label>' +
+        '<p class="sfq-out" id="sfcOut" aria-live="polite"></p>' +
         '<details><summary>Cómo medir el SAG</summary><ol>' +
         '<li>Ponete el equipo completo que usás para andar: casco, zapatos, mochila y agua.</li>' +
         '<li>Empujá el o-ring hasta pegarlo al guardapolvo (en el shock, hasta el sello).</li>' +
         '<li>Subite a la bici en posición de ataque, sin rebotar, apoyado en una pared o con ayuda.</li>' +
         '<li>Bajate con cuidado, sin mover el o-ring, y medí cuánto se corrió. Repetilo 2 o 3 veces.</li></ol></details>',
-        '<button type="button" class="sfc-b prim" id="sfcUsar" disabled>Usar este valor</button>');
+        '<button type="button" class="sfq-b prim" id="sfcUsar" disabled>Usar este valor</button>');
       pSag.addEventListener("input", sagCalc);
       $("sfcUsar").addEventListener("click", function () { cur.set(sagS === "S" ? "sagS" : "sagH", $("sfcUsar").getAttribute("data-v")); cerrar(); });
     }
@@ -87,22 +87,22 @@
   function abrirPres(desde) {
     if (!pPres) {
       pPres = dialogo("pn", "Calcular presión de neumáticos",
-        '<div class="sfc-dos">' +
-        '<label class="sfc-l"><span>Peso del piloto (kg)</span><input id="pnPiloto" type="text" inputmode="decimal" autocomplete="off"></label>' +
-        '<label class="sfc-l"><span>Peso de la bici (kg)</span><input id="pnBici" type="text" inputmode="decimal" autocomplete="off"></label>' +
-        '<label class="sfc-l"><span>Equipo y mochila (kg)</span><input id="pnEquipo" type="text" inputmode="decimal" autocomplete="off" value="4"></label>' +
-        '<label class="sfc-l"><span>Estilo</span><select id="pnEstilo">' + opt([["xc", "XC / Maratón"], ["trail", "Trail"], ["enduro", "Enduro"], ["dh", "Descenso / bikepark"]]) + "</select></label>" +
-        '<label class="sfc-l"><span>Ancho delantera (pulg.)</span><input id="pnAnchoD" type="text" inputmode="decimal" autocomplete="off"></label>' +
-        '<label class="sfc-l"><span>Ancho trasera (pulg.)</span><input id="pnAnchoT" type="text" inputmode="decimal" autocomplete="off"></label>' +
-        '<label class="sfc-l"><span>Carcasa delantera</span><select id="pnCarcD">' + opt([["liviana", "XC / liviana"], ["trail", "Trail"], ["enduro", "Enduro / reforzada"], ["dh", "Descenso / doble capa"]]) + "</select></label>" +
-        '<label class="sfc-l"><span>Carcasa trasera</span><select id="pnCarcT">' + opt([["liviana", "XC / liviana"], ["trail", "Trail"], ["enduro", "Enduro / reforzada"], ["dh", "Descenso / doble capa"]]) + "</select></label>" +
-        '<label class="sfc-l"><span>Sistema</span><select id="pnSistema">' + opt([["tubeless", "Tubeless"], ["camara", "Con cámara"]]) + "</select></label>" +
-        '<label class="sfc-l"><span>Inserto delantero</span><select id="pnInsD">' + opt([["no", "No"], ["si", "Sí"]]) + "</select></label>" +
-        '<label class="sfc-l"><span>Inserto trasero</span><select id="pnInsT">' + opt([["no", "No"], ["si", "Sí"]]) + "</select></label>" +
-        '<label class="sfc-l sfc-ancho"><span>Estado de la pista</span><select id="pnPista">' + opt([["seco_suelto", "Seco y suelto"], ["compacto", "Compacto"], ["humedo", "Húmedo"], ["barroso", "Barroso"], ["mojado", "Mojado"]]) + "</select></label></div>" +
-        '<p class="sfc-out" id="pnOut" aria-live="polite"></p>' +
-        '<p class="sfc-aviso">Es un punto de partida, no una especificación del fabricante. Respetá la presión mínima y máxima de tu cubierta y de tu llanta, y ajustá de a 1 psi en un tramo que conozcas.</p>',
-        '<button type="button" class="sfc-b prim" id="pnUsar" disabled>Usar estos valores</button>');
+        '<div class="sfq-dos">' +
+        '<label class="sfq-l"><span>Peso del piloto (kg)</span><input id="pnPiloto" type="text" inputmode="decimal" autocomplete="off"></label>' +
+        '<label class="sfq-l"><span>Peso de la bici (kg)</span><input id="pnBici" type="text" inputmode="decimal" autocomplete="off"></label>' +
+        '<label class="sfq-l"><span>Equipo y mochila (kg)</span><input id="pnEquipo" type="text" inputmode="decimal" autocomplete="off" value="4"></label>' +
+        '<label class="sfq-l"><span>Estilo</span><select id="pnEstilo">' + opt([["xc", "XC / Maratón"], ["trail", "Trail"], ["enduro", "Enduro"], ["dh", "Descenso / bikepark"]]) + "</select></label>" +
+        '<label class="sfq-l"><span>Ancho delantera (pulg.)</span><input id="pnAnchoD" type="text" inputmode="decimal" autocomplete="off"></label>' +
+        '<label class="sfq-l"><span>Ancho trasera (pulg.)</span><input id="pnAnchoT" type="text" inputmode="decimal" autocomplete="off"></label>' +
+        '<label class="sfq-l"><span>Carcasa delantera</span><select id="pnCarcD">' + opt([["liviana", "XC / liviana"], ["trail", "Trail"], ["enduro", "Enduro / reforzada"], ["dh", "Descenso / doble capa"]]) + "</select></label>" +
+        '<label class="sfq-l"><span>Carcasa trasera</span><select id="pnCarcT">' + opt([["liviana", "XC / liviana"], ["trail", "Trail"], ["enduro", "Enduro / reforzada"], ["dh", "Descenso / doble capa"]]) + "</select></label>" +
+        '<label class="sfq-l"><span>Sistema</span><select id="pnSistema">' + opt([["tubeless", "Tubeless"], ["camara", "Con cámara"]]) + "</select></label>" +
+        '<label class="sfq-l"><span>Inserto delantero</span><select id="pnInsD">' + opt([["no", "No"], ["si", "Sí"]]) + "</select></label>" +
+        '<label class="sfq-l"><span>Inserto trasero</span><select id="pnInsT">' + opt([["no", "No"], ["si", "Sí"]]) + "</select></label>" +
+        '<label class="sfq-l sfq-ancho"><span>Estado de la pista</span><select id="pnPista">' + opt([["seco_suelto", "Seco y suelto"], ["compacto", "Compacto"], ["humedo", "Húmedo"], ["barroso", "Barroso"], ["mojado", "Mojado"]]) + "</select></label></div>" +
+        '<p class="sfq-out" id="pnOut" aria-live="polite"></p>' +
+        '<p class="sfq-aviso">Es un punto de partida, no una especificación del fabricante. Respetá la presión mínima y máxima de tu cubierta y de tu llanta, y ajustá de a 1 psi en un tramo que conozcas.</p>',
+        '<button type="button" class="sfq-b prim" id="pnUsar" disabled>Usar estos valores</button>');
       pPres.addEventListener("input", presCalc); pPres.addEventListener("change", presCalc);
       $("pnUsar").addEventListener("click", function () { var b = $("pnUsar"); cur.set("presD", b.getAttribute("data-d")); cur.set("presT", b.getAttribute("data-t")); cerrar(); });
     }
@@ -152,23 +152,23 @@
     [i0 - 1, i0, i0 + 1].forEach(function (i) {
       if (i < 0 || i >= lista.length) return;
       var kk = lista[i], s = 100 * (cargaLb * lr) / (kk * strokePulg);
-      html += '<div class="sfc-fila"><span><b>' + kk + " lb</b> → SAG " + s.toFixed(1).replace(".", ",") + " % (" + (s / 100 * stroke).toFixed(1).replace(".", ",") + ' mm)</span><button type="button" class="sfc-b" data-k="' + kk + '">Usar</button></div>';
+      html += '<div class="sfq-fila"><span><b>' + kk + " lb</b> → SAG " + s.toFixed(1).replace(".", ",") + " % (" + (s / 100 * stroke).toFixed(1).replace(".", ",") + ' mm)</span><button type="button" class="sfq-b" data-k="' + kk + '">Usar</button></div>';
     });
     res.innerHTML = html;
   }
   function abrirCoil(desde) {
     if (!pCoil) {
       pCoil = dialogo("rc", "Calcular resorte del shock",
-        '<div class="sfc-dos">' +
-        '<label class="sfc-l"><span>Peso del piloto (kg)</span><input id="rcPiloto" type="text" inputmode="decimal" autocomplete="off"></label>' +
-        '<label class="sfc-l"><span>Equipo y mochila (kg)</span><input id="rcEquipo" type="text" inputmode="decimal" autocomplete="off" value="4"></label>' +
-        '<label class="sfc-l"><span>Peso de la bici (kg)</span><input id="rcBici" type="text" inputmode="decimal" autocomplete="off"></label>' +
-        '<label class="sfc-l"><span>Peso en la rueda trasera (%)</span><input id="rcReparto" type="text" inputmode="decimal" autocomplete="off" value="62"></label>' +
-        '<label class="sfc-l"><span>Recorrido de la rueda (mm)</span><input id="rcRueda" type="text" inputmode="decimal" autocomplete="off"></label>' +
-        '<label class="sfc-l"><span>Carrera del shock (mm)</span><input id="rcStroke" type="text" inputmode="decimal" autocomplete="off"></label>' +
-        '<label class="sfc-l sfc-ancho"><span>SAG objetivo (% de la carrera del shock)</span><input id="rcSag" type="text" inputmode="decimal" autocomplete="off" value="28"></label></div>' +
-        '<div class="sfc-out" id="rcOut" aria-live="polite"></div><div class="sfc-res" id="rcRes"></div>' +
-        '<p class="sfc-aviso">Es un punto de partida: el cálculo no considera la precarga ni revisa si el resorte entra en tu shock. Poné el resorte, medí el SAG con el equipo puesto y ajustá la precarga a partir de ahí.</p>');
+        '<div class="sfq-dos">' +
+        '<label class="sfq-l"><span>Peso del piloto (kg)</span><input id="rcPiloto" type="text" inputmode="decimal" autocomplete="off"></label>' +
+        '<label class="sfq-l"><span>Equipo y mochila (kg)</span><input id="rcEquipo" type="text" inputmode="decimal" autocomplete="off" value="4"></label>' +
+        '<label class="sfq-l"><span>Peso de la bici (kg)</span><input id="rcBici" type="text" inputmode="decimal" autocomplete="off"></label>' +
+        '<label class="sfq-l"><span>Peso en la rueda trasera (%)</span><input id="rcReparto" type="text" inputmode="decimal" autocomplete="off" value="62"></label>' +
+        '<label class="sfq-l"><span>Recorrido de la rueda (mm)</span><input id="rcRueda" type="text" inputmode="decimal" autocomplete="off"></label>' +
+        '<label class="sfq-l"><span>Carrera del shock (mm)</span><input id="rcStroke" type="text" inputmode="decimal" autocomplete="off"></label>' +
+        '<label class="sfq-l sfq-ancho"><span>SAG objetivo (% de la carrera del shock)</span><input id="rcSag" type="text" inputmode="decimal" autocomplete="off" value="28"></label></div>' +
+        '<div class="sfq-out" id="rcOut" aria-live="polite"></div><div class="sfq-res" id="rcRes"></div>' +
+        '<p class="sfq-aviso">Es un punto de partida: el cálculo no considera la precarga ni revisa si el resorte entra en tu shock. Poné el resorte, medí el SAG con el equipo puesto y ajustá la precarga a partir de ahí.</p>');
       pCoil.addEventListener("input", coilCalc);
       $("rcRes").addEventListener("click", function (e) { var b = e.target.closest("button[data-k]"); if (b) { cur.set("durezaS", b.getAttribute("data-k")); cerrar(); } });
     }
@@ -180,11 +180,11 @@
   /* ---------------- botones ---------------- */
   // Un adaptador describe un formulario: get(clave), set(clave, valor), ancla(clave) → el campo (input) junto al que va el botón, lev() → curva o null.
   function boton(ad, ancla, etiqueta, fn) {
-    if (!ancla || ancla.parentNode.querySelector('.sfc-btn[data-sfc="' + etiqueta + '"]')) return;
-    var b = el("button", "sfc-b sfc-btn", "Calcular"); b.type = "button"; b.setAttribute("data-sfc", etiqueta); b.setAttribute("aria-label", etiqueta);
+    if (!ancla || ancla.parentNode.querySelector('.sfq-btn[data-sfc="' + etiqueta + '"]')) return;
+    var b = el("button", "sfq-b sfq-btn", "Calcular"); b.type = "button"; b.setAttribute("data-sfc", etiqueta); b.setAttribute("aria-label", etiqueta);
     b.addEventListener("click", function () { cur = ad; fn(b); });
     // el campo queda corto y el botón a su lado, en una sola línea (el resto de los campos de la fila no se mueven)
-    var par = el("div", "sfc-par"); ancla.parentNode.insertBefore(par, ancla); par.appendChild(ancla); par.appendChild(b); ancla.classList.add("sfc-corto");
+    var par = el("div", "sfq-par"); ancla.parentNode.insertBefore(par, ancla); par.appendChild(ancla); par.appendChild(b); ancla.classList.add("sfq-corto");
   }
   function montar(ad) {
     boton(ad, ad.ancla("sagH"), "Calcular el SAG de la horquilla", function (b) { abrirSag("H", b); });
