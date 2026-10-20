@@ -704,3 +704,6 @@ textarea.sfa-nota { height: auto; min-height: 84px; padding: 10px 12px; resize: 
 .uso-barras rect { fill: var(--cian); opacity: .85; }
 .uso-barras text { fill: var(--ink-dim); font: 9px var(--mono); }
 .sf-mail-hora { width: auto; min-width: 100px; height: 34px; margin-top: 4px; }
+
+/* Salto a Coach: mismo estilo que «Volver a Bike» en Coach */
+.nav-item.volver-coach { color: var(--cian); }

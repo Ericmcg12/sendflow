@@ -1,6 +1,7 @@
 // @ts-nocheck
-// Edge Function "aviso-diario" (20/10/2026): push con la sesión del día. SOLO push, nunca mail, y SOLO a quien lo prendió
-// en su Perfil (notif_prefs.push_sesion, coach_v26.sql). La llama un cron de Postgres (pg_cron + pg_net) cada hora en punto;
+// Edge Function "aviso-diario" (20/10/2026): push con la sesión del día y recordatorio de clases presenciales. SOLO push, nunca mail,
+// y SOLO a quien lo prendió en su Perfil (notif_prefs.push_sesion / push_clase, coach_v26.sql y coach_v27.sql).
+// v2 (21/10/2026): las sesiones presenciales muestran horario y lugar; recordatorio «Clase presencial en 2 horas» (aviso_clase_tomar). La llama un cron de Postgres (pg_cron + pg_net) cada hora en punto;
 // cada persona recibe el aviso a la hora local que eligió, una vez por día, solo si ese día tiene sesiones pendientes y no
 // avisó en su calendario que no entrena (no entreno / viaje / visita médica).
 // Verify JWT: DESACTIVADO (el cron no tiene sesión). La protege un secreto compartido en el Vault (aviso_diario_secreto) que viaja
@@ -24,7 +25,23 @@ function iguales(a, b) { if (a.length !== b.length) return false; let x = 0; for
 const TIPO = { bici: "Bici", gimnasio: "Gimnasio", tecnica: "Técnica", recuperacion: "Recuperación", otro: "Sesión" };
 function texto(it) {
   const s = (it.sesiones || [])[0] || {}, mas = (it.n || 1) - 1;
-  return { title: "Tu entrenamiento de hoy", body: `${s.titulo || TIPO[s.tipo] || "Sesión"}${s.duracionMin ? " · " + s.duracionMin + " min" : ""}${mas > 0 ? ` (+${mas} más)` : ""}` };
+  const donde = s.modalidad === "presencial" ? ` · Presencial${s.hora ? " " + s.hora : ""}${s.lugar ? " · " + s.lugar : ""}` : (s.duracionMin ? " · " + s.duracionMin + " min" : "");
+  return { title: "Tu entrenamiento de hoy", body: `${s.titulo || TIPO[s.tipo] || "Sesión"}${donde}${mas > 0 ? ` (+${mas} más)` : ""}` };
+}
+async function enviar(subs, t, tag, ruta) {
+  let ok = 0;
+  await Promise.all((subs || []).map(async (s) => {
+    const url = s.sitio === "bike" ? `${BIKE}/?coach=${ruta}` : `${COACH}/${ruta}`;
+    try {
+      await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify({ title: t.title, body: t.body, url, tag }), { TTL: 6 * 3600, urgency: "normal" });
+      ok++;
+    } catch (e) {
+      const st = e && e.statusCode;
+      if (st === 404 || st === 410) { try { await rpc("push_quitar", { p_endpoint: s.endpoint }); } catch (_) {} }
+      else console.error("push", st, String(e && (e.body || e.message) || e).slice(0, 200));
+    }
+  }));
+  return ok;
 }
 const j = (o, s = 200) => new Response(JSON.stringify(o), { status: s, headers: { "Content-Type": "application/json" } });
 
@@ -38,20 +55,16 @@ Deno.serve(async (req) => {
     let enviados = 0;
     for (const it of (lista || [])) {
       let subs = []; try { subs = await rpc("push_destino", { p_usuario: it.usuarioId }); } catch (e) { console.error("push_destino", e.message); continue; }
-      const t = texto(it);
-      await Promise.all((subs || []).map(async (s) => {
-        const url = s.sitio === "bike" ? `${BIKE}/?coach=planes` : `${COACH}/planes`;
-        try {
-          await webpush.sendNotification({ endpoint: s.endpoint, keys: { p256dh: s.p256dh, auth: s.auth } }, JSON.stringify({ title: t.title, body: t.body, url, tag: "sesion-diaria" }), { TTL: 6 * 3600, urgency: "normal" });
-          enviados++;
-        } catch (e) {
-          const st = e && e.statusCode;
-          if (st === 404 || st === 410) { try { await rpc("push_quitar", { p_endpoint: s.endpoint }); } catch (_) {} }
-          else console.error("push", st, String(e && (e.body || e.message) || e).slice(0, 200));
-        }
-      }));
+      enviados += await enviar(subs, texto(it), "sesion-diaria", "planes");
     }
-    return j({ ok: true, usuarios: (lista || []).length, enviados });
+    // recordatorio de clases presenciales (empiezan dentro de 2 horas); solo a quien prendió «Recordarme las clases»
+    let clases = [];
+    try { clases = await rpc("aviso_clase_tomar", {}); } catch (e) { console.error("aviso_clase_tomar", e.message); }
+    for (const c of (clases || [])) {
+      let subs = []; try { subs = await rpc("push_destino", { p_usuario: c.usuarioId }); } catch (e) { console.error("push_destino", e.message); continue; }
+      enviados += await enviar(subs, { title: "Clase presencial en 2 horas", body: `${c.titulo || "Clase"} · ${c.hora}${c.lugar ? " · " + c.lugar : ""}` }, "clase-presencial:" + c.hora, "planes");
+    }
+    return j({ ok: true, usuarios: (lista || []).length, clases: (clases || []).length, enviados });
   } catch (e) {
     console.error("aviso-diario", e && e.stack || e);
     return j({ error: "Error del servidor." }, 500);

@@ -191,3 +191,7 @@ Función `SECURITY DEFINER` (solo `authenticated`; exige entrenador) que devuelv
 - `notif_prefs` + `push_sesion boolean default false`, `push_hora smallint default 8`, `zona text`, `ultimo_aviso_sesion date`. `notif_prefs_leer()` las devuelve; `notif_prefs_push_guardar(p_activo, p_hora, p_zona)` las cambia (solo la propia persona).
 - `aviso_diario_secreto()` y `aviso_sesion_diaria_tomar()` (solo `service_role`); secreto `aviso_diario_secreto` en el Vault; cron `aviso-sesion-diaria` (`0 * * * *`) → función de borde `aviso-diario`.
 
+### coach_v27 (21/10/2026): planes presenciales
+- `tareas_plan` + `modalidad text default 'online' ('online'|'presencial')`, `hora time`, `lugar text (≤120)`. `coach_tarea_json`, `calendario_de`, `coach_plan_cargar`, `coach_tarea_guardar` y `coach_plan_a_grupo` los leen/escriben.
+- `notif_prefs` + `push_clase boolean default false`; `notif_prefs_clase_guardar(p_activo)`; `aviso_clase_tomar()` (solo `service_role`): clases presenciales de hoy que empiezan dentro de 2 horas. SQL: `nube/coach_v27_presencial.sql`.
+

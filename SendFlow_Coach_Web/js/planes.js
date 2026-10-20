@@ -101,7 +101,7 @@
     const l = $(".hoy-lista", c);
     if (!h.hoy.length) l.appendChild(html(`<div class="prosa" style="font-size:13px">Hoy no tenés sesiones${h.proximaCarrera ? "" : ""}.</div>`));
     h.hoy.forEach(t => {
-      const it = html(`<button type="button" class="ses-fila ${t.estado}" style="--c:${(TIPOS[t.tipo] || TIPOS.otro).c}">${chipTipo(t.tipo)}<span class="nom">${esc(t.titulo)}</span>${t.duracionMin ? `<span class="dur">${t.duracionMin} min</span>` : ""}<span class="est">${t.estado === "hecha" ? "✓ Hecha" : t.estado === "omitida" ? "No la hice" : "Pendiente"}${t.validada ? ` <span class="ses-val" title="Tu entrenador la validó">${PULGAR}</span>` : ""}</span>${(t.ejercicios || []).length ? `<span class="ej-prev">${esc(t.ejercicios.slice(0, 3).map(e => e.nombre).join(" · "))}${t.ejercicios.length > 3 ? ` · +${t.ejercicios.length - 3}` : ""}</span>` : ""}</button>`);
+      const it = html(`<button type="button" class="ses-fila ${t.estado}" style="--c:${(TIPOS[t.tipo] || TIPOS.otro).c}">${chipTipo(t.tipo)}<span class="nom">${esc(t.titulo)}</span>${t.modalidad === "presencial" ? `<span class="dur chip-pres">${esc(t.hora || "Presencial")}${t.lugar ? " · " + esc(t.lugar) : ""}</span>` : ""}${t.duracionMin ? `<span class="dur">${t.duracionMin} min</span>` : ""}<span class="est">${t.estado === "hecha" ? "✓ Hecha" : t.estado === "omitida" ? "No la hice" : "Pendiente"}${t.validada ? ` <span class="ses-val" title="Tu entrenador la validó">${PULGAR}</span>` : ""}</span>${(t.ejercicios || []).length ? `<span class="ej-prev">${esc(t.ejercicios.slice(0, 3).map(e => e.nombre).join(" · "))}${t.ejercicios.length > 3 ? ` · +${t.ejercicios.length - 3}` : ""}</span>` : ""}</button>`);
       it.addEventListener("click", async () => { if (await verSesion(t, false)) { const n = await tarjetaHoy(enPlanes); if (n) { n.classList.remove("entra"); c.replaceWith(n); } } });   // sin .entra: sin la animación de entrada quedaba invisible
       l.appendChild(it);
     });
@@ -309,7 +309,7 @@
         const s = html(`<button type="button" class="ses ${t.estado} ${vencida ? "vencida" : ""} tipo-${t.tipo}" style="--c:${(TIPOS[t.tipo] || TIPOS.otro).c}">
           <span class="ses-l1">${chipTipo(t.tipo)}${t.estado === "hecha" ? `<span class="ok">✓${t.esfuerzo ? " " + t.esfuerzo : ""}</span>${t.validada ? `<span class="ses-val" title="Tu entrenador la validó" aria-label="Validada por el entrenador">${PULGAR}</span>` : ""}` : t.estado === "omitida" ? `<span class="no">✗</span>` : ""}</span>
           <span class="ses-nom">${esc(t.titulo)}</span>
-          <span class="ses-meta">${t.tipo === "carrera" ? (t.fecha >= hoy ? cuentaRegresiva(t.fecha) : "") : [t.duracionMin ? t.duracionMin + " min" : "", t.intensidad ? "int. " + t.intensidad : "", (t.ejercicios || []).length ? t.ejercicios.length + " ejerc." : ""].filter(Boolean).join(" · ")}</span>
+          <span class="ses-meta">${t.tipo === "carrera" ? (t.fecha >= hoy ? cuentaRegresiva(t.fecha) : "") : [t.modalidad === "presencial" ? "Presencial" + (t.hora ? " " + t.hora : "") : "", t.duracionMin ? t.duracionMin + " min" : "", t.intensidad ? "int. " + t.intensidad : "", (t.ejercicios || []).length ? t.ejercicios.length + " ejerc." : ""].filter(Boolean).join(" · ")}</span>
           ${t.notaPiloto ? `<span class="ses-nota">“${esc(t.notaPiloto.length > 60 ? t.notaPiloto.slice(0, 60) + "…" : t.notaPiloto)}”</span>` : ""}
         </button>`);
         s.addEventListener("click", async () => { if (await verSesion(t, edita, p)) recargar(); });
@@ -326,7 +326,7 @@
     if (edita) return editarSesion(p, t, t.fecha);
     const ej = t.ejercicios || [];
     const cuerpo = html(`<div class="ses-detalle">
-      <div class="ses-det-cab">${chipTipo(t.tipo)}<span>${DIAS[(deIso(t.fecha).getDay() + 6) % 7]} ${corta(t.fecha)}</span>${t.duracionMin ? `<span>${t.duracionMin} min</span>` : ""}${t.intensidad ? `<span>intensidad ${t.intensidad}/10</span>` : ""}</div>
+      <div class="ses-det-cab">${chipTipo(t.tipo)}<span>${DIAS[(deIso(t.fecha).getDay() + 6) % 7]} ${corta(t.fecha)}</span>${t.duracionMin ? `<span>${t.duracionMin} min</span>` : ""}${t.intensidad ? `<span>intensidad ${t.intensidad}/10</span>` : ""}${t.modalidad === "presencial" ? `<span class="chip-pres">Presencial${t.hora ? " · " + esc(t.hora) : ""}${t.lugar ? " · " + esc(t.lugar) : ""}</span>` : ""}</div>
       ${t.validada && t.estado === "hecha" ? `<div class="ses-validada-txt">${PULGAR}${esCoach() ? "Validaste esta sesión." : "Tu entrenador vio esta sesión y la validó."}</div>` : ""}
       ${t.descripcion ? `<p class="prosa">${esc(t.descripcion)}</p>` : ""}
       ${ej.length ? `<table class="tabla-ej"><thead><tr><th>Ejercicio</th><th>Series</th><th>Reps</th><th>Carga / tiempo</th></tr></thead><tbody>${ej.map(e => `<tr><td>${esc(e.nombre)}${e.nota ? `<small>${esc(e.nota)}</small>` : ""}</td><td>${e.series || ""}</td><td>${esc(e.reps || "")}</td><td>${esc([e.carga, e.tiempo].filter(Boolean).join(" · "))}</td></tr>`).join("")}</tbody></table>` : ""}
@@ -371,13 +371,21 @@
       <div class="campo"><label>Título</label><input class="input" name="titulo" maxlength="120" value="${esc(t.titulo)}" placeholder="Fuerza de piernas, fondo en bici…"></div>
       <div class="campo solo-ses"><label>Duración (min)</label><input class="input" type="number" min="0" max="1440" name="dur" value="${t.duracionMin || ""}"></div>
       <div class="campo solo-ses"><label>Intensidad <b class="int-v">${t.intensidad || "—"}</b>/10</label><input type="range" min="1" max="10" name="int" value="${t.intensidad || 5}"></div>
+      <div class="campo ancho solo-ses"><label>Modalidad</label><div class="tipos-ses" role="radiogroup"><button type="button" class="tipo-ses" data-mod="online">Online</button><button type="button" class="tipo-ses" data-mod="presencial">Presencial (clase con el entrenador)</button></div></div>
+      <div class="campo solo-ses pres-sesion"><label>Horario</label><input class="input" type="time" name="hora" value="${esc(t.hora || "")}"></div>
+      <div class="campo solo-ses pres-sesion"><label>Lugar</label><input class="input" name="lugar" maxlength="120" value="${esc(t.lugar || "")}" placeholder="Club, parque, dirección…"></div>
       <div class="campo ancho"><label>Descripción</label><textarea class="input" name="desc" maxlength="2000" placeholder="Qué tiene que hacer y cómo">${esc(t.descripcion || "")}</textarea></div>
       <div class="campo ancho solo-ses"><label>Ejercicios</label><div class="ejercicios"></div>
         <div class="ej-acciones">${window.Biblioteca ? `<button type="button" class="btn chico primario" data-accion="ej-bib">${ICONOS.mas}Elegir de la biblioteca</button>` : ""}<button type="button" class="btn chico" data-accion="ej">${window.Biblioteca ? "Escribir uno" : ICONOS.mas + "Agregar ejercicio"}</button></div>
         ${window.Biblioteca ? `<datalist id="dlEj">${Biblioteca.nombresEjercicios().map(n => `<option value="${esc(n)}"></option>`).join("")}</datalist>` : ""}</div>
       ${t.id && t.estado !== "pendiente" ? `<div class="campo ancho"><div class="aviso-correccion">El piloto la marcó: <b>${t.estado === "hecha" ? "hecha" + (t.esfuerzo ? ", esfuerzo " + t.esfuerzo + "/10" : "") : "no la hizo"}</b>${t.notaPiloto ? ` — “${esc(t.notaPiloto)}”` : ""}</div></div>` : ""}
     </div>`);
-    let tipo = t.tipo, tocoInt = !!t.intensidad;
+    let tipo = t.tipo, tocoInt = !!t.intensidad, mod = t.modalidad === "presencial" ? "presencial" : "online";
+    const pintarMod = () => {
+      $$("[data-mod]", cuerpo).forEach(b => b.classList.toggle("sel", b.dataset.mod === mod));
+      $$(".pres-sesion", cuerpo).forEach(x => x.classList.toggle("oculto", mod !== "presencial" || tipo === "carrera" || tipo === "descanso"));
+    };
+    $$("[data-mod]", cuerpo).forEach(b => b.addEventListener("click", () => { mod = b.dataset.mod; pintarMod(); }));
     const ejs = $(".ejercicios", cuerpo);
     const filaEj = (e) => {
       const f = html(`<div class="ej-fila"><input class="input" name="en" ${window.Biblioteca ? 'list="dlEj"' : ""} placeholder="Ejercicio" maxlength="120" value="${esc(e.nombre || "")}"><input class="input" name="es" type="number" min="0" max="999" placeholder="Series" value="${e.series || ""}"><input class="input" name="er" placeholder="Reps" maxlength="20" value="${esc(e.reps || "")}"><input class="input" name="ec" placeholder="Carga o tiempo" maxlength="40" value="${esc([e.carga, e.tiempo].filter(Boolean).join(" · "))}"><span class="ej-bt">${window.Biblioteca ? `<button type="button" class="btn icono chico fantasma" data-guardar title="Guardar en mis ejercicios" aria-label="Guardar en mis ejercicios">☆</button>` : ""}<button type="button" class="btn icono chico peligro" data-quitar aria-label="Quitar">${ICONOS.cerrar}</button></span></div>`);
@@ -414,6 +422,7 @@
     const pintarTipo = () => {
       $$(".tipo-ses", cuerpo).forEach(b => b.classList.toggle("sel", b.dataset.tipo === tipo));
       $$(".solo-ses", cuerpo).forEach(x => x.classList.toggle("oculto", tipo === "carrera" || tipo === "descanso"));
+      pintarMod();
       $("[name=titulo]", cuerpo).placeholder = tipo === "carrera" ? "Nombre de la carrera" : "Fuerza de piernas, fondo en bici…";
     };
     $$(".tipo-ses", cuerpo).forEach(b => b.addEventListener("click", () => { tipo = b.dataset.tipo; pintarTipo(); }));
@@ -432,6 +441,8 @@
       const d = { fecha, tipo, titulo: $("[name=titulo]", c).value.trim() || (TIPOS[tipo] || TIPOS.otro).t, descripcion: $("[name=desc]", c).value.trim(),
         duracionMin: tipo === "carrera" || tipo === "descanso" ? null : ($("[name=dur]", c).value || null), intensidad: tipo === "carrera" || tipo === "descanso" || !tocoInt ? null : $("[name=int]", c).value,
         ejercicios: tipo === "carrera" || tipo === "descanso" ? [] : ejercicios };
+      const pres = mod === "presencial" && tipo !== "carrera" && tipo !== "descanso";
+      d.modalidad = pres ? "presencial" : "online"; d.hora = pres ? ($("[name=hora]", c).value || null) : null; d.lugar = pres ? ($("[name=lugar]", c).value.trim() || null) : null;
       try { await rpc("coach_tarea_guardar", { p_plan: p.id, p_id: t.id || null, d }); aviso(t.id ? "Sesión guardada." : "Sesión agregada."); if (window.Biblioteca) Biblioteca.autoGuardar(ejercicios); return true; }
       catch (e) { aviso(e.message, "error"); return false; }
     } });
@@ -453,6 +464,11 @@
     };
     const cuerpo = html(`<div class="form-grilla plan-form">
       ${p.id ? "" : `<div class="campo ancho"><label>Alumno</label><select class="input" name="piloto">${grupos.length ? `<optgroup label="Pilotos">` : ""}${vinc.map(x => `<option value="${x.usuarioId}">${esc(x.nombre)}</option>`).join("")}${grupos.length ? `</optgroup><optgroup label="Grupos (el plan se crea para todos)">${grupos.map(g => `<option value="g:${esc(g.id)}">${esc(g.nombre)} · ${g.miembros.filter(m => m.activo).length === 1 ? "1 piloto" : g.miembros.filter(m => m.activo).length + " pilotos"}</option>`).join("")}</optgroup>` : ""}</select></div>`}
+      ${p.id ? "" : `<div class="campo ancho"><label>Modalidad</label><select class="input" name="modalidad"><option value="online">Online: el piloto entrena por su cuenta y marca sus sesiones</option><option value="presencial">Presencial: clases con vos, en un lugar y horario</option></select></div>
+      <div class="campo ancho pres-plan" hidden><label>Días de clase</label><div class="frec-dias">${["L", "M", "X", "J", "V", "S", "D"].map((x, k) => `<label class="frec-dia"><input type="checkbox" name="pdia" value="${k}"><span>${x}</span></label>`).join("")}</div></div>
+      <div class="campo pres-plan" hidden><label>Horario</label><input class="input" type="time" name="phora" value="18:00"></div>
+      <div class="campo pres-plan" hidden><label>Duración de la clase (min)</label><input class="input" type="number" name="pdur" min="15" max="600" value="90"></div>
+      <div class="campo ancho pres-plan" hidden><label>Lugar</label><input class="input" name="plugar" maxlength="120" placeholder="Club, parque, dirección…"><small class="ayuda-chica">Se crea una clase en cada día elegido, entre las fechas del plan, con este horario y lugar. Si abajo elegís un plan armado, sus sesiones se reparten en esos días como clases. Después podés cargar o cambiar los ejercicios de cada clase, y a los pilotos que prendieron los avisos les llega el recordatorio.</small></div>`}
       ${p.id || !window.Biblioteca ? "" : `<div class="campo ancho plantilla-campo"><label>Empezar desde un plan armado <span class="opcional">(opcional)</span></label>
         <select class="input" name="plantilla"><option value="">— Plan vacío: lo armo yo —</option>${mios.length ? `<optgroup label="Mis planes tipo">${mios.map(x => `<option value="m:${x.id}">${esc(x.titulo)}</option>`).join("")}</optgroup>` : ""}<optgroup label="Planes armados">${Biblioteca.PLANES.map(x => `<option value="a:${x.id}">${esc(x.titulo)}</option>`).join("")}</optgroup></select>
         <small class="ayuda-chica plantilla-ayuda">Las sesiones se reparten solas desde la fecha de inicio y después las podés cambiar una por una.</small></div>`}
@@ -493,14 +509,20 @@
     });
     // Plan armado: completa título, tipo, fechas, objetivo y fases con lo de la plantilla elegida
     const selPl = $("[name=plantilla]", cuerpo);
-    const frecuencia = () => { const m = $("[name=frec]", cuerpo); return m ? { modo: m.value, dias: $$("[name=fdia]:checked", cuerpo).map(x => +x.value) } : null; };
+    const selMod = $("[name=modalidad]", cuerpo);
+    const esPres = () => !!selMod && selMod.value === "presencial";
+    const diasPres = () => $$("[name=pdia]:checked", cuerpo).map(x => +x.value);
+    const frecuencia = () => { if (esPres()) return { modo: "dias", dias: diasPres() }; const m = $("[name=frec]", cuerpo); return m ? { modo: m.value, dias: $$("[name=fdia]:checked", cuerpo).map(x => +x.value) } : null; };
     if (selPl) {
       const campoF = $(".frec-campo", cuerpo), selF = $("[name=frec]", cuerpo);
-      const alCambiar = () => { campoF.hidden = !selPl.value; $(".frec-dias", cuerpo).hidden = selF.value !== "dias"; };
+      const alCambiar = () => { campoF.hidden = !selPl.value || esPres(); $(".frec-dias", campoF).hidden = selF.value !== "dias"; };
       selPl.addEventListener("change", alCambiar); selF.addEventListener("change", alCambiar);
       const soloFrec = () => selPl.dispatchEvent(new CustomEvent("change", { detail: { soloFrec: true } }));
       selF.addEventListener("change", soloFrec); $$("[name=fdia]", cuerpo).forEach(x => x.addEventListener("change", soloFrec));
+      $$("[name=pdia]", cuerpo).forEach(x => x.addEventListener("change", soloFrec));
+      if (selMod) selMod.addEventListener("change", () => { alCambiar(); soloFrec(); });
     }
+    if (selMod) selMod.addEventListener("change", () => { $$(".pres-plan", cuerpo).forEach(x => { x.hidden = !esPres(); }); });
     if (selPl) selPl.addEventListener("change", (ev) => {
       const solo = !!(ev.detail && ev.detail.soloFrec);   // cambió la frecuencia: no se pisa lo que el entrenador ya escribió
       const desde = $("[name=desde]", cuerpo).value || hoyIso();
@@ -528,6 +550,20 @@
       const sp = !p.id && window.Biblioteca && $("[name=plantilla]", c) ? $("[name=plantilla]", c).value : "";
       let gen = null;
       if (sp) { d.desde = d.desde || hoyIso(); const pl = plantillaDe(sp, d.desde, fr); if (pl) { gen = pl.g; d.hasta = gen.hasta; d.fases = gen.fases; } }
+      if (!p.id && esPres()) {   // plan presencial: clases en los días, horario y lugar elegidos
+        const dias = diasPres(), hora = $("[name=phora]", c).value || null, lugar = $("[name=plugar]", c).value.trim() || null, dur = +$("[name=pdur]", c).value || 90;
+        if (!dias.length) { aviso("Elegí los días de clase.", "error"); return false; }
+        if (!hora) { aviso("Poné el horario de las clases.", "error"); return false; }
+        const marcar = (s) => Object.assign({}, s, { modalidad: "presencial", hora, lugar, duracionMin: s.duracionMin || dur });
+        if (gen) gen = { desde: gen.desde, hasta: gen.hasta, fases: gen.fases, sesiones: gen.sesiones.map(marcar) };
+        else {
+          if (!d.desde || !d.hasta) { aviso("Poné las fechas de inicio y fin del plan para crear las clases.", "error"); return false; }
+          const clases = []; let n = 0;
+          for (let f = d.desde; f <= d.hasta && n++ < 400; f = sumar(f, 1)) if (dias.includes((deIso(f).getDay() + 6) % 7)) clases.push(marcar({ fecha: f, tipo: "bici", titulo: "Clase presencial", descripcion: "", ejercicios: [] }));
+          if (!clases.length) { aviso("Entre esas fechas no cae ninguno de los días elegidos.", "error"); return false; }
+          gen = { desde: d.desde, hasta: d.hasta, fases: d.fases, sesiones: clases };
+        }
+      }
       let r;
       try { r = await rpc("coach_plan_guardar", { p_id: p.id || null, d }); }
       catch (e) { aviso(e.message, "error"); return false; }
@@ -544,5 +580,5 @@
     } }] });
   }
 
-  window.Planes = { lista, ver, tarjetaHoy, seguimiento, actividad, TIPOS, FASES };
+  window.Planes = { lista, ver, tarjetaHoy, seguimiento, actividad, editarPlan, TIPOS, FASES };
 })();

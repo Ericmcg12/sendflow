@@ -1761,3 +1761,9 @@ a.ap-fila:hover{background:rgba(255,255,255,.03);}
 .gr-nuevo:hover{color:var(--ink);border-color:var(--borde-2);}
 .gr-lista{display:flex;flex-direction:column;gap:6px;max-height:240px;overflow:auto;padding:8px;border:1px solid var(--borde);border-radius:var(--r-md);}
 .gr-op{display:flex;gap:8px;align-items:center;cursor:pointer;font-size:14px;} .gr-op input{accent-color:var(--cian);}
+
+/* v56: clases presenciales */
+.chip-pres{display:inline-block;padding:2px 8px;border-radius:999px;border:1px solid var(--cian);color:var(--cian);font:600 11px var(--sans);}
+.ses-fila .chip-pres{border:0;padding:0;}
+
+.campo[hidden],.frec-dias[hidden]{display:none !important;}

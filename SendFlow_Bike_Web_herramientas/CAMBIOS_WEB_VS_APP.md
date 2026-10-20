@@ -201,6 +201,13 @@ Antes: +2,5 kg fijo con lluvia. Ahora (`parchar_peso_clima` en `parche_defaults.
 - **Coach · Grupos** (`js/grupos.js`): Pilotos → Grupos (crear/editar/borrar; online, presencial o mixto; pilotos con cuenta vinculada); en «Nuevo plan», «Alumno» también lista los grupos (el plan se crea para todos); en un plan, «Copiar a un grupo». Cada copia es independiente y arranca sin marcar.
 - **Aviso push con la sesión del día:** solo si el piloto lo prende en Perfil («Aviso con mi sesión del día», hora 05–12, en `avisos-email.js`, igual en Bike y Coach; si el dispositivo no tiene avisos activados, pide el permiso). Función de borde `aviso-diario` (sin verificación JWT, protegida por secreto del Vault; usa las claves VAPID de avisos-coach). Solo push, nunca mail; solo días con sesión pendiente; no avisa si el piloto marcó en su calendario «no entreno», viaje o visita médica. Un aviso por día.
 
+## 2d-quaterdecies) Planes presenciales, botón «Ir a Coach» (21/10/2026)
+- **Bike · menú:** «Ir a Coach →» en cian, antes de «Salir», con el mismo estilo que «← Volver a Bike» de Coach.
+- **Coach · Nuevo plan:** «Modalidad» Online / Presencial. Presencial: días de clase, horario, duración y lugar. Crea una clase en cada día elegido entre las fechas del plan (o reparte un plan armado en esos días como clases). Funciona con un piloto o con un grupo (el plan se copia a todos). Cada sesión tiene modalidad, hora y lugar y se pueden editar una por una (en «Sesión»); se ven en el plan, en «Tu entrenamiento de hoy» y en Bike.
+- **Aviso push:** el piloto, en su Perfil, puede prender «Recordarme las clases presenciales» (2 horas antes, con horario y lugar); el aviso de «la sesión del día» también muestra horario y lugar. Siguen siendo opcionales y solo push. Función de borde `aviso-diario` v2.
+- **Base (coach_v27_presencial.sql, aplicada):** `tareas_plan.modalidad/hora/lugar`, `notif_prefs.push_clase`, `notif_prefs_clase_guardar`, `aviso_clase_tomar` y las funciones de sesiones actualizadas.
+- Arreglo: en el formulario de plan los campos con `hidden` se veían igual (CSS); ahora se ocultan.
+
 ## 2e) Ayuda para medir el SAG y frases de velocidad (ideas tomadas de la revisión de sagly.at; textos propios)
 
 El SAG es un dato que se carga **antes** de analizar una bajada; el semáforo solo confirma si está en zona. Por eso la calculadora **no** va en el popup del semáforo (ahí quedó igual que antes):
