@@ -184,3 +184,10 @@ Diseño completo en `claude/PERFILES_Y_MODOS_APP.md`. Se ejecuta después de `co
 
 ### coach_v25 (20/10/2026): `coach_resumen_pilotos(p_dias int default 28)`
 Función `SECURITY DEFINER` (solo `authenticated`; exige entrenador) que devuelve `{hoy, dias, pilotos:[{usuarioId, nombre, sinMarcar:{n, primera, planId, dias}, ultima, ultimaRespuesta, venc, hechas, cumpl, esfuerzo, tendencia, semanas:[{lunes, esfuerzo, delta}]}]}` para los pilotos con vínculo activo y sesiones en los últimos 60 días. No cuenta como falta de respuesta los días con una fecha del piloto con «no entreno», viaje o visita médica. Sin tablas nuevas. SQL: `SendFlow_Bike_Web_herramientas/nube/coach_v25_resumen_pilotos.sql`.
+
+### coach_v26 (20/10/2026): uso, grupos y aviso diario
+- `admin_uso_resumen(p_semanas)`: solo `es_admin()`; devuelve `{ahora:{…}, semanas:[{lunes, cuentasNuevas, activos, bajadas, envios, analisis, sesionesMarcadas, mensajes, planes}]}`.
+- Tablas `coach_grupos(id, entrenador_id, nombre, modalidad online|presencial|mixto, notas, creado, editado)` y `coach_grupo_miembros(grupo_id, piloto_id)`; RLS sin políticas. Funciones `coach_grupos_listar()`, `coach_grupo_guardar(p_id, d)`, `coach_grupo_borrar(p_id)` y `coach_plan_a_grupo(p_plan, p_grupo, p_excluir)` (copia el plan y sus sesiones, sin marcar, a cada miembro con vínculo activo).
+- `notif_prefs` + `push_sesion boolean default false`, `push_hora smallint default 8`, `zona text`, `ultimo_aviso_sesion date`. `notif_prefs_leer()` las devuelve; `notif_prefs_push_guardar(p_activo, p_hora, p_zona)` las cambia (solo la propia persona).
+- `aviso_diario_secreto()` y `aviso_sesion_diaria_tomar()` (solo `service_role`); secreto `aviso_diario_secreto` en el Vault; cron `aviso-sesion-diaria` (`0 * * * *`) → función de borde `aviso-diario`.
+

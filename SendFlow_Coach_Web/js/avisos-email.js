@@ -49,6 +49,41 @@
       });
       lista.appendChild(l);
     });
+    /* v55 (coach_v26.sql): aviso push con la sesión del día. Apagado por defecto: solo lo recibe quien lo prende acá.
+       Es una notificación en este dispositivo (nunca mail), a la hora elegida y solo los días con sesión pendiente. */
+    (function () {
+      var l = el("label", "sf-mail-op"), fila = el("span", "sf-mail-fila"), c = el("input");
+      c.type = "checkbox"; c.checked = prefs.push_sesion === true;
+      fila.appendChild(c); fila.appendChild(document.createTextNode(" Aviso con mi sesión del día"));
+      l.appendChild(fila); l.appendChild(el("small", "ayuda", "Una notificación en este dispositivo con tu entrenamiento de hoy. Solo los días que tenés una sesión pendiente. Nunca por mail."));
+      var hora = el("select", "input sf-mail-hora"); hora.setAttribute("aria-label", "Hora del aviso");
+      for (var h = 5; h <= 12; h++) { var o = el("option", null, (h < 10 ? "0" : "") + h + ":00"); o.value = String(h); hora.appendChild(o); }
+      hora.value = String(prefs.push_hora != null ? prefs.push_hora : 8); hora.disabled = !c.checked;
+      var zona = ""; try { zona = Intl.DateTimeFormat().resolvedOptions().timeZone || ""; } catch (e) { /* sin zona: queda la de Argentina */ }
+      function guardar(activo) {
+        return sb.rpc("notif_prefs_push_guardar", { p_activo: activo, p_hora: parseInt(hora.value, 10), p_zona: zona || null }).then(function (r) { if (r.error) throw r.error; return r; });
+      }
+      function asegurarPush() {   // el aviso llega por las notificaciones de este dispositivo: hay que tenerlas activas
+        if (!window.SFAvisos) return Promise.resolve();
+        return SFAvisos.estado().then(function (est) { if (est === "activo") return; return SFAvisos.activar(); });
+      }
+      c.addEventListener("change", function () {
+        var v = c.checked; c.disabled = true; hora.disabled = true;
+        (v ? asegurarPush() : Promise.resolve()).then(function () { return guardar(v); }).then(function () {
+          c.disabled = false; hora.disabled = !v;
+          decir(v ? "Listo: vas a recibir tu sesión del día a las " + hora.value + ":00." : "Listo: no vas a recibir más el aviso de la sesión del día.", "ok");
+        }).catch(function (e) {
+          c.disabled = false; c.checked = !v; hora.disabled = !c.checked;
+          decir(/notif_prefs_push_guardar/.test((e && e.message) || "") && /(does not exist|Could not find)/i.test((e && e.message) || "") ? "Falta aplicar coach_v26.sql en Supabase." : errTxt(e), "error");
+        });
+      });
+      hora.addEventListener("change", function () {
+        hora.disabled = true;
+        guardar(true).then(function () { hora.disabled = false; decir("Listo: el aviso llega a las " + hora.value + ":00.", "ok"); }, function (e) { hora.disabled = false; decir(errTxt(e), "error"); });
+      });
+      var fh = el("span", "sf-mail-fila"); fh.appendChild(document.createTextNode("Hora: ")); fh.appendChild(hora); l.appendChild(fh);
+      lista.appendChild(l);
+    })();
     cont.appendChild(lista);
     cont.appendChild(el("p", "ayuda sf-mail-nota", "Los avisos en pantalla y las notificaciones siguen igual. Los mails de tu cuenta (contraseña, invitaciones) llegan siempre."));
     cont.appendChild(msg);

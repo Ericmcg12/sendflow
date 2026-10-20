@@ -222,7 +222,7 @@
           <div style="min-width:0"><h1 class="titulo-pagina" style="font-size:22px">${esc(p.titulo)}</h1>
           <div class="sub-pagina">${edita ? sello(p.pilotoNombre, colP) + " · " : "De " + esc(p.entrenadorNombre) + " · "}${esc(TIPOS_PLAN[p.tipo] || "")} · ${corta(p.desde)} → ${corta(p.hasta)}</div></div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="cal-acciones-plan" style="display:contents"></span>${edita ? `<button class="btn chico" data-accion="editar">${ICONOS.editar}Plan y fases</button><button class="btn chico peligro" data-accion="borrar" aria-label="Borrar plan" title="Borrar plan">${ICONOS.basura}</button>` : ""}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="cal-acciones-plan" style="display:contents"></span>${edita ? `<button class="btn chico" data-accion="editar">${ICONOS.editar}Plan y fases</button>${window.Grupos ? `<button class="btn chico" data-accion="grupo" title="Crear una copia de este plan para cada piloto de un grupo">${ICONOS.mas}Copiar a un grupo</button>` : ""}<button class="btn chico peligro" data-accion="borrar" aria-label="Borrar plan" title="Borrar plan">${ICONOS.basura}</button>` : ""}</div>
       </div>
       ${p.descripcion ? `<p class="prosa entra plan-desc">${esc(p.descripcion)}</p>` : ""}
       <div class="fases-barra entra" id="fasesBarra"></div>
@@ -248,6 +248,7 @@
     }));
     if (edita) {
       $("[data-accion=editar]", raiz).addEventListener("click", async () => { const r = await editarPlan(p, fs); if (r) { window.CoachApp.navegar(); } });
+      const bg = $("[data-accion=grupo]", raiz); if (bg) bg.addEventListener("click", () => Grupos.copiarPlan(p));
       $("[data-accion=borrar]", raiz).addEventListener("click", async () => {
         if (!(await confirmar(`¿Borrar el plan "${p.titulo}" con todas sus sesiones? El piloto deja de verlo.`, "Borrar"))) return;
         try { await rpc("coach_plan_borrar", { p_id: p.id }); aviso("Plan borrado."); window.irA("/planes"); } catch (e) { aviso(e.message, "error"); }
@@ -442,6 +443,7 @@
     const vinc = (fs || []).filter(x => x.usuarioId);
     if (!p && !vinc.length) { aviso("Para armar un plan, el alumno tiene que tener cuenta y haber aceptado tu invitación (Pilotos → invitar).", "oro"); return null; }
     p = p || { titulo: "", tipo: "pretemporada", desde: hoyIso(), hasta: sumar(hoyIso(), 83), descripcion: "", fases: [] };
+    const grupos = (!p.id && window.Grupos) ? (await Grupos.listar()).filter(g => g.miembros.some(m => m.activo)) : [];   // coach_v26: un plan para varios pilotos
     let mios = []; if (!p.id && window.Biblioteca) { try { mios = await Biblioteca.plantillasListar("plan"); } catch (e) { /* sin v16 */ } }
     // «a:id» = plan armado de SendFlow · «m:id» = plan tipo guardado por el entrenador
     const plantillaDe = (val, desde, frec) => {
@@ -450,7 +452,7 @@
       const pl = Biblioteca.PLANES.find(x => x.id === val.slice(2)); return pl ? { titulo: pl.titulo.replace(/ · .*$/, ""), tipo: pl.tipo, descripcion: pl.descripcion, g: Biblioteca.generarPlan(pl, desde, frec) } : null;
     };
     const cuerpo = html(`<div class="form-grilla plan-form">
-      ${p.id ? "" : `<div class="campo ancho"><label>Alumno</label><select class="input" name="piloto">${vinc.map(x => `<option value="${x.usuarioId}">${esc(x.nombre)}</option>`).join("")}</select></div>`}
+      ${p.id ? "" : `<div class="campo ancho"><label>Alumno</label><select class="input" name="piloto">${grupos.length ? `<optgroup label="Pilotos">` : ""}${vinc.map(x => `<option value="${x.usuarioId}">${esc(x.nombre)}</option>`).join("")}${grupos.length ? `</optgroup><optgroup label="Grupos (el plan se crea para todos)">${grupos.map(g => `<option value="g:${esc(g.id)}">${esc(g.nombre)} · ${g.miembros.filter(m => m.activo).length === 1 ? "1 piloto" : g.miembros.filter(m => m.activo).length + " pilotos"}</option>`).join("")}</optgroup>` : ""}</select></div>`}
       ${p.id || !window.Biblioteca ? "" : `<div class="campo ancho plantilla-campo"><label>Empezar desde un plan armado <span class="opcional">(opcional)</span></label>
         <select class="input" name="plantilla"><option value="">— Plan vacío: lo armo yo —</option>${mios.length ? `<optgroup label="Mis planes tipo">${mios.map(x => `<option value="m:${x.id}">${esc(x.titulo)}</option>`).join("")}</optgroup>` : ""}<optgroup label="Planes armados">${Biblioteca.PLANES.map(x => `<option value="a:${x.id}">${esc(x.titulo)}</option>`).join("")}</optgroup></select>
         <small class="ayuda-chica plantilla-ayuda">Las sesiones se reparten solas desde la fecha de inicio y después las podés cambiar una por una.</small></div>`}
@@ -515,7 +517,12 @@
         fases: $$(".fase-fila", c).map(f => ({ nombre: $("[name=fn]", f).value.trim() || FASES[$("[name=ft]", f).value].t, tipo: $("[name=ft]", f).value, desde: $("[name=fd]", f).value, hasta: $("[name=fh]", f).value })).filter(f => f.desde && f.hasta) };
       if (!d.titulo) { aviso("Ponele un título al plan.", "error"); return false; }
       if (d.desde && d.hasta && d.hasta < d.desde) { aviso("La fecha de fin es anterior a la de inicio.", "error"); return false; }
-      if (!p.id) d.pilotoUsuarioId = $("[name=piloto]", c).value;
+      let grupoSel = null;
+      if (!p.id) {
+        const vp = $("[name=piloto]", c).value;
+        if (vp.startsWith("g:")) { grupoSel = grupos.find(g => "g:" + g.id === vp); const prim = grupoSel && grupoSel.miembros.find(m => m.activo); if (!prim) { aviso("Ese grupo no tiene pilotos con vínculo activo.", "error"); return false; } d.pilotoUsuarioId = prim.usuarioId; }
+        else d.pilotoUsuarioId = vp;
+      }
       const fr = !p.id ? frecuencia() : null;
       if (fr && fr.modo === "dias" && !fr.dias.length && $("[name=plantilla]", c).value) { aviso("Elegí al menos un día de la semana para entrenar.", "error"); return false; }
       const sp = !p.id && window.Biblioteca && $("[name=plantilla]", c) ? $("[name=plantilla]", c).value : "";
@@ -529,6 +536,10 @@
         try { const rc = await rpc("coach_plan_cargar", { p_plan: r.plan.id, d: gen.sesiones }); aviso(`Plan creado con ${rc.cargadas} sesiones: revisalas y ajustá lo que quieras.`); }
         catch (e) { aviso("El plan se creó, pero no se pudieron cargar las sesiones: " + e.message, "error"); }
       } else aviso(p.id ? "Plan guardado." : "Plan creado: ahora cargá las sesiones.");
+      if (grupoSel) {   // el plan ya existe para el primer piloto: se copia al resto del grupo
+        try { const rg = await Grupos.aplicarAGrupo(r.plan.id, grupoSel.id); aviso(`Plan creado para ${rg.planesCreados + 1} pilotos de «${grupoSel.nombre}».`); }
+        catch (e) { aviso("El plan se creó para el primer piloto, pero no se pudo copiar al grupo: " + e.message, "error"); }
+      }
       return r.plan;
     } }] });
   }

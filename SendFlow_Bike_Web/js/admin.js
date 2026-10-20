@@ -138,6 +138,61 @@
       $("adm-nav-mensajes").hidden = !((accesos.indexOf("sender") >= 0 && conEntrenador) || (accesos.indexOf("coach") >= 0 && roles.indexOf("entrenador") >= 0));
     }, function () {});
   }
+  /* ---------- Pestaña «Uso» (coach_v26.sql: admin_uso_resumen) ---------- */
+  var usoCargado = false;
+  var SERIES = [["activos", "Personas activas", "Hicieron algo en la semana: subir una bajada, enviar al profe, marcar una sesión, escribir o analizar."],
+                ["bajadas", "Bajadas subidas a la nube", ""], ["envios", "Envíos al profe", ""], ["sesionesMarcadas", "Sesiones marcadas", ""],
+                ["mensajes", "Mensajes", ""], ["analisis", "Análisis creados", ""], ["planes", "Planes nuevos", ""], ["cuentasNuevas", "Cuentas nuevas", ""]];
+  function barras(semanas, clave) {
+    var W = 320, H = 70, n = semanas.length, paso = W / n, ancho = Math.max(6, paso * 0.6);
+    var mx = Math.max(1, Math.max.apply(null, semanas.map(function (s) { return s[clave] || 0; })));
+    var NS = "http://www.w3.org/2000/svg", svg = document.createElementNS(NS, "svg");
+    svg.setAttribute("viewBox", "0 0 " + W + " " + (H + 14)); svg.setAttribute("class", "uso-barras"); svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", clave);
+    semanas.forEach(function (s, i) {
+      var v = s[clave] || 0, h = Math.round((v / mx) * H), r = document.createElementNS(NS, "rect");
+      r.setAttribute("x", (i * paso + (paso - ancho) / 2).toFixed(1)); r.setAttribute("y", H - h); r.setAttribute("width", ancho.toFixed(1)); r.setAttribute("height", Math.max(h, v ? 2 : 0)); r.setAttribute("rx", 2);
+      var t = document.createElementNS(NS, "title"); t.textContent = fechaCorta(s.lunes) + ": " + v; r.appendChild(t); svg.appendChild(r);
+      if (v) { var x = document.createElementNS(NS, "text"); x.setAttribute("x", (i * paso + paso / 2).toFixed(1)); x.setAttribute("y", H + 11); x.setAttribute("text-anchor", "middle"); x.textContent = v; svg.appendChild(x); }
+    });
+    return svg;
+  }
+  function fechaCorta(iso) { var p = String(iso).slice(0, 10).split("-"); return p[2] + "/" + p[1]; }
+  function pintarUso(d) {
+    var c = $("uso-contenido"); c.textContent = "";
+    var a = d.ahora || {}, kp = el("div", "uso-kpis");
+    [["cuentas", "Cuentas", a.cuentas], ["aprobadas", "Cuentas aprobadas", a.aprobadas], ["activas7", "Entraron en 7 días", a.activas7], ["activas30", "Entraron en 30 días", a.activas30],
+     ["entrenadores", "Entrenadores", a.entrenadores], ["vinculos", "Vínculos piloto–entrenador", a.vinculos], ["conPush", "Con avisos en el celular", a.conPush],
+     ["avisoDiario", "Con aviso de la sesión del día", a.avisoDiario], ["grupos", "Grupos de pilotos", a.grupos], ["espacioMB", "Espacio usado en Coach", (a.espacioMB != null ? String(a.espacioMB).replace(".", ",") + " MB" : "—")]].forEach(function (k) {
+      var t = el("div", "tarjeta uso-kpi"); t.appendChild(el("span", "uso-et", k[1])); t.appendChild(el("b", "uso-num", String(k[2]))); kp.appendChild(t);
+    });
+    c.appendChild(kp);
+    var sem = d.semanas || [];
+    c.appendChild(el("h2", "uso-tit", "Semana a semana (lunes de cada semana)"));
+    var g = el("div", "uso-grilla");
+    SERIES.forEach(function (s) {
+      var t = el("div", "tarjeta uso-graf"); t.appendChild(el("span", "uso-et", s[1]));
+      var tot = sem.reduce(function (n, x) { return n + (x[s[0]] || 0); }, 0); t.appendChild(el("b", "uso-num", String(tot)));
+      t.appendChild(el("small", "uso-sub", "en las últimas " + sem.length + " semanas" + (s[2] ? " · " + s[2] : "")));
+      t.appendChild(barras(sem, s[0])); g.appendChild(t);
+    });
+    c.appendChild(g);
+    c.appendChild(el("p", "ayuda", "«Entraron» sale del último inicio de sesión de cada cuenta; el resto, de lo que se guardó en la base cada semana. Para ver visitas y pantallas, usá Cloudflare Web Analytics."));
+  }
+  function cargarUso() {
+    var m = $("uso-msg"); m.hidden = true;
+    sb.rpc("admin_uso_resumen", { p_semanas: 8 }).then(function (r) {
+      if (r.error) { m.textContent = /admin_uso_resumen/.test(r.error.message || "") && /(does not exist|Could not find)/i.test(r.error.message || "") ? "Falta aplicar coach_v26.sql en Supabase." : (r.error.message || "No se pudo cargar."); m.className = "mensaje error"; m.hidden = false; return; }
+      usoCargado = true; pintarUso(r.data || {});
+    }, function () { m.textContent = "No hay conexión."; m.className = "mensaje error"; m.hidden = false; });
+  }
+  function pestana(cual) {
+    $("p-cuentas").classList.toggle("sel", cual === "cuentas"); $("p-uso").classList.toggle("sel", cual === "uso");
+    $("adm-cuentas").hidden = cual !== "cuentas"; $("adm-uso").hidden = cual !== "uso";
+    if (cual === "uso" && !usoCargado) cargarUso();
+  }
+  $("p-cuentas").addEventListener("click", function () { pestana("cuentas"); });
+  $("p-uso").addEventListener("click", function () { pestana("uso"); });
   function arrancar() {
     $("adm-login").hidden = true; $("adm-salir").hidden = true;
     menuCompleto();
