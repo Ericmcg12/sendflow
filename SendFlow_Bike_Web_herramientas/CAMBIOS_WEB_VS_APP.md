@@ -173,4 +173,5 @@ El SAG es un dato que se carga **antes** de analizar una bajada; el semáforo so
 
 - `animaciones-suspension`: todo el trabajo (esta carpeta, el sitio y las animaciones sueltas en `analisis/`).
 - `deploy-bike-web`: solo el contenido de `SendFlow_Bike_Web` para bajar un ZIP liviano. Sin historial; no hacer merge de ella.
+- `deploy-coach-web`: lo mismo para `SendFlow_Coach_Web` (el sitio Coach). Sin historial; no hacer merge de ella.
   Hay que actualizarla (copiar el sitio) cada vez que cambie.
