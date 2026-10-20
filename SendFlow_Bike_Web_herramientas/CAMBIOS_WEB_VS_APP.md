@@ -175,6 +175,11 @@ Antes: +2,5 kg fijo con lluvia. Ahora (`parchar_peso_clima` en `parche_defaults.
 - Una sesión ya guardada como «hecha» se abre bloqueada (botones, esfuerzo y nota); solo «Todavía no» la reabre y habilita Guardar. El bloqueo es de la pantalla: la base (`coach_tarea_marcar`) no lo exige.
 - «Sacar foto» en el Perfil de Bike se oculta a propósito en equipos con mouse (`capture` no abre cámara en escritorio); aparece en el celular.
 
+## 2d-decies) Historial de entrenamiento del piloto + «no la hice» (20/10/2026)
+- Coach · ficha del piloto (con cuenta vinculada): sección «Historial de entrenamiento» (`js/historial-piloto.js`, sin cambios en la base: usa `coach_planes_listar(p_piloto)` + `coach_plan_ver`, hasta 24 planes). Resumen (hechas, cumplimiento, esfuerzo promedio, ¿le cuesta menos?), gráfico semanal (sesiones hechas / no hechas / sin marcar + esfuerzo percibido vs intensidad planificada), ejercicios (veces, esfuerzo promedio, tendencia y mini gráfico), planes anteriores y línea de tiempo con notas.
+- El esfuerzo es por sesión (lo marca el piloto); el de un ejercicio es el promedio de las sesiones hechas donde aparece. Tendencia = primera mitad vs segunda mitad (mínimo 4 sesiones con esfuerzo; ±0,5 puntos).
+- «No la hice» se comporta igual que «Sí, la hice»: queda guardada y bloqueada; solo «Todavía no» la reabre.
+
 ## 2e) Ayuda para medir el SAG y frases de velocidad (ideas tomadas de la revisión de sagly.at; textos propios)
 
 El SAG es un dato que se carga **antes** de analizar una bajada; el semáforo solo confirma si está en zona. Por eso la calculadora **no** va en el popup del semáforo (ahí quedó igual que antes):

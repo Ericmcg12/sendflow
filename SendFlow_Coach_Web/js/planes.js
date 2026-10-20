@@ -338,14 +338,14 @@
       </div>`}
     </div>`);
     let est = t.estado;
-    // Ya guardada como «hecha»: no se puede cambiar ni volver a guardar; solo «Todavía no» la reabre
-    const bloqueada = marcableSesion(t) && t.estado === "hecha";
+    // Ya guardada como «hecha» o «no la hice» (para el plan cuentan igual: quedó resuelta): no se puede cambiar ni volver a guardar; solo «Todavía no» la reabre
+    const bloqueada = marcableSesion(t) && (t.estado === "hecha" || t.estado === "omitida");
     let btnGuardar = null;
     const actGuardar = () => { if (btnGuardar) btnGuardar.disabled = bloqueada && est !== "pendiente"; };
     if (bloqueada) {
       $$("[data-est]", cuerpo).forEach(b => { if (b.dataset.est !== "pendiente") b.disabled = true; });
       $$("[name=esf],[name=nota]", cuerpo).forEach(x => { x.disabled = true; });
-      const m = $(".marcar", cuerpo); if (m) m.insertBefore(html(`<small class="ayuda-chica">Ya la marcaste como hecha. Si querés cambiarla, tocá «Todavía no» y guardá.</small>`), m.firstChild);
+      const m = $(".marcar", cuerpo); if (m) m.insertBefore(html(`<small class="ayuda-chica">Ya la marcaste como ${t.estado === "hecha" ? "hecha" : "no hecha"}. Si querés cambiarla, tocá «Todavía no» y guardá.</small>`), m.firstChild);
     }
     const pintarEst = () => { $$("[data-est]", cuerpo).forEach(b => b.classList.toggle("sel", b.dataset.est === est)); const e = $(".esf", cuerpo); if (e) e.classList.toggle("oculto", est !== "hecha"); };
     $$("[data-est]", cuerpo).forEach(b => b.addEventListener("click", () => { est = b.dataset.est; pintarEst(); actGuardar(); }));
