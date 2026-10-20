@@ -45,7 +45,7 @@
     const nombreCal = op.nombreCal || (entrenador ? "SendFlow · Planes" : "SendFlow · Mi plan");
     const L = ["BEGIN:VCALENDAR", "VERSION:2.0", "PRODID:-//SendFlow//Coach calendario 1.0//ES", "CALSCALE:GREGORIAN", "METHOD:PUBLISH",
       "NAME:" + escapar(nombreCal), "X-WR-CALNAME:" + escapar(nombreCal),
-      "X-WR-CALDESC:" + escapar(entrenador ? "Sesiones de tus planes y fechas de tus pilotos (SendFlow Coach)." : "Tu plan de entrenamiento y tus fechas (SendFlow Coach)."),
+      "X-WR-CALDESC:" + escapar(entrenador ? "Sesiones de tus planes, fechas de tus pilotos y tus fechas (SendFlow Coach)." : "Tu plan de entrenamiento y tus fechas (SendFlow Coach)."),
       "REFRESH-INTERVAL;VALUE=DURATION:PT6H", "X-PUBLISHED-TTL:PT6H"];
     const evento = (props) => { L.push("BEGIN:VEVENT"); props.filter(Boolean).forEach(p => L.push(p)); L.push("END:VEVENT"); };
 
@@ -88,6 +88,23 @@
       evento([`UID:fecha-${f.id}@${dominio}`, "DTSTAMP:" + ahora, "DTSTART;VALUE=DATE:" + fechaIcs(f.desde), "DTEND;VALUE=DATE:" + diaSiguiente(hasta),
         "SUMMARY:" + escapar(resumen), "DESCRIPTION:" + escapar(det.join("\n")),
         "CATEGORIES:SendFlow," + escapar(tipo), f.sinEntreno ? "TRANSP:OPAQUE" : "TRANSP:TRANSPARENT"]);
+    });
+
+    ((datos && datos.fechasEntrenador) || []).forEach(f => {   // v52: fechas del entrenador (viaje, médico, carrera, «sin devoluciones»)
+      if (!f || !f.id || !valida(f.desde)) return;
+      const hasta = valida(f.hasta) && f.hasta >= f.desde ? f.hasta : f.desde;
+      const tipo = TIPOS_FECHA[f.tipo] || TIPOS_FECHA.otro;
+      const propia = !!f.esMia;
+      const quien = propia ? "" : (f.entrenadorNombre ? f.entrenadorNombre : "Entrenador") + " · ";
+      const titulo = String(f.titulo || "").trim();
+      const resumen = quien + (titulo && titulo.toLowerCase() !== tipo.toLowerCase() ? `${tipo}: ${titulo}` : tipo) + (f.sinDevoluciones ? " (sin devoluciones)" : "");
+      const det = [];
+      if (f.sinDevoluciones) det.push(propia ? "No hay devoluciones esos días." : "Esos días no va a haber devoluciones.");
+      if (f.nota) det.push(String(f.nota));
+      det.push(propia ? "Fecha tuya (la cargaste como entrenador)." : "Fecha de tu entrenador.");
+      evento([`UID:fecha-entrenador-${f.id}@${dominio}`, "DTSTAMP:" + ahora, "DTSTART;VALUE=DATE:" + fechaIcs(f.desde), "DTEND;VALUE=DATE:" + diaSiguiente(hasta),
+        "SUMMARY:" + escapar(resumen), "DESCRIPTION:" + escapar(det.join("\n")),
+        "CATEGORIES:SendFlow," + escapar(tipo), f.sinDevoluciones ? "TRANSP:OPAQUE" : "TRANSP:TRANSPARENT"]);
     });
 
     L.push("END:VCALENDAR");

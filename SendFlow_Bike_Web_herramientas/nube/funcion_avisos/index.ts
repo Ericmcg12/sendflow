@@ -17,6 +17,10 @@
 // v5 (16/10/2026): entrenadores libres (coach_v23.sql). {tipo:"solicitud", solicitudId}: el piloto pidió entrenar con
 //   vos → mail + push al entrenador. {tipo:"solicitud_respuesta", solicitudId}: el entrenador aceptó o no → al piloto.
 //   Una sola vez por solicitud (lo controla aviso_solicitud_preparar). Entran en «Devoluciones y avisos».
+// v6 (20/10/2026): agenda del entrenador (coach_v24.sql). {tipo:"fecha_piloto", analisisId:<id de la fecha>}: el entrenador cargó una fecha
+//   en el calendario de un piloto → mail + push a ese piloto. {tipo:"fecha_agenda", analisisId:<id de la fecha>}: el entrenador publicó una
+//   fecha propia (viaje, médico, carrera, «no hay devoluciones») → mail + push a todos sus pilotos con vínculo activo. Una sola vez por fecha
+//   (lo controla aviso_fecha_preparar). Entran en «Devoluciones y avisos». No hay aviso por las fechas que carga el piloto.
 // Secrets: RESEND_API_KEY, MAIL_FROM (los mismos de invitar-alumno). Opcionales: ORIGENES, COACH_URL. Verify JWT: ACTIVADO.
 import webpush from "npm:web-push@3.6.7";
 const URL_SB = Deno.env.get("SUPABASE_URL");
@@ -60,7 +64,7 @@ function mailSendFlow(o: any): string {
 // prefs: lo que devuelve notif_prefs_de; null = no hay notificaciones_v1.sql (se manda, como antes);
 //        { error: true } = no se pudo leer la preferencia (no se manda: mejor un mail menos que uno no querido).
 const TIPO_MAIL = { respuesta: "mail_mensajes", comentario: "mail_mensajes", devolucion: "mail_actividad", visto: "mail_actividad",
-  solicitud: "mail_actividad", solicitud_respuesta: "mail_actividad" };
+  solicitud: "mail_actividad", solicitud_respuesta: "mail_actividad", fecha_piloto: "mail_actividad", fecha_agenda: "mail_actividad" };
 function debeMandarMail(tipo, email, prefs) {
   if (!email) return { mandar: false, motivo: "sin email" };
   const clave = TIPO_MAIL[tipo];
@@ -115,6 +119,29 @@ function armarSolicitud(tipo, d) {
     pie: "Recibís este aviso porque pediste entrenar con SendFlow Coach." }) };
 }
 
+// v6: mails de las fechas del entrenador (agenda)
+const TIPO_FECHA = { carrera: "Carrera", medico: "Visita médica", viaje: "Viaje", otro: "Fecha" };
+const MESES_C = ["ene", "feb", "mar", "abr", "may", "jun", "jul", "ago", "sep", "oct", "nov", "dic"];
+function diaCorto(iso) { const p = String(iso || "").slice(0, 10).split("-").map(Number); return p.length === 3 && p[1] >= 1 && p[1] <= 12 ? `${p[2]} ${MESES_C[p[1] - 1]}` : ""; }
+function rangoFecha(d) { const a = diaCorto(d.desde), b = diaCorto(d.hasta); return a && b && d.hasta !== d.desde ? `del ${a} al ${b}` : a; }
+function armarFecha(tipo, d, dest) {
+  const de = d.nombreOrigen || "Tu entrenador";
+  const hola = `<p>Hola${dest && dest.nombre ? " " + esc(String(dest.nombre).split(" ")[0]) : ""},</p>`;
+  const que = `${TIPO_FECHA[d.tipoFecha] || "Fecha"}: ${d.titulo || ""}`;
+  const cita = d.nota ? `<blockquote style="margin:16px 0;padding:10px 14px;border-left:3px solid #4fe3c2;background:#0b1214;color:#f2f5f4;border-radius:0 6px 6px 0">${esc(String(d.nota).slice(0, 500))}</blockquote>` : "";
+  if (tipo === "fecha_piloto") {
+    const asunto = `${de} agregó una fecha a tu calendario`;
+    return { subject: asunto, html: mailSendFlow({ producto: "COACH", etiqueta: "FECHA NUEVA", titulo: esc(asunto),
+      cuerpo: `${hola}<p><b>${esc(de)}</b> agregó en tu calendario: <b>${esc(que)}</b>, ${esc(rangoFecha(d))}.</p>${cita}<p>La ves en Mi plan. Si no es correcta, podés borrarla desde ahí.</p>`,
+      boton: "VER MI CALENDARIO", enlace: `${COACH}/planes`, pie: "Recibís este aviso porque entrenás con SendFlow Coach." }) };
+  }
+  const asunto = `${de}: ${que} (${rangoFecha(d)})`;
+  const sin = d.sinDevoluciones ? "<p><b>Esos días no va a haber devoluciones.</b></p>" : "";
+  return { subject: asunto, html: mailSendFlow({ producto: "COACH", etiqueta: d.sinDevoluciones ? "SIN DEVOLUCIONES" : "AGENDA DE TU ENTRENADOR", titulo: esc(asunto),
+    cuerpo: `${hola}<p><b>${esc(de)}</b> cargó una fecha en su calendario: <b>${esc(que)}</b>, ${esc(rangoFecha(d))}.</p>${sin}${cita}`,
+    boton: "VER MI CALENDARIO", enlace: `${COACH}/planes`, pie: "Recibís este aviso porque entrenás con SendFlow Coach." }) };
+}
+
 // Texto corto de la notificación (el mail tiene el largo)
 function textoPush(tipo, d) {
   const de = d.nombreOrigen || (tipo === "visto" || tipo === "respuesta" || tipo === "envio" ? "Tu piloto" : "Tu entrenador");
@@ -129,6 +156,8 @@ function textoPush(tipo, d) {
     case "solicitud": return { title: `${d.nombreOrigen || "Un piloto"} quiere entrenar con vos`, body: d.mensaje ? String(d.mensaje).slice(0, 120) : "Aceptala o rechazala en Coach." };
     case "solicitud_respuesta": return d.aceptada ? { title: `${d.nombreOrigen || "Tu entrenador"} aceptó entrenarte`, body: "Ya está vinculado a tu cuenta." }
       : { title: "Solicitud no aceptada", body: `${d.nombreOrigen || "El entrenador"} no puede entrenarte por ahora.` };
+    case "fecha_piloto": return { title: `${de} agregó una fecha a tu calendario`, body: `${TIPO_FECHA[d.tipoFecha] || "Fecha"}: ${d.titulo || ""} · ${rangoFecha(d)}` };
+    case "fecha_agenda": return { title: d.sinDevoluciones ? `${de}: sin devoluciones ${rangoFecha(d)}` : `${de} cargó una fecha`, body: `${TIPO_FECHA[d.tipoFecha] || "Fecha"}: ${d.titulo || ""} · ${rangoFecha(d)}` };
     case "envio": return { title: d.correccion ? `${de} mandó la corrección` : d.soloDatos ? `${de} te mandó una bajada` : `${de} te mandó un video`, body: titulo };
   }
   return { title: "SendFlow", body: titulo };
@@ -189,7 +218,7 @@ Deno.serve(async (req) => {
     let b; try { b = await req.json(); } catch { return j({ error: "Datos inválidos." }, 400); }
     if (b.accion === "clave") return j({ clave: VAPID_PUB || null });
     const tipo = String(b.tipo || ""), analisisId = String(b.analisisId || b.envioId || b.solicitudId || "");
-    if (!["visto", "respuesta", "comentario", "devolucion", "envio", "solicitud", "solicitud_respuesta"].includes(tipo) || !UUID.test(analisisId)) return j({ error: "Datos inválidos." }, 400);
+    if (!["visto", "respuesta", "comentario", "devolucion", "envio", "solicitud", "solicitud_respuesta", "fecha_piloto", "fecha_agenda"].includes(tipo) || !UUID.test(analisisId)) return j({ error: "Datos inválidos." }, 400);
     if (tipo === "solicitud" || tipo === "solicitud_respuesta") {   // v5
       const sid = String(b.solicitudId || "");
       if (!UUID.test(sid)) return j({ error: "Datos inválidos." }, 400);
@@ -206,6 +235,24 @@ Deno.serve(async (req) => {
       });
       if (!r.ok) { console.error("resend", r.status, (await r.text()).slice(0, 300)); return j({ error: "No se pudo enviar el mail." }, 502); }
       return j({ ok: true, enviado: true, push: nPush, mail: true });
+    }
+    if (tipo === "fecha_piloto" || tipo === "fecha_agenda") {   // v6: agenda del entrenador
+      let d; try { d = await rpcServicio("aviso_fecha_preparar", { p_usuario: yo.id, p_fecha: analisisId, p_origen: tipo === "fecha_piloto" ? "piloto" : "agenda" }); }
+      catch (e) { console.error(e.message); return j({ error: "No se pudo preparar el aviso (¿falta correr coach_v24.sql?)." }, 500); }
+      if (!d.enviar) return j({ ok: true, enviado: false, motivo: d.motivo });
+      let nPush = 0, nMail = 0;
+      for (const dest of (d.destinos || []).slice(0, 200)) {
+        nPush += await mandarPush(dest.destino, tipo, d, "planes");
+        const dec = debeMandarMail(tipo, dest.email, dest.email ? await prefsMail(dest.destino) : null);
+        if (!dec.mandar) continue;
+        const m = armarFecha(tipo, d, dest);
+        const r = await fetch("https://api.resend.com/emails", {
+          method: "POST", headers: { Authorization: `Bearer ${Deno.env.get("RESEND_API_KEY")}`, "Content-Type": "application/json" },
+          body: JSON.stringify({ from: Deno.env.get("MAIL_FROM") || "SendFlow <onboarding@resend.dev>", to: [dest.email], subject: m.subject, html: m.html }),
+        });
+        if (r.ok) nMail++; else console.error("resend", r.status, (await r.text()).slice(0, 300));
+      }
+      return j({ ok: true, enviado: nPush + nMail > 0, push: nPush, mail: nMail });
     }
     if (tipo === "envio") {
       let d; try { d = await rpcServicio("aviso_envio_preparar", { p_usuario: yo.id, p_envio: analisisId }); }
