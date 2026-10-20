@@ -63,6 +63,7 @@
         locales.forEach(function (p) { if (p.nubeId && !vistos[p.nubeId]) tareas.push(a.eliminarPerfilDB(p.id)); });
         return Promise.all(tareas).then(function () {
           H.classList.add("sf-perfiles-cuenta");
+          if (a.autoSeleccionarPerfil) a.autoSeleccionarPerfil();
           var pant = $("pantallaPerfiles");
           if (pant && pant.classList.contains("activa")) a.renderizarListaPerfiles();
         });

@@ -353,7 +353,7 @@
       </section>`;
   }
   function cabInicio(acciones) {
-    return `<div class="cab-pagina inicio-cab entra"><div><h1 class="titulo-pagina">Hola, ${esc(String(USUARIO.nombre || "").split(" ")[0])}</h1><div class="sub-pagina">${esCoach() ? "Entrenador" : "Piloto"}</div></div>
+    return `<div class="cab-pagina inicio-cab entra"><div><h1 class="titulo-pagina">Hola, <span class="saludo-nombre">${esc(String(USUARIO.nombre || "").split(" ")[0])}</span></h1><div class="sub-pagina">${esCoach() ? "Entrenador" : "Piloto"}</div></div>
         <div class="acciones-inicio">${acciones}</div></div>
       <div class="inicio-orden"><div data-slot="solicitudes" class="sfe-solicitudes" hidden></div><div data-slot="plan"></div><div data-slot="mensajes"></div></div>`;
   }
@@ -816,7 +816,7 @@
     if (d < 60) return "recién";
     if (d < 3600) return "hace " + Math.round(d / 60) + " min";
     if (d < 86400) return "hace " + Math.round(d / 3600) + " h";
-    return new Date(s).toLocaleDateString("es-AR", { day: "numeric", month: "short" });
+    return new Date(s).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
   };
   async function pantallaMensajes(v, idSel) {
     clearInterval(relojBandeja);

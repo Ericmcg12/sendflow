@@ -141,6 +141,17 @@ Un solo módulo, `piezas/calculos-bici.js` (+ `calculos-bici.css`), con un «ada
 - **Perfil de la app de análisis** (ids `pf…`), **Recorte** (`rc…`) y **Bajada** (`bt…`): mismos botones; en Recorte y Bajada no hay peso de la bici ni ancho de cubierta, se escriben en la ventana.
 - El script `aplicar_semaforos_popup.py` copia el módulo al sitio y a `analisis/`, y agrega los `<script>`/`<link>` en ambos `index.html`.
 
+## 2d-quater) Vista por defecto y perfil activo automático en /analisis (20/10/2026)
+- La vista de datos de una bajada abre en **Suspensión** (antes Rueda): `estado.modoCanalSusp` arranca en `"suspension"` (`parche_defaults.py`).
+- En /analisis ya no hay selector de perfil, por eso Taller → Mantenimiento pedía elegir uno aunque hubiera bicis en la cuenta. Ahora, al traer los perfiles de la cuenta, se activa solo el último usado (`localStorage.sf_perfil_activo`) o el más reciente; Mantenimiento lo vuelve a intentar si no hay ninguno activo (sin tocar la configuración de una bajada abierta). Código en `piezas/perfil-auto.js`.
+- Si la cuenta no tiene ninguna bici, Mantenimiento sigue pidiendo cargarla.
+
+## 2d-quinquies) Inicio de Bike y Coach, fechas (20/10/2026)
+- Bike/Inicio: tarjeta **Mensajes** (últimas 3 conversaciones, sin leer, «Ver todos»), como la de Coach. Se muestra si hay conversaciones o entrenador vinculado.
+- Saludo: en Bike y en Coach, solo el primer nombre y en cian (`.saludo-nombre`).
+- Fechas del calendario y de los planes: dd/mm/aaaa. El detalle de un día se abre en una ventana (con «Agregar fecha este día») en vez de aparecer debajo del calendario.
+- Coach: estos cambios están hechos directo sobre `SendFlow_Coach_Web` (el pipeline del PHP original no corre acá); `coach-web/piezas/calendario.js` está al día, el saludo y `planes.js`/`app.js` no.
+
 ## 2e) Ayuda para medir el SAG y frases de velocidad (ideas tomadas de la revisión de sagly.at; textos propios)
 
 El SAG es un dato que se carga **antes** de analizar una bajada; el semáforo solo confirma si está en zona. Por eso la calculadora **no** va en el popup del semáforo (ahí quedó igual que antes):
