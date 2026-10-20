@@ -533,6 +533,7 @@
       }
     }
     if (window.CoachBicis) CoachBicis.pintar($("#perfilesPiloto", v), id, p.nombre);   // v43: bicis y set-ups (perfiles_v1.sql)
+    if (p.vinculado && p.usuarioId && window.HistorialPiloto) HistorialPiloto.pintar($("#perfilesPiloto", v), p.usuarioId, p.nombre);   // v54: historial de planes y esfuerzo
   }
   function tarjetaPerfil(pf) {
     const d = pf.datos || {};
