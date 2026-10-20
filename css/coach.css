@@ -1767,3 +1767,12 @@ a.ap-fila:hover{background:rgba(255,255,255,.03);}
 .ses-fila .chip-pres{border:0;padding:0;}
 
 .campo[hidden],.frec-dias[hidden]{display:none !important;}
+
+/* v57: confirmar lugar de clases presenciales */
+.cc-lista{display:grid;gap:10px;margin-top:10px;}
+.cc-fila{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;padding:10px 12px;border:1px solid var(--borde,rgba(255,255,255,.12));border-radius:12px;}
+.cc-info{display:grid;gap:2px;min-width:0;}
+.cc-info span{color:var(--cian);}
+.cc-info small{opacity:.7;}
+.cc-acc{display:flex;gap:8px;flex-wrap:wrap;}
+.chip-pres.por-confirmar{border-color:var(--oro);color:var(--oro);}

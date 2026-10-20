@@ -87,6 +87,8 @@
   }
 
   // ======================================================================= Hoy (piloto)
+  // clase presencial pendiente cuyo lugar el entrenador todavía no confirmó (coach_v28.sql); sin la columna nueva no marca nada
+  const porConfirmar = (t) => t.modalidad === "presencial" && t.estado === "pendiente" && t.lugarConfirmado === false;
   async function tarjetaHoy(enPlanes) {
     let h; try { h = await rpc("coach_plan_hoy", {}); } catch (e) { return null; }
     if (!h || !h.tienePlan) return null;
@@ -101,7 +103,7 @@
     const l = $(".hoy-lista", c);
     if (!h.hoy.length) l.appendChild(html(`<div class="prosa" style="font-size:13px">Hoy no tenés sesiones${h.proximaCarrera ? "" : ""}.</div>`));
     h.hoy.forEach(t => {
-      const it = html(`<button type="button" class="ses-fila ${t.estado}" style="--c:${(TIPOS[t.tipo] || TIPOS.otro).c}">${chipTipo(t.tipo)}<span class="nom">${esc(t.titulo)}</span>${t.modalidad === "presencial" ? `<span class="dur chip-pres">${esc(t.hora || "Presencial")}${t.lugar ? " · " + esc(t.lugar) : ""}</span>` : ""}${t.duracionMin ? `<span class="dur">${t.duracionMin} min</span>` : ""}<span class="est">${t.estado === "hecha" ? "✓ Hecha" : t.estado === "omitida" ? "No la hice" : "Pendiente"}${t.validada ? ` <span class="ses-val" title="Tu entrenador la validó">${PULGAR}</span>` : ""}</span>${(t.ejercicios || []).length ? `<span class="ej-prev">${esc(t.ejercicios.slice(0, 3).map(e => e.nombre).join(" · "))}${t.ejercicios.length > 3 ? ` · +${t.ejercicios.length - 3}` : ""}</span>` : ""}</button>`);
+      const it = html(`<button type="button" class="ses-fila ${t.estado}" style="--c:${(TIPOS[t.tipo] || TIPOS.otro).c}">${chipTipo(t.tipo)}<span class="nom">${esc(t.titulo)}</span>${t.modalidad === "presencial" ? `<span class="dur chip-pres${porConfirmar(t) ? " por-confirmar" : ""}">${esc(t.hora || "Presencial")}${porConfirmar(t) ? " · lugar a confirmar" : (t.lugar ? " · " + esc(t.lugar) : "")}</span>` : ""}${t.duracionMin ? `<span class="dur">${t.duracionMin} min</span>` : ""}<span class="est">${t.estado === "hecha" ? "✓ Hecha" : t.estado === "omitida" ? "No la hice" : "Pendiente"}${t.validada ? ` <span class="ses-val" title="Tu entrenador la validó">${PULGAR}</span>` : ""}</span>${(t.ejercicios || []).length ? `<span class="ej-prev">${esc(t.ejercicios.slice(0, 3).map(e => e.nombre).join(" · "))}${t.ejercicios.length > 3 ? ` · +${t.ejercicios.length - 3}` : ""}</span>` : ""}</button>`);
       it.addEventListener("click", async () => { if (await verSesion(t, false)) { const n = await tarjetaHoy(enPlanes); if (n) { n.classList.remove("entra"); c.replaceWith(n); } } });   // sin .entra: sin la animación de entrada quedaba invisible
       l.appendChild(it);
     });
@@ -326,7 +328,7 @@
     if (edita) return editarSesion(p, t, t.fecha);
     const ej = t.ejercicios || [];
     const cuerpo = html(`<div class="ses-detalle">
-      <div class="ses-det-cab">${chipTipo(t.tipo)}<span>${DIAS[(deIso(t.fecha).getDay() + 6) % 7]} ${corta(t.fecha)}</span>${t.duracionMin ? `<span>${t.duracionMin} min</span>` : ""}${t.intensidad ? `<span>intensidad ${t.intensidad}/10</span>` : ""}${t.modalidad === "presencial" ? `<span class="chip-pres">Presencial${t.hora ? " · " + esc(t.hora) : ""}${t.lugar ? " · " + esc(t.lugar) : ""}</span>` : ""}</div>
+      <div class="ses-det-cab">${chipTipo(t.tipo)}<span>${DIAS[(deIso(t.fecha).getDay() + 6) % 7]} ${corta(t.fecha)}</span>${t.duracionMin ? `<span>${t.duracionMin} min</span>` : ""}${t.intensidad ? `<span>intensidad ${t.intensidad}/10</span>` : ""}${t.modalidad === "presencial" ? `<span class="chip-pres${porConfirmar(t) ? " por-confirmar" : ""}">Presencial${t.hora ? " · " + esc(t.hora) : ""}${porConfirmar(t) ? " · lugar a confirmar" : (t.lugar ? " · " + esc(t.lugar) : "")}</span>${t.lugarCambiado ? `<span class="chip-pres">Cambió el lugar</span>` : ""}` : ""}</div>
       ${t.validada && t.estado === "hecha" ? `<div class="ses-validada-txt">${PULGAR}${esCoach() ? "Validaste esta sesión." : "Tu entrenador vio esta sesión y la validó."}</div>` : ""}
       ${t.descripcion ? `<p class="prosa">${esc(t.descripcion)}</p>` : ""}
       ${ej.length ? `<table class="tabla-ej"><thead><tr><th>Ejercicio</th><th>Series</th><th>Reps</th><th>Carga / tiempo</th></tr></thead><tbody>${ej.map(e => `<tr><td>${esc(e.nombre)}${e.nota ? `<small>${esc(e.nota)}</small>` : ""}</td><td>${e.series || ""}</td><td>${esc(e.reps || "")}</td><td>${esc([e.carga, e.tiempo].filter(Boolean).join(" · "))}</td></tr>`).join("")}</tbody></table>` : ""}
