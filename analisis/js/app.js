@@ -95,7 +95,7 @@ const estado = {
   notasSoloLectura: false,
   mapaMostrado: "3d",
   zoomMapa3d: 1, zoomPlanimetria: 1, zoomMapaTrack: 1, panMapaTrack: {x:0, y:0},
-  modoCanalSusp: "rueda", modoUnidadSusp: "pct", // "rueda"|"suspension" y "pct"|"mm" — panel de visualización estilo BYB
+  modoCanalSusp: "suspension", modoUnidadSusp: "pct", // "rueda"|"suspension" y "pct"|"mm" — panel de visualización estilo BYB
   mostrarSuspH: true, mostrarSuspS: true,
   mostrarImuX: true, mostrarImuY: true, mostrarImuZ: true,
   mostrarGiroX: true, mostrarGiroY: true, mostrarGiroZ: true
@@ -3442,24 +3442,38 @@ $("btnSeleccionarPerfilHome").addEventListener("click", async () => {
     console.error("No se pudo cargar la lista de perfiles:", e);
   }
 });
-$("listaSeleccionarPerfil").addEventListener("click", async (ev) => {
-  const fila = ev.target.closest("[data-seleccionar-perfil]");
-  if (!fila) return;
-  const id = parseInt(fila.dataset.seleccionarPerfil, 10);
+// (copia web) selección de perfil reutilizable; {sinConfig:true} no toca la configuración de una bajada ya abierta
+async function sfSeleccionarPerfil(id, op){
   try{
     const perfil = await leerPerfilDB(id);
-    if (!perfil) return;
-    Object.assign(estado.config, extraerConfigDePerfilCompleto(perfil.datos));
+    if (!perfil) return false;
+    if (!(op && op.sinConfig)) Object.assign(estado.config, extraerConfigDePerfilCompleto(perfil.datos));
     estado.perfilActivoId = id;
     estado.perfilActivoNombre = perfil.nombre;
     estado.perfilActivoNombreBase = perfil.nombreBase || perfil.nombre;
     estado.perfilActivoFoto = (perfil.datos && perfil.datos.foto) || null;
     estado.perfilActivoDatos = perfil.datos || null;
+    try{ localStorage.setItem("sf_perfil_activo", String(id)); }catch(e){}
     actualizarIndicadorPerfilActivoHome();
-    $("modalSeleccionarPerfil").classList.add("oculto");
-  }catch(e){
-    console.error("No se pudo aplicar el perfil:", e);
-  }
+    return true;
+  }catch(e){ console.error("No se pudo aplicar el perfil:", e); return false; }
+}
+// En /analisis ya no hay selector de perfil: se activa solo el último usado, o el más reciente de la cuenta.
+async function sfAutoPerfil(op){
+  if (estado.perfilActivoId != null && estado.perfilActivoDatos) return true;
+  let lista = [];
+  try{ lista = await listarPerfilesDB(); }catch(e){}
+  if (!lista.length) return false;
+  let guardado = null;
+  try{ guardado = parseInt(localStorage.getItem("sf_perfil_activo"), 10); }catch(e){}
+  let elegido = lista.find(p => p.id === guardado);
+  if (!elegido) elegido = lista.slice().sort((a, b) => String(b.fecha || "").localeCompare(String(a.fecha || "")))[0];
+  return sfSeleccionarPerfil(elegido.id, op);
+}
+$("listaSeleccionarPerfil").addEventListener("click", async (ev) => {
+  const fila = ev.target.closest("[data-seleccionar-perfil]");
+  if (!fila) return;
+  if (await sfSeleccionarPerfil(parseInt(fila.dataset.seleccionarPerfil, 10))) $("modalSeleccionarPerfil").classList.add("oculto");
 });
 $("btnCerrarSeleccionarPerfil").addEventListener("click", () => { $("modalSeleccionarPerfil").classList.add("oculto"); });
 $("btnIrANuevoPerfilDesdeHome").addEventListener("click", () => {
@@ -8062,6 +8076,7 @@ async function construirMantenimiento(){
   if (!bdDisponible()){ caja.innerHTML = ""; return; }
   const info = `<b>Qué muestra:</b> el uso acumulado de cada suspensión en las bajadas guardadas de este perfil y cuánto falta para cada service. Las horas son solo de las bajadas grabadas con el Sender.<br><br><b>Cómo usarlo:</b> poné los intervalos que indica el fabricante de tu horquilla y tu shock (en horas), y tocá HECHO cuando hagas el service: el contador vuelve a cero. Si la misma pista con el mismo set-up que semanas atrás da rebote más rápido, más hundimiento o más topes, aparece un aviso de posible pérdida de aceite, hidráulico o aire.`;
   const cab = cabeceraTarjetaEventos("MANTENIMIENTO", estado.perfilActivoNombre ? estado.perfilActivoNombre.replace(/</g, "&lt;") : "", "infoMantenimiento", info);
+  if (estado.perfilActivoId == null || !estado.perfilActivoDatos) await sfAutoPerfil({ sinConfig: true });
   if (estado.perfilActivoId == null || !estado.perfilActivoDatos){ caja.innerHTML = cab + `<div class="aviso">Elegí un perfil de piloto y bici para ver el mantenimiento.</div>`; return; }
   let fichas = [];
   try{ fichas = await asegurarHistorialSetup(); }catch(e){}
@@ -12680,6 +12695,6 @@ document.addEventListener("DOMContentLoaded", animarEntradaBienvenida);   // Sen
 window.__sfAnalisis = { get estado() { return estado; }, muestrasAColumnas: muestrasAColumnas, comprimirGzip: comprimirGzip, leerBajadaDB: leerBajadaDB,
   // perfiles desde la cuenta (perfiles-web.js)
   abrirModalPerfil: abrirModalPerfil, leerPerfilCompleto: leerPerfilCompleto, listarPerfilesDB: listarPerfilesDB, mostrarPantalla: mostrarPantalla, renderizarListaGuardados: renderizarListaGuardados, generarTablaLeverageDefault: generarTablaLeverageDefault,
-  guardarPerfilEnDB: guardarPerfilEnDB, eliminarPerfilDB: eliminarPerfilDB, renderizarListaPerfiles: renderizarListaPerfiles };
+  guardarPerfilEnDB: guardarPerfilEnDB, eliminarPerfilDB: eliminarPerfilDB, autoSeleccionarPerfil: sfAutoPerfil, renderizarListaPerfiles: renderizarListaPerfiles };
 
 })();

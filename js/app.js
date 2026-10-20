@@ -292,7 +292,7 @@
       var h = r && r.data; if (r.error || !h) return;
       var fe = (h.fechasEntrenador || [])[0];   // v52: fechas del entrenador (viaje, médico…): se ve al abrir Bike
       if (fe) {
-        var cd = function (iso) { var p = String(iso).slice(0, 10).split("-").map(Number); return p[2] + "/" + p[1]; };
+        var cd = function (iso) { var p = String(iso).slice(0, 10).split("-").map(Number); return ("0" + p[2]).slice(-2) + "/" + ("0" + p[1]).slice(-2) + "/" + p[0]; };
         var ln = document.createElement("span"); ln.className = "plan-hoy fe-linea";
         ln.textContent = (fe.entrenadorNombre || "Tu entrenador") + ": " + fe.titulo + " · " + (fe.hoy ? "hoy" : (fe.hasta && fe.hasta !== fe.desde ? "del " + cd(fe.desde) + " al " + cd(fe.hasta) : cd(fe.desde))) + (fe.sinDevoluciones ? " · sin devoluciones" : "");
         el.appendChild(ln);
@@ -328,9 +328,42 @@
   }
 
   var TIENE_SENDER = false;   // v43
+  // v53: los mensajes con el entrenador, al frente en el Inicio (igual que en Coach)
+  function pintarMensajesHub(conEntrenador) {
+    var caja = $("hub-mensajes"); if (!caja) return;
+    caja.textContent = "";
+    sb.rpc("coach_conversaciones").then(function (r) {
+      var conv = (r.error ? [] : ((r.data && r.data.conversaciones) || []));
+      if (!conv.length && !conEntrenador) return;
+      var sin = conv.reduce(function (s, c) { return s + (c.sinLeer || 0); }, 0);
+      var card = el("section", "tarjeta hub-msj" + (sin ? " con-nuevos" : ""));
+      var cab = el("div", "hub-msj-cab");
+      var tt = el("div", ""); tt.appendChild(el("span", "etiqueta", "Mensajes"));
+      tt.appendChild(el("h2", "", sin ? sin + (sin === 1 ? " mensaje sin leer" : " mensajes sin leer") : (conv.length ? "Tus conversaciones" : "Hablá con tu entrenador")));
+      cab.appendChild(tt);
+      var ver = el("button", "btn" + (sin ? " primario" : ""), conv.length ? "Ver todos" : "Abrir mensajes"); ver.type = "button";
+      ver.addEventListener("click", function () { abrirMensajes(); });
+      cab.appendChild(ver); card.appendChild(cab);
+      if (!conv.length) card.appendChild(el("p", "ayuda", "Las conversaciones empiezan desde una devolución de tu entrenador. Acá vas a ver lo que te escriba."));
+      conv.slice(0, 3).forEach(function (c) {
+        var b = el("button", "conv-item" + (c.sinLeer ? " sin-leer" : "")); b.type = "button";
+        b.appendChild(el("span", "conv-avatar", otroDe(c).split(" ").map(function (p) { return p[0] || ""; }).join("").slice(0, 2).toUpperCase()));
+        var tx = el("span", "conv-txt"), f = el("span", "conv-fila");
+        f.appendChild(el("b", "", otroDe(c))); f.appendChild(el("span", "conv-hora", haceCuanto(c.ultimo)));
+        tx.appendChild(f); tx.appendChild(el("span", "conv-tit", c.titulo || "Sin título"));
+        tx.appendChild(el("span", "conv-ult", (c.ultimoEsMio ? "Vos: " : "") + (c.ultimoTexto || "")));
+        b.appendChild(tx);
+        if (c.sinLeer) b.appendChild(el("b", "conv-n", String(c.sinLeer)));
+        b.addEventListener("click", function () { abrirMensajes(); abrirConversacion(c.analisisId); });
+        card.appendChild(b);
+      });
+      caja.appendChild(card);
+    });
+  }
   function pintarHub(nombre, roles, accesos, esAdmin, conEntrenador) {
     var sal = $("hub-saludo"); sal.textContent = nombre ? "Hola, " : "Hola";
-    if (nombre) { var nm = document.createElement("span"); nm.className = "saludo-nombre"; nm.textContent = nombre; sal.appendChild(nm); }
+    if (nombre) { var nm = document.createElement("span"); nm.className = "saludo-nombre"; nm.textContent = String(nombre).trim().split(/\s+/)[0]; sal.appendChild(nm); }
+    pintarMensajesHub(conEntrenador);
     var cont = $("hub-tarjetas");
     cont.textContent = "";
     var tiene = function (p) { return accesos.indexOf(p) >= 0; };
@@ -472,7 +505,7 @@
     if (d < 60) return "recién";
     if (d < 3600) return "hace " + Math.round(d / 60) + " min";
     if (d < 86400) return "hace " + Math.round(d / 3600) + " h";
-    return new Date(s).toLocaleDateString("es-AR", { day: "numeric", month: "short" });
+    return new Date(s).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
   }
   function el(tag, cls, txt) { var e = document.createElement(tag); if (cls) e.className = cls; if (txt != null) e.textContent = txt; return e; }
   function minSeg(t) { t = Math.max(0, Math.round(t)); return Math.floor(t / 60) + ":" + String(t % 60).padStart(2, "0"); }
