@@ -84,6 +84,21 @@
       var fh = el("span", "sf-mail-fila"); fh.appendChild(document.createTextNode("Hora: ")); fh.appendChild(hora); l.appendChild(fh);
       lista.appendChild(l);
     })();
+    /* v56 (coach_v27.sql): recordatorio de clases presenciales, 2 horas antes. Apagado por defecto; solo push. */
+    (function () {
+      var l = el("label", "sf-mail-op"), fila = el("span", "sf-mail-fila"), c = el("input");
+      c.type = "checkbox"; c.checked = prefs.push_clase === true;
+      fila.appendChild(c); fila.appendChild(document.createTextNode(" Recordarme las clases presenciales"));
+      l.appendChild(fila); l.appendChild(el("small", "ayuda", "Una notificación 2 horas antes de cada clase presencial que tu entrenador cargó, con el horario y el lugar. Nunca por mail."));
+      c.addEventListener("change", function () {
+        var v = c.checked; c.disabled = true;
+        (v && window.SFAvisos ? SFAvisos.estado().then(function (est) { if (est !== "activo") return SFAvisos.activar(); }) : Promise.resolve())
+          .then(function () { return sb.rpc("notif_prefs_clase_guardar", { p_activo: v }); })
+          .then(function (r) { if (r.error) throw r.error; c.disabled = false; decir(v ? "Listo: te avisamos 2 horas antes de cada clase presencial." : "Listo: no te avisamos más de las clases.", "ok"); })
+          .catch(function (err) { c.disabled = false; c.checked = !v; decir(/notif_prefs_clase_guardar/.test((err && err.message) || "") && /(does not exist|Could not find)/i.test((err && err.message) || "") ? "Falta aplicar coach_v27.sql en Supabase." : errTxt(err), "error"); });
+      });
+      lista.appendChild(l);
+    })();
     cont.appendChild(lista);
     cont.appendChild(el("p", "ayuda sf-mail-nota", "Los avisos en pantalla y las notificaciones siguen igual. Los mails de tu cuenta (contraseña, invitaciones) llegan siempre."));
     cont.appendChild(msg);
