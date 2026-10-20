@@ -1888,6 +1888,7 @@
         });
         lista.appendChild(el);
       });
+      if (window.SFAgendaChat) SFAgendaChat.decorar(lista, l, { analisisId: a.id, soyCoach: !!coach, pilotoNombre: nombreP });   // v52
       if (window.Archivos) Archivos.pintar(lista);
       lista.scrollTop = lista.scrollHeight;
     };

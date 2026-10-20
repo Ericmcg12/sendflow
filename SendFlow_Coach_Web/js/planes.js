@@ -94,6 +94,7 @@
       <div class="hoy-cab"><span class="etiqueta">Tu entrenamiento de hoy</span>${h.semana && h.semana.total ? `<span class="hoy-semana">Esta semana: <b>${h.semana.hechas}</b> de ${h.semana.total} sesiones</span>` : ""}</div>
       <div class="hoy-lista"></div>
       ${window.CoachCalendario ? CoachCalendario.htmlFechasHoy(h.fechasHoy) : ""}
+      ${window.CoachCalendario && CoachCalendario.htmlEntrenador ? CoachCalendario.htmlEntrenador(h.fechasEntrenador) : ""}
       ${h.proximaCarrera ? `<div class="prox-carrera grande"><span class="dias">${h.proximaCarrera.dias === 0 ? "HOY" : h.proximaCarrera.dias}</span><span>${h.proximaCarrera.dias === 0 ? "" : h.proximaCarrera.dias === 1 ? "día para" : "días para"} <b>${esc(h.proximaCarrera.titulo)}</b> · ${corta(h.proximaCarrera.fecha)}</span></div>` : ""}
       ${enPlanes ? "" : `<a class="btn chico" href="/planes">Ver mi plan</a>`}
     </div>`);
@@ -266,7 +267,7 @@
     el.innerHTML = "";
     const fases = (p.fases || []).filter(f => f.desde && f.hasta);
     const ini = p.desde || (fases[0] && fases[0].desde), fin = p.hasta || (fases.length && fases[fases.length - 1].hasta);
-    const carreras = (p.tareas || []).filter(t => t.tipo === "carrera").concat((p._fechas || []).filter(f => f.tipo === "carrera").map(f => ({ titulo: f.titulo, fecha: f.desde }))).sort((a, b) => a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0);
+    const carreras = (p.tareas || []).filter(t => t.tipo === "carrera").concat((p._fechas || []).filter(f => f.tipo === "carrera" && !f._e).map(f => ({ titulo: f.titulo, fecha: f.desde }))).sort((a, b) => a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0);
     if (!ini || !fin || fin <= ini) { el.classList.add("oculto"); return; }
     el.classList.remove("oculto");
     const total = (deIso(fin) - deIso(ini)) / 864e5 + 1;

@@ -1,4 +1,9 @@
 // ============================================================================
+// v52 (20/10/2026, coach_v24.sql): FECHAS DEL ENTRENADOR. El entrenador carga las suyas (viaje, médico, carrera, otro; rango; nota;
+//   «no hay devoluciones esos días») y las ven todos sus pilotos con vínculo activo (calendario del mes, semana del plan, inicio).
+//   El entrenador también puede cargar una fecha en el calendario de un piloto (la cambia o borra quien la cargó; el piloto la puede
+//   borrar). Al cargarlas se avisa al piloto (mail + push, avisos-coach v6). Las del entrenador llevan _e = true.
+// ============================================================================
 // calendario.js (Coach v48, 16/10/2026) — FECHAS PROPIAS DEL PILOTO + CALENDARIO DEL MES + CALENDARIO DEL CELULAR.
 // Necesita coach_v21.sql (sin él no se muestra nada nuevo).
 // · El piloto, en Mi plan, carga sus fechas (carrera, visita médica, viaje, otro; un día o un rango; nota; «no puedo
@@ -44,12 +49,19 @@
 
   // ======================================================================= chips
   function chip(f, conNombre) {
-    const x = tipo(f.tipo);
-    const el = html(`<button type="button" class="fp-chip ${f.sinEntreno ? "sin" : ""}" style="--c:${x.c}" title="${esc(x.t + ": " + f.titulo + (f.sinEntreno ? " · no entrena" : ""))}">
-      <span class="fp-ico">${x.i}</span><span class="fp-txt">${conNombre && !f.esMia ? `<b>${esc(f.pilotoNombre || "")}</b> · ` : ""}${esc(f.titulo)}</span>${f.sinEntreno ? `<span class="fp-no">No entrena</span>` : ""}</button>`);
+    const x = tipo(f.tipo), e = !!f._e, sin = f.sinEntreno || f.sinDevoluciones;
+    const quien = e ? `<b>${esc(f.esMia ? "Yo" : (f.entrenadorNombre || "Entrenador"))}</b> · ` : (conNombre && !f.esMia ? `<b>${esc(f.pilotoNombre || "")}</b> · ` : "");
+    const nota = f.sinDevoluciones ? "Sin devoluciones" : f.sinEntreno ? "No entrena" : "";
+    const el = html(`<button type="button" class="fp-chip ${sin ? "sin" : ""} ${e ? "fe" : ""}" style="--c:${x.c}" title="${esc(x.t + ": " + f.titulo + (nota ? " · " + nota.toLowerCase() : "") + (f.cargoEntrenador ? " · la cargó tu entrenador" : ""))}">
+      <span class="fp-ico">${x.i}</span><span class="fp-txt">${quien}${esc(f.titulo)}</span>${nota ? `<span class="fp-no">${nota}</span>` : ""}</button>`);
     return el;
   }
-  async function abrir(f) { return f.esMia ? editar(f) : ver(f); }
+  async function abrir(f) {
+    if (f._e) return f.esMia ? editarE(f) : verE(f);
+    if (f.esMia) return editar(f);
+    if (f.creadaPorMi) return editar(f, null, { paraPiloto: f.pilotoUsuarioId });   // la cargó este entrenador: la puede cambiar o borrar
+    return ver(f);
+  }
 
   // ======================================================================= ver (entrenador) / editar (piloto)
   function ver(f) {
@@ -62,7 +74,8 @@
     return abrirModal({ titulo: f.titulo, cuerpo, acciones: [{ texto: "Cerrar", clase: "fantasma", valor: false }] });
   }
 
-  function editar(f, diaIni) {
+  function editar(f, diaIni, op) {
+    op = op || {};
     const nueva = !f;
     f = f || { tipo: "carrera", titulo: "", desde: diaIni || hoyIso(), hasta: diaIni || hoyIso(), nota: "", sinEntreno: false };
     let t = f.tipo;
@@ -71,7 +84,7 @@
       <div class="campo ancho"><label>Título</label><input class="input" name="titulo" maxlength="120" value="${esc(f.titulo)}"></div>
       <div class="campo"><label>Desde</label><input class="input" type="date" name="desde" value="${esc(f.desde)}"></div>
       <div class="campo"><label>Hasta <span class="opcional">(si dura más de un día)</span></label><input class="input" type="date" name="hasta" value="${esc(f.hasta && f.hasta !== f.desde ? f.hasta : "")}"></div>
-      <div class="campo ancho"><label class="fp-check"><input type="checkbox" name="sin" ${f.sinEntreno ? "checked" : ""}><span>No puedo entrenar ese día</span></label><small class="ayuda-chica">Tu entrenador lo ve en su calendario y planifica alrededor.</small></div>
+      <div class="campo ancho ${op.paraPiloto ? "oculto" : ""}"><label class="fp-check"><input type="checkbox" name="sin" ${f.sinEntreno ? "checked" : ""}><span>No puedo entrenar ese día</span></label><small class="ayuda-chica">Tu entrenador lo ve en su calendario y planifica alrededor.</small></div>
       <div class="campo ancho"><label>Nota <span class="opcional">(opcional)</span></label><textarea class="input" name="nota" maxlength="1000" placeholder="Lugar, horario, lo que tu entrenador tenga que saber…">${esc(f.nota || "")}</textarea></div>
     </div>`);
     const ph = { carrera: "Copa Mendoza, fecha 3…", medico: "Traumatólogo, control…", viaje: "Viaje a Chile…", otro: "Examen, cumpleaños…" };
@@ -84,28 +97,95 @@
     const acciones = [{ texto: "Volver", clase: "fantasma", valor: false }];
     if (!nueva) acciones.push({ texto: "Borrar", clase: "peligro", alHacer: async () => {
       if (!(await confirmar(`¿Borrar «${f.titulo}»?`, "Borrar"))) return false;
-      try { await rpc("coach_fecha_borrar", { p_id: f.id }); aviso("Fecha borrada."); return true; } catch (e) { aviso(e.message, "error"); return false; }
+      try { await rpc(op.paraPiloto ? "coach_fecha_para_piloto_borrar" : "coach_fecha_borrar", { p_id: f.id }); aviso("Fecha borrada."); return true; } catch (e) { aviso(e.message, "error"); return false; }
     } });
     acciones.push({ texto: nueva ? "Agregar" : "Guardar", clase: "primario", alHacer: async (c) => {
       const desde = $("[name=desde]", c).value, hasta = $("[name=hasta]", c).value || desde;
       if (!desde) { aviso("Poné la fecha.", "error"); return false; }
       if (hasta < desde) { aviso("La fecha de fin es anterior a la de inicio.", "error"); return false; }
       const d = { tipo: t, titulo: $("[name=titulo]", c).value.trim(), desde, hasta, nota: $("[name=nota]", c).value.trim(), sinEntreno: $("[name=sin]", c).checked };
-      try { await rpc("coach_fecha_guardar", { p_id: f.id || null, d }); aviso(nueva ? "Fecha agregada. Tu entrenador la ve en su calendario." : "Fecha guardada."); return true; }
+      try {
+        if (op.paraPiloto) {
+          const r = await rpc("coach_fecha_para_piloto", { p_piloto: op.paraPiloto, p_id: f.id || null, d });
+          if (r && r.nueva && r.fecha) API.avisar("fecha_piloto", r.fecha.id);
+          aviso(nueva ? "Fecha agregada al calendario del piloto. Le avisamos." : "Fecha guardada.");
+        } else {
+          await rpc("coach_fecha_guardar", { p_id: f.id || null, d });
+          aviso(nueva ? "Fecha agregada. Tu entrenador la ve en su calendario." : "Fecha guardada.");
+        }
+        return true;
+      }
       catch (e) { aviso(e.message, "error"); return false; }
     } });
-    return abrirModal({ titulo: nueva ? "Agregar fecha" : "Mi fecha", cuerpo, acciones });
+    return abrirModal({ titulo: nueva ? "Agregar fecha" : (op.paraPiloto ? "Fecha de " + (f.pilotoNombre || "tu piloto") : "Mi fecha"), cuerpo, acciones });
+  }
+
+  // ======================================================================= fechas del entrenador (v52)
+  // piloto: ver (solo lectura) · entrenador: editar / agregar / borrar las suyas
+  function verE(f) {
+    const x = tipo(f.tipo);
+    const cuerpo = html(`<div class="fp-ver" style="--c:${x.c}">
+      <div class="fp-ver-cab"><span class="fp-ico">${x.i}</span><span>${esc(x.t)}</span><span>${esc(rango(f))}</span></div>
+      ${f.sinDevoluciones ? `<div class="fp-aviso-no">${esc(f.entrenadorNombre || "Tu entrenador")} no va a hacer devoluciones esos días.</div>` : ""}
+      ${f.nota ? `<p class="prosa">${esc(f.nota)}</p>` : ""}
+      <small class="ayuda-chica">Fecha de ${esc(f.entrenadorNombre || "tu entrenador")}.</small></div>`);
+    return abrirModal({ titulo: f.titulo, cuerpo, acciones: [{ texto: "Cerrar", clase: "fantasma", valor: false }] });
+  }
+  function editarE(f, diaIni) {
+    const nueva = !f;
+    f = f || { tipo: "viaje", titulo: "", desde: diaIni || hoyIso(), hasta: diaIni || hoyIso(), nota: "", sinDevoluciones: true };
+    let t = f.tipo;
+    const cuerpo = html(`<div class="form-grilla fp-form">
+      <div class="campo ancho"><label>Tipo</label><div class="tipos-ses" role="radiogroup">${Object.entries(TIPOS).map(([k, x]) => `<button type="button" class="tipo-ses ${k === t ? "sel" : ""}" data-tipo="${k}" style="--c:${x.c}" role="radio" aria-checked="${k === t}">${x.t}</button>`).join("")}</div></div>
+      <div class="campo ancho"><label>Título</label><input class="input" name="titulo" maxlength="120" value="${esc(f.titulo)}"></div>
+      <div class="campo"><label>Desde</label><input class="input" type="date" name="desde" value="${esc(f.desde)}"></div>
+      <div class="campo"><label>Hasta <span class="opcional">(si dura más de un día)</span></label><input class="input" type="date" name="hasta" value="${esc(f.hasta && f.hasta !== f.desde ? f.hasta : "")}"></div>
+      <div class="campo ancho"><label class="fp-check"><input type="checkbox" name="sin" ${f.sinDevoluciones ? "checked" : ""}><span>No hay devoluciones esos días</span></label><small class="ayuda-chica">Tus pilotos lo ven en su calendario y se enteran de por qué no vas a responder.</small></div>
+      <div class="campo ancho"><label>Nota <span class="opcional">(opcional)</span></label><textarea class="input" name="nota" maxlength="1000" placeholder="Lugar, motivo, cuándo volvés…">${esc(f.nota || "")}</textarea></div>
+    </div>`);
+    const ph = { carrera: "Copa Mendoza, fecha 3…", medico: "Control médico…", viaje: "Viaje a Chile…", otro: "Capacitación, feriado…" };
+    const pintar = () => {
+      $$(".tipo-ses", cuerpo).forEach(b => { const s = b.dataset.tipo === t; b.classList.toggle("sel", s); b.setAttribute("aria-checked", s); });
+      $("[name=titulo]", cuerpo).placeholder = ph[t];
+    };
+    $$(".tipo-ses", cuerpo).forEach(b => b.addEventListener("click", () => { t = b.dataset.tipo; pintar(); if (t === "medico" || t === "viaje") $("[name=sin]", cuerpo).checked = true; }));
+    pintar();
+    const acciones = [{ texto: "Volver", clase: "fantasma", valor: false }];
+    if (!nueva) acciones.push({ texto: "Borrar", clase: "peligro", alHacer: async () => {
+      if (!(await confirmar(`¿Borrar «${f.titulo}»?`, "Borrar"))) return false;
+      try { await rpc("coach_fecha_entrenador_borrar", { p_id: f.id }); aviso("Fecha borrada."); return true; } catch (e) { aviso(e.message, "error"); return false; }
+    } });
+    acciones.push({ texto: nueva ? "Agregar" : "Guardar", clase: "primario", alHacer: async (c) => {
+      const desde = $("[name=desde]", c).value, hasta = $("[name=hasta]", c).value || desde;
+      if (!desde) { aviso("Poné la fecha.", "error"); return false; }
+      if (hasta < desde) { aviso("La fecha de fin es anterior a la de inicio.", "error"); return false; }
+      const d = { tipo: t, titulo: $("[name=titulo]", c).value.trim(), desde, hasta, nota: $("[name=nota]", c).value.trim(), sinDevoluciones: $("[name=sin]", c).checked };
+      try {
+        const r = await rpc("coach_fecha_entrenador_guardar", { p_id: f.id || null, d });
+        if (r && r.nueva && r.fecha) API.avisar("fecha_agenda", r.fecha.id);   // mail + push a todos tus pilotos (una sola vez por fecha)
+        aviso(nueva ? "Fecha agregada. Tus pilotos la ven y les avisamos." : "Fecha guardada.");
+        return true;
+      } catch (e) { aviso(e.message, "error"); return false; }
+    } });
+    return abrirModal({ titulo: nueva ? "Agregar mi fecha" : "Mi fecha", cuerpo, acciones });
   }
 
   // ======================================================================= semana del plan (planes.js)
   async function fechasDePlan(p, edita) {
-    try { return (await rpc("coach_fechas_listar", edita ? { p_piloto: p.pilotoUsuarioId } : {})).fechas || []; } catch (e) { return null; }
+    let fs;
+    try { fs = (await rpc("coach_fechas_listar", edita ? { p_piloto: p.pilotoUsuarioId } : {})).fechas || []; } catch (e) { return null; }
+    try {   // v52: también las fechas del entrenador de este plan (el piloto las ve; el entrenador ve las suyas)
+      const d0 = p.desde ? String(p.desde).slice(0, 10) : hoyIso(), d1 = p.hasta ? String(p.hasta).slice(0, 10) : sumar(d0, 120);
+      const r = await rpc("coach_calendario_datos", { p_desde: sumar(d0, -7), p_hasta: d1 > sumar(d0, 400) ? sumar(d0, 400) : d1 });
+      fs = fs.concat((r.fechasEntrenador || []).filter(f => !p.entrenadorId || f.entrenadorId === p.entrenadorId).map(f => Object.assign({ _e: true }, f)));
+    } catch (e) { /* sin coach_v24.sql: solo las del piloto */ }
+    return fs;
   }
   // Chips de las fechas del piloto arriba de las sesiones del día
   function pintarDia(col, ls, dia, p, edita, recargar) {
     const fs = (p._fechas || []).filter(f => cubre(f, dia));
     if (!fs.length) return;
-    if (fs.some(f => f.sinEntreno)) col.classList.add("fp-sin-entreno");
+    if (fs.some(f => f.sinEntreno || f.sinDevoluciones)) col.classList.add("fp-sin-entreno");
     const caja = html(`<div class="fp-dia"></div>`);
     fs.forEach(f => { const c = chip(f, edita); c.addEventListener("click", async () => { if (await abrir(f)) recargar(); }); caja.appendChild(c); });
     ls.prepend(caja);
@@ -116,6 +196,10 @@
     if (!edita) {
       const b = html(`<button class="btn chico" type="button">${ICONOS.mas}Agregar fecha</button>`);
       b.addEventListener("click", async () => { if (await editar(null)) recargar(); });
+      cont.appendChild(b);
+    } else {
+      const b = html(`<button class="btn chico" type="button">${ICONOS.mas}Agregar mi fecha</button>`);
+      b.addEventListener("click", async () => { if (await editarE(null)) recargar(); });
       cont.appendChild(b);
     }
     const s = html(`<button class="btn chico" type="button">${ICO_CAL}Agregar a mi calendario</button>`);
@@ -128,7 +212,7 @@
     const caja = html(`<div class="campo ancho fp-aviso oculto"></div>`);
     inp.closest(".campo").after(caja);
     const pintar = () => {
-      const fs = p._fechas.filter(f => inp.value && cubre(f, inp.value));
+      const fs = p._fechas.filter(f => !f._e && inp.value && cubre(f, inp.value));
       caja.classList.toggle("oculto", !fs.length);
       caja.innerHTML = fs.map(f => `<div class="fp-aviso-fila" style="--c:${tipo(f.tipo).c}"><span class="fp-ico">${tipo(f.tipo).i}</span><span>${esc(p.pilotoNombre || "El piloto")} tiene <b>${esc(tipo(f.tipo).t.toLowerCase())}: ${esc(f.titulo)}</b>${f.sinEntreno ? " y marcó que <b>no puede entrenar</b>" : ""}.</span></div>`).join("");
     };
@@ -138,6 +222,12 @@
   function htmlFechasHoy(fs) {
     if (!fs || !fs.length) return "";
     return `<div class="fp-hoy">${fs.map(f => `<span class="fp-hoy-it" style="--c:${tipo(f.tipo).c}"><span class="fp-ico">${tipo(f.tipo).i}</span>Hoy: <b>${esc(f.titulo)}</b>${f.sinEntreno ? " · no entrenás" : ""}</span>`).join("")}</div>`;
+  }
+
+  // Tarjeta «Tu entrenamiento de hoy» (piloto): lo que viene de su entrenador (hoy y los próximos 14 días)
+  function htmlEntrenador(fe) {
+    if (!fe || !fe.length) return "";
+    return `<div class="fp-hoy fe-hoy">${fe.slice(0, 4).map(f => `<span class="fp-hoy-it fe" style="--c:${tipo(f.tipo).c}"><span class="fp-ico">${tipo(f.tipo).i}</span><span><b>${esc(f.entrenadorNombre || "Tu entrenador")}</b>: ${esc(f.titulo)} · ${esc(f.hoy ? "hoy" : rango(f).toLowerCase())}${f.sinDevoluciones ? " · sin devoluciones" : ""}</span></span>`).join("")}</div>`;
   }
 
   // ======================================================================= calendario del mes (Planes / Mi plan)
@@ -155,6 +245,7 @@
       const fin = sumar(lunes(ult), 6);
       cache[m] = await rpc("coach_calendario_datos", { p_desde: ini, p_hasta: fin });
       cache[m]._ini = ini; cache[m]._fin = fin;
+      (cache[m].fechasEntrenador || []).forEach(f => { f._e = true; });
       return cache[m];
     };
     try { datos = await cargar(mes); } catch (e) { return; }   // sin coach_v21.sql: no se muestra
@@ -163,19 +254,19 @@
       <div class="cal-cab">
         <div class="cal-tit"><span class="etiqueta">${coach ? "Calendario de tus pilotos" : "Mi calendario"}</span><h2 class="cal-mes-nom"></h2></div>
         <div class="cal-nav"><button type="button" class="btn icono chico" data-mes="-1" aria-label="Mes anterior">‹</button><button type="button" class="btn chico fantasma" data-mes="hoy">Hoy</button><button type="button" class="btn icono chico" data-mes="1" aria-label="Mes siguiente">›</button></div>
-        <div class="cal-acc">${coach ? "" : `<button type="button" class="btn chico primario" data-accion="fecha">${ICONOS.mas}Agregar fecha</button>`}<button type="button" class="btn chico" data-accion="ics">${ICO_CAL}Agregar a mi calendario</button></div>
+        <div class="cal-acc">${coach ? `<button type="button" class="btn chico primario" data-accion="fecha-e">${ICONOS.mas}Agregar mi fecha</button>` : `<button type="button" class="btn chico primario" data-accion="fecha">${ICONOS.mas}Agregar fecha</button>`}<button type="button" class="btn chico" data-accion="ics">${ICO_CAL}Agregar a mi calendario</button></div>
       </div>
       ${coach && pilotos.length > 1 ? `<div class="cal-filtro"><select class="input" name="piloto" aria-label="Piloto"><option value="">Todos los pilotos</option>${pilotos.map(([id, n]) => `<option value="${esc(id)}">${esc(n)}</option>`).join("")}</select></div>` : ""}
       <div class="cal-semdias">${DIAS.map(d => `<span>${d}</span>`).join("")}</div>
       <div class="cal-grilla"></div>
-      <div class="cal-leyenda"><span><i class="ley-ses"></i>Sesión del plan</span><span><i class="ley-fp"></i>${coach ? "Fecha del piloto" : "Fecha tuya"}</span><span><i class="ley-no"></i>No ${coach ? "entrena" : "entrenás"}</span></div>
+      <div class="cal-leyenda"><span><i class="ley-ses"></i>Sesión del plan</span><span><i class="ley-fp"></i>${coach ? "Fecha del piloto" : "Fecha tuya"}</span><span><i class="ley-fe"></i>${coach ? "Mis fechas" : "Fecha de tu entrenador"}</span><span><i class="ley-no"></i>No ${coach ? "entrena" : "entrenás"} / sin devoluciones</span></div>
       <div class="cal-panel"></div>
-      ${coach ? "" : `<div class="cal-mias"></div>`}
+      <div class="cal-mias"></div>
     </section>`);
     cont.appendChild(raiz);
     entradaEscalonada(cont, 0);
     const deDia = (dia) => ({
-      fechas: (datos.fechas || []).filter(f => cubre(f, dia) && (!filtro || f.pilotoUsuarioId === filtro)),
+      fechas: (datos.fechas || []).filter(f => cubre(f, dia) && (!filtro || f.pilotoUsuarioId === filtro)).concat((datos.fechasEntrenador || []).filter(f => cubre(f, dia))),
       sesiones: (datos.sesiones || []).filter(s => s.fecha === dia && (!filtro || s.pilotoUsuarioId === filtro))
     });
     const recargar = async () => { Object.keys(cache).forEach(k => delete cache[k]); datos = await cargar(mes, true); pintar(); pintarMias(); };
@@ -191,9 +282,9 @@
       for (let dia = datos._ini; dia <= datos._fin; dia = sumar(dia, 1)) {
         const { fechas, sesiones } = deDia(dia);
         const n = fechas.length + sesiones.length;
-        const celda = html(`<button type="button" class="cal-dia ${dia.slice(0, 7) !== mes ? "otro-mes" : ""} ${dia === hoy ? "hoy" : ""} ${dia === sel ? "sel" : ""} ${fechas.some(f => f.sinEntreno) ? "sin-entreno" : ""} ${fechas.length ? "con-fp" : ""}" aria-label="${esc(corta(dia) + (n ? ` · ${n} ${n === 1 ? "cosa" : "cosas"}` : ""))}">
+        const celda = html(`<button type="button" class="cal-dia ${dia.slice(0, 7) !== mes ? "otro-mes" : ""} ${dia === hoy ? "hoy" : ""} ${dia === sel ? "sel" : ""} ${fechas.some(f => f.sinEntreno || f.sinDevoluciones) ? "sin-entreno" : ""} ${fechas.length ? "con-fp" : ""}" aria-label="${esc(corta(dia) + (n ? ` · ${n} ${n === 1 ? "cosa" : "cosas"}` : ""))}">
           <span class="cal-num">${deIso(dia).getDate()}</span>
-          <span class="cal-items">${fechas.slice(0, 2).map(f => `<span class="cal-fp" style="--c:${tipo(f.tipo).c}"><span class="fp-ico">${tipo(f.tipo).i}</span><span>${coach && !f.esMia ? esc(iniciales(f.pilotoNombre || "?")) + " · " : ""}${esc(f.titulo)}</span></span>`).join("")}${sesiones.slice(0, Math.max(0, 3 - Math.min(2, fechas.length))).map(chipSes).join("")}${n > 3 ? `<span class="cal-mas">+${n - 3}</span>` : ""}</span>
+          <span class="cal-items">${fechas.slice(0, 2).map(f => `<span class="cal-fp ${f._e ? "fe" : ""}" style="--c:${tipo(f.tipo).c}"><span class="fp-ico">${tipo(f.tipo).i}</span><span>${f._e ? "" : (coach && !f.esMia ? esc(iniciales(f.pilotoNombre || "?")) + " · " : "")}${esc(f.titulo)}</span></span>`).join("")}${sesiones.slice(0, Math.max(0, 3 - Math.min(2, fechas.length))).map(chipSes).join("")}${n > 3 ? `<span class="cal-mas">+${n - 3}</span>` : ""}</span>
           <span class="cal-puntos">${fechas.map(f => `<i class="p-fp" style="--c:${tipo(f.tipo).c}"></i>`).join("")}${sesiones.slice(0, 4).map(s => `<i style="--c:${((window.Planes && Planes.TIPOS) || {})[s.tipo] ? Planes.TIPOS[s.tipo].c : "#4fe3c2"}"></i>`).join("")}</span>
         </button>`);
         celda.addEventListener("click", () => { sel = dia; $$(".cal-dia.sel", g).forEach(x => x.classList.remove("sel")); celda.classList.add("sel"); pintarPanel(); });
@@ -206,9 +297,10 @@
       if (!sel || sel < datos._ini || sel > datos._fin) return;
       const { fechas, sesiones } = deDia(sel);
       const d = deIso(sel);
-      const cab = html(`<div class="cal-panel-cab"><b>${DIAS[(d.getDay() + 6) % 7]} ${corta(sel)}</b>${coach ? "" : `<button type="button" class="btn chico" data-accion="fecha-dia">${ICONOS.mas}Agregar fecha este día</button>`}</div>`);
+      const cab = html(`<div class="cal-panel-cab"><b>${DIAS[(d.getDay() + 6) % 7]} ${corta(sel)}</b>${coach ? `<button type="button" class="btn chico" data-accion="fecha-dia-e">${ICONOS.mas}Agregar mi fecha este día</button>` : `<button type="button" class="btn chico" data-accion="fecha-dia">${ICONOS.mas}Agregar fecha este día</button>`}</div>`);
       p.appendChild(cab);
       const b = $("[data-accion=fecha-dia]", cab); if (b) b.addEventListener("click", async () => { if (await editar(null, sel)) recargar(); });
+      const be = $("[data-accion=fecha-dia-e]", cab); if (be) be.addEventListener("click", async () => { if (await editarE(null, sel)) recargar(); });
       if (!fechas.length && !sesiones.length) { p.appendChild(html(`<div class="ayuda-chica">Nada este día.</div>`)); return; }
       const l = html(`<div class="cal-panel-lista"></div>`); p.appendChild(l);
       fechas.forEach(f => { const c = chip(f, coach); const r = html(`<div class="cal-panel-fp"></div>`); r.appendChild(c); if (f.nota) r.appendChild(html(`<small class="ayuda-chica">${esc(f.nota)}</small>`)); c.addEventListener("click", async () => { if (await abrir(f)) recargar(); }); l.appendChild(r); });
@@ -220,17 +312,33 @@
     }
     async function pintarMias() {
       const c = $(".cal-mias", raiz); if (!c) return;
-      let fs; try { fs = (await rpc("coach_fechas_listar", {})).fechas || []; } catch (e) { return; }
-      const hoy = hoyIso(), prox = fs.filter(f => (f.hasta || f.desde) >= hoy);
+      const hoy = hoyIso();
+      let propias;
+      try {
+        propias = coach ? ((await rpc("coach_fechas_entrenador_listar", {})).fechas || []).map(f => Object.assign({ _e: true }, f))
+                        : ((await rpc("coach_fechas_listar", {})).fechas || []);
+      } catch (e) { return; }
+      const lista = (fs) => {
+        const l = html(`<div class="cal-mias-lista"></div>`);
+        fs.forEach(f => {
+          const x = tipo(f.tipo), sin = f.sinEntreno ? (coach ? "" : " · no entrenás") : f.sinDevoluciones ? (f.esMia ? " · sin devoluciones" : " · no hace devoluciones") : "";
+          const mio = f.esMia && (!f._e || coach);
+          const quien = !f.esMia && f._e ? ` · ${esc(f.entrenadorNombre || "tu entrenador")}` : f.cargoEntrenador ? " · la cargó tu entrenador" : "";
+          const it = html(`<button type="button" class="cal-mia ${f._e ? "fe" : ""}" style="--c:${x.c}"><span class="fp-ico">${x.i}</span><span class="cm-t"><b>${esc(f.titulo)}</b><small>${esc(x.t)} · ${esc(rango(f))}${sin}${quien}</small></span><span class="cm-e">${mio ? "Editar" : "Ver"}</span></button>`);
+          it.addEventListener("click", async () => { if (await abrir(f)) recargar(); });
+          l.appendChild(it);
+        });
+        return l;
+      };
+      const prox = propias.filter(f => (f.hasta || f.desde) >= hoy);
       c.innerHTML = `<div class="titulo-seccion">Mis próximas fechas</div>`;
-      if (!prox.length) { c.appendChild(html(`<div class="ayuda-chica">Todavía no cargaste fechas. Agregá tus carreras, viajes o turnos médicos: tu entrenador los ve y arma el plan alrededor.</div>`)); return; }
-      const l = html(`<div class="cal-mias-lista"></div>`); c.appendChild(l);
-      prox.forEach(f => {
-        const x = tipo(f.tipo);
-        const it = html(`<button type="button" class="cal-mia" style="--c:${x.c}"><span class="fp-ico">${x.i}</span><span class="cm-t"><b>${esc(f.titulo)}</b><small>${esc(x.t)} · ${esc(rango(f))}${f.sinEntreno ? " · no entrenás" : ""}</small></span><span class="cm-e">Editar</span></button>`);
-        it.addEventListener("click", async () => { if (await editar(f)) recargar(); });
-        l.appendChild(it);
-      });
+      if (!prox.length) c.appendChild(html(`<div class="ayuda-chica">${coach ? "Todavía no cargaste fechas tuyas. Agregá tus viajes, turnos médicos o carreras: tus pilotos las ven y saben por qué no hay devoluciones esos días." : "Todavía no cargaste fechas. Agregá tus carreras, viajes o turnos médicos: tu entrenador los ve y arma el plan alrededor."}</div>`));
+      else c.appendChild(lista(prox));
+      if (!coach) {   // lo que viene de su entrenador
+        let fe = [];
+        try { fe = ((await rpc("coach_calendario_datos", { p_desde: hoy, p_hasta: sumar(hoy, 120) })).fechasEntrenador || []).map(f => Object.assign({ _e: true }, f)); } catch (e) { /* sin coach_v24.sql */ }
+        if (fe.length) { c.appendChild(html(`<div class="titulo-seccion cal-de-entrenador">De tu entrenador</div>`)); c.appendChild(lista(fe)); }
+      }
     }
     $$("[data-mes]", raiz).forEach(b => b.addEventListener("click", async () => {
       const d = deIso(mes + "-01");
@@ -239,6 +347,7 @@
       pintar();
     }));
     const bf = $("[data-accion=fecha]", raiz); if (bf) bf.addEventListener("click", async () => { if (await editar(null, sel && sel >= hoyIso() ? sel : null)) recargar(); });
+    const bfe = $("[data-accion=fecha-e]", raiz); if (bfe) bfe.addEventListener("click", async () => { if (await editarE(null, sel && sel >= hoyIso() ? sel : null)) recargar(); });
     $("[data-accion=ics]", raiz).addEventListener("click", () => suscripcion());
     const sp = $("[name=piloto]", raiz); if (sp) sp.addEventListener("change", () => { filtro = sp.value; pintar(); });
     pintar(); pintarMias();
@@ -305,5 +414,5 @@
     return abrirModal({ titulo: "Agregar a mi calendario", cuerpo, acciones: [{ texto: "Cerrar", clase: "fantasma", valor: false }] });
   }
 
-  window.CoachCalendario = { seccionLista, fechasDePlan, pintarDia, accionesPlan, avisoFecha, htmlFechasHoy, editar, suscripcion, descargar, TIPOS };
+  window.CoachCalendario = { seccionLista, fechasDePlan, pintarDia, accionesPlan, avisoFecha, htmlFechasHoy, htmlEntrenador, editar, editarE, verE, suscripcion, descargar, TIPOS };
 })();

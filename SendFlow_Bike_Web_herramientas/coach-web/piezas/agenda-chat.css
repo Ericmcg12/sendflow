@@ -1,0 +1,30 @@
+/* ===== Agenda (20/10/2026): «Agregar al calendario» desde el chat (agenda-chat.js) y fechas del entrenador (calendario.js) ===== */
+.sfa-btn { display: inline-grid; place-items: center; width: 26px; height: 26px; margin: 0 0 0 auto; padding: 0; border: 1px solid transparent; border-radius: var(--r-sm, 6px);
+  background: transparent; color: var(--ink-dim, #8b9a98); cursor: pointer; opacity: .55; transition: opacity .15s, color .15s, border-color .15s; }
+.burbuja:hover .sfa-btn, .sfa-btn:focus-visible { opacity: 1; }
+.sfa-btn:hover { color: var(--oro, #ffbd00); border-color: var(--oro-dim, rgba(255,189,0,.5)); opacity: 1; }
+.sfa-btn:focus-visible { outline: 2px solid var(--cian, #4fe3c2); outline-offset: 2px; }
+@media (hover: none) { .sfa-btn { opacity: .85; } }
+.sfa-modal { width: min(520px, 100%); max-height: calc(100dvh - 36px); overflow: auto; font-family: var(--sans, "IBM Plex Sans", system-ui, sans-serif); }
+.sfa-modal .modal-cab { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.sfa-modal .modal-cab h2 { text-transform: none; letter-spacing: 0; font-size: 17px; margin: 0; }
+.sfa-intro { margin: 0 0 14px; }
+.sfa-campo { display: flex; flex-direction: column; gap: 6px; margin: 0 0 14px; font: 500 13px/1.3 var(--sans, "IBM Plex Sans", system-ui, sans-serif); letter-spacing: 0; text-transform: none; color: var(--ink-dim, #8b9a98); }
+.sfa-et { font: 500 13px/1.3 var(--sans, "IBM Plex Sans", system-ui, sans-serif); color: var(--ink-dim, #8b9a98); }
+.sfa-ayuda { font: 12px/1.4 var(--sans, "IBM Plex Sans", system-ui, sans-serif); color: var(--ink-mute, #7b8988); letter-spacing: 0; text-transform: none; font-weight: 400; }
+.sfa-in { width: 100%; box-sizing: border-box; }
+textarea.sfa-nota { height: auto; min-height: 84px; padding: 10px 12px; resize: vertical; font: 14px/1.5 var(--sans, "IBM Plex Sans", system-ui, sans-serif); }
+.sfa-dos { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+@media (max-width: 480px) { .sfa-dos { grid-template-columns: 1fr; } }
+.sfa-tipos { display: flex; flex-wrap: wrap; gap: 6px; }
+.sfa-tipo { height: 36px; margin: 0; padding: 0 12px; border: 1px solid var(--borde-2, #2e393a); border-radius: var(--r-md, 8px); background: transparent; color: var(--ink, #f2f5f4); font: 500 13px/1 var(--sans, "IBM Plex Sans", system-ui, sans-serif); cursor: pointer; }
+.sfa-tipo:hover { border-color: var(--oro-dim, rgba(255,189,0,.5)); color: var(--oro, #ffbd00); }
+.sfa-tipo.sel { border-color: var(--oro, #ffbd00); color: var(--oro, #ffbd00); background: rgba(255,189,0,.08); }
+.sfa-check { display: flex; align-items: center; gap: 8px; margin: 0 0 14px; font: 500 13.5px/1.3 var(--sans, "IBM Plex Sans", system-ui, sans-serif); letter-spacing: 0; text-transform: none; color: var(--ink, #f2f5f4); }
+.sfa-check input { width: 18px; height: 18px; accent-color: var(--oro, #ffbd00); }
+.sfa-msg { margin: 0 0 10px; }
+.sfa-pie { display: flex; justify-content: flex-end; gap: 8px; flex-wrap: wrap; margin-top: 6px; }
+.sfa-pie .btn { margin: 0; display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.sfa-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 10000; max-width: min(92vw, 460px); padding: 12px 16px; border-radius: var(--r-md, 8px);
+  background: var(--panel-3, #1b2426); border: 1px solid var(--borde-2, #2e393a); border-left: 3px solid var(--cian, #4fe3c2); color: var(--ink, #f2f5f4); font: 14px/1.4 var(--sans, "IBM Plex Sans", system-ui, sans-serif); }
+.sfa-toast.error { border-left-color: #e0483f; }

@@ -1,0 +1,11 @@
+
+/* ==========================================================================
+   v52 (20/10/2026) — fechas del entrenador (coach_v24.sql): línea sólida y borde izquierdo (las del piloto son rayadas y punteadas),
+   para que se distingan de un vistazo en el calendario del mes, en la semana del plan y en el inicio.
+   ========================================================================== */
+.fp-chip.fe,.cal-fp.fe,.fp-hoy-it.fe,.cal-mia.fe{border-style:solid;border-left-width:3px;border-left-color:var(--c);
+  background:color-mix(in srgb, var(--c) 13%, transparent);}
+.fp-chip.fe:hover,.cal-mia.fe:hover{border-color:var(--c);}
+.ley-fe{border:1px solid #c49bff;border-left:3px solid #c49bff;background:rgba(196,155,255,.22);}
+.fe-hoy{margin-top:8px;}
+.cal-de-entrenador{margin-top:16px;}

@@ -10,6 +10,7 @@
     aviso: function (t, tipo) { UI.aviso(t, tipo === "error" ? "error" : "oro"); },
     alVincular: function () {}
   });
+  if (window.SFAgendaChat) SFAgendaChat.iniciar({ sb: API.sb, aviso: function (t, tipo) { UI.aviso(t, tipo === "error" ? "error" : "oro"); } });   // v52: «Agregar al calendario» en el chat
   if (window.SFBienvenida) SFBienvenida.iniciar({ sb: API.sb, irAPerfil: function () { ir("/perfil"); }, irABicis: function () { ir("/perfil#bicis"); } });
   var revisada = false;
   window.CoachLibres = {

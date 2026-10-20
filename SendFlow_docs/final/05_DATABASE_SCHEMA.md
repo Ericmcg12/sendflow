@@ -174,3 +174,10 @@ Diseño completo en `claude/PERFILES_Y_MODOS_APP.md`. Se ejecuta después de `co
 - Frenos: 3 pendientes por piloto, una por entrenador, 10 por día, 1 día tras cancelar, 30 días tras un rechazo. El email del piloto no se muestra en la solicitud.
 - La marca de la bienvenida vive en `perfiles_usuario.datos_piloto.bienvenida`.
 
+
+## coach_v24.sql (20/10/2026) — agenda del entrenador (aplicado en producción el 20/10/2026)
+- Tabla `coach_fechas_entrenador` (RLS activo, sin políticas): `entrenador_id`, `tipo` (carrera/medico/viaje/otro), `titulo`, `desde`–`hasta` (máx. 90 días), `nota`, `sin_devoluciones`, `avisado_en`. Solo el entrenador las crea, cambia y borra (`coach_fechas_entrenador_listar`, `coach_fecha_entrenador_guardar`, `coach_fecha_entrenador_borrar`); las ven **todos sus pilotos con vínculo activo** (dentro de `calendario_de` / `coach_calendario_datos` como `fechasEntrenador` y en `coach_plan_hoy` como `fechasEntrenador`, próximos 14 días).
+- `coach_fechas_piloto` gana `creada_por` (quién la cargó; null = el piloto) y `avisado_en`. El entrenador carga una fecha en el calendario de un piloto con vínculo activo: `coach_fecha_para_piloto(p_piloto, p_id, d)` y, desde el chat, `coach_fecha_para_analisis(p_analisis, d)` (el piloto es el del análisis; tiene que tener cuenta vinculada). Cambia/borra solo las que cargó él (`coach_fecha_para_piloto_borrar`); el piloto puede editar/borrar todas las suyas. `coach_fecha_json` suma `cargoEntrenador`, `creadaPorNombre`, `creadaPorMi`.
+- Ayudas internas sin permiso para usuarios: `calendario_fecha_normalizar`. Avisos: `aviso_fecha_preparar(p_usuario, p_fecha, p_origen 'piloto'|'agenda')` (solo `service_role`, una vez por fecha, no avisa fechas pasadas).
+- Edge Functions: `avisos-coach` v6 (tipos `fecha_piloto` y `fecha_agenda`: mail + push, respetan «Devoluciones y avisos») y `calendario-ics` (incluye `fechasEntrenador`; sigue sin verificación de JWT, protegido por el token).
+- Front: `coach-web/piezas/calendario.js`, `agenda-chat.js` (+ css) y `coach-web/aplicar_v52_agenda.py` (parches de Coach y de Bike).

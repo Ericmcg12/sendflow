@@ -289,7 +289,15 @@
     /* v29: el plan de entrenamiento (coach_v13.sql): lo de hoy y la próxima carrera, en una línea */
     var plan = document.createElement("span"); plan.className = "plan-hoy"; plan.hidden = true; el.appendChild(plan);
     sb.rpc("coach_plan_hoy").then(function (r) {
-      var h = r && r.data; if (r.error || !h || !h.tienePlan) return;
+      var h = r && r.data; if (r.error || !h) return;
+      var fe = (h.fechasEntrenador || [])[0];   // v52: fechas del entrenador (viaje, médico…): se ve al abrir Bike
+      if (fe) {
+        var cd = function (iso) { var p = String(iso).slice(0, 10).split("-").map(Number); return p[2] + "/" + p[1]; };
+        var ln = document.createElement("span"); ln.className = "plan-hoy fe-linea";
+        ln.textContent = (fe.entrenadorNombre || "Tu entrenador") + ": " + fe.titulo + " · " + (fe.hoy ? "hoy" : (fe.hasta && fe.hasta !== fe.desde ? "del " + cd(fe.desde) + " al " + cd(fe.hasta) : cd(fe.desde))) + (fe.sinDevoluciones ? " · sin devoluciones" : "");
+        el.appendChild(ln);
+      }
+      if (!h.tienePlan) return;
       var TIP = { bici: "Bici", tecnica: "Técnica", gimnasio: "Gimnasio", recuperacion: "Recuperación", carrera: "Carrera", descanso: "Descanso", otro: "Otro" };
       var hoy = h.hoy || [];
       var txt = !hoy.length ? "Hoy no tenés sesiones en tu plan." : "Hoy: " + hoy.map(function (x) { return (TIP[x.tipo] || "") + " · " + x.titulo + (x.duracionMin ? " (" + x.duracionMin + " min)" : "") + (x.estado === "hecha" ? " ✓" : ""); }).join(" — ");
@@ -528,6 +536,8 @@
       if (k.esMio && k.leido) b.appendChild(el("div", "leido", "Leído ✓"));
       caja.appendChild(b);
     });
+    var cc = bandeja.lista.filter(function (x) { return x.analisisId === id; })[0];
+    if (window.SFAgendaChat) SFAgendaChat.decorar(caja, lista, { analisisId: id, soyCoach: !!(cc && cc.soyCoach), pilotoNombre: cc ? cc.pilotoNombre : "" });   // v52
     if (!silencioso || abajo) caja.scrollTop = caja.scrollHeight;
   }
   function abrirConversacion(id, silencioso) {
@@ -723,6 +733,7 @@
     } });
   /* v43: entrenadores libres (js/entrenadores-libres.js) y bienvenida de primera vez (js/bienvenida-nueva.js), coach_v23.sql */
   if (window.SFEntrenadores) SFEntrenadores.iniciar({ sb: sb, alVincular: function () {} });
+  if (window.SFAgendaChat) SFAgendaChat.iniciar({ sb: sb });   // v52: «Agregar al calendario» en el chat
   if (window.SFBienvenida) SFBienvenida.iniciar({ sb: sb, irAPerfil: function () { abrirPerfil(""); }, irABicis: function () { abrirPerfil("#bicis"); } });
   $("form-perfil-clave").addEventListener("submit", function (ev) {
     ev.preventDefault();
