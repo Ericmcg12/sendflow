@@ -59,3 +59,6 @@
 .sf-sinbici-caja .btn { margin: 0; }
 .nube-sec { margin: 14px 0 6px; font: 600 11px/1 var(--mono, monospace); letter-spacing: .08em; text-transform: uppercase; color: var(--oro, #e6b655); }
 .nube-recibidos { display: grid; gap: 6px; }
+
+/* Abrir un log por WiFi es solo de la app (en la web no hay datalogger a mano) */
+#btnImportarWifi, #btnConectarWifi { display: none !important; }

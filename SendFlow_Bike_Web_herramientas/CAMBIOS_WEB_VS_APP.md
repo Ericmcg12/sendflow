@@ -162,6 +162,12 @@ Un solo módulo, `piezas/calculos-bici.js` (+ `calculos-bici.css`), con un «ada
 ## 2d-septies) Peso extra por clima + estado de la pista (20/10/2026)
 Antes: +2,5 kg fijo con lluvia. Ahora (`parchar_peso_clima` en `parche_defaults.py`): lluvia + húmedo 0,5 · mojado 1,5 · barroso 3,5; nieve + húmedo 0,5 · mojado 1,5 · barroso 2,5; nublado + mojado 1 · barroso 1,5. Cualquier otra combinación suma 0. Es una estimación, no una pesada. La lista de estado de pista no cambió.
 
+## 2d-octies) Entrenador abre en el análisis lo que le mandan; sin WiFi (20/10/2026)
+- «Desde la nube» → «Enviadas por mis pilotos»: al tocar un envío con datos del Sender se baja el .sfpb de Coach (función `archivos-coach`, acción `url`, que ya verifica el permiso), se guarda en este navegador con el formato de respaldo y se abre en el análisis, con todos los gráficos. Las marcas y comentarios siguen en Coach. Envíos solo-video se ven en Coach. Solo aparecen los que el piloto mandó (`coach_envios_listar`), no todas sus bajadas.
+- «Al profe» (mandar a Coach) está en cada bajada de la nube.
+- Abrir/descargar por WiFi del datalogger es solo de la app: oculto en la web (`#btnImportarWifi`, `#btnConectarWifi`).
+- Sin verificar con datos reales: que el almacenamiento (R2) permita leer el archivo desde el origen de Bike (CORS de GET).
+
 ## 2e) Ayuda para medir el SAG y frases de velocidad (ideas tomadas de la revisión de sagly.at; textos propios)
 
 El SAG es un dato que se carga **antes** de analizar una bajada; el semáforo solo confirma si está en zona. Por eso la calculadora **no** va en el popup del semáforo (ahí quedó igual que antes):

@@ -81,6 +81,45 @@
     }).then(accion === "profe" ? enviarLocal : abrirLocal).then(function () { aviso(""); libre(); }, function (e) { libre(); aviso((e && e.message) || window.SFNube.msg(e), "e"); });
   }
 
+  // Entrenador: baja la bajada que mandó un piloto (.sfpb de Coach), la guarda en este navegador (como en un respaldo) y la abre en el análisis.
+  function funcionCoach(nombre, cuerpo) {
+    return window.SFNube.cliente().functions.invoke(nombre, { body: cuerpo || {} }).then(function (r) {
+      if (!r.error) return r.data;
+      var ctx = r.error.context;
+      if (ctx && typeof ctx.json === "function") return ctx.json().catch(function () { return {}; }).then(function (d) { throw new Error((d && d.error) || r.error.message || "Error del servidor."); });
+      throw new Error(r.error.message || "Error del servidor.");
+    });
+  }
+  function leerPaquete(buf) {
+    var u = new Uint8Array(buf);
+    if (u[0] === 0x1f && u[1] === 0x8b) {
+      if (typeof DecompressionStream !== "function") return Promise.reject(new Error("Este navegador no puede descomprimir la bajada."));
+      return new Response(new Blob([buf]).stream().pipeThrough(new DecompressionStream("gzip"))).text().then(JSON.parse);
+    }
+    return Promise.resolve(JSON.parse(new TextDecoder().decode(u)));
+  }
+  function abrirEnvio(e, fila_el) {
+    if (fila_el.dataset.ocupado) return; fila_el.dataset.ocupado = "1"; fila_el.classList.add("ocupada");
+    var libre = function () { delete fila_el.dataset.ocupado; fila_el.classList.remove("ocupada"); };
+    var sb = window.SFNube.cliente();
+    if (!e.bajadaId) { libre(); aviso("Este envío es solo un video, sin datos del Sender: se ve en Coach.", "e"); return; }
+    if (sinConexion()) { libre(); aviso("Sin conexión.", "e"); return; }
+    aviso("Bajando la bajada de " + (e.pilotoNombre || "tu piloto") + "…");
+    var pq;
+    sb.rpc("coach_bajada_ver", { p_id: e.bajadaId }).then(function (r) {
+      if (r.error) throw new Error(r.error.message);
+      var id = r.data && r.data.bajada && r.data.bajada.archivoId; if (!id) throw new Error("La bajada no tiene archivo.");
+      return funcionCoach("archivos-coach", { accion: "url", ids: [id] }).then(function (d) { var u = d && d.urls && d.urls[id]; if (!u) throw new Error("No se pudo obtener el archivo."); return fetch(u); });
+    }).then(function (res) { if (!res.ok) throw new Error("No se pudo bajar el archivo (" + res.status + ")."); return res.arrayBuffer(); })
+      .then(leerPaquete).then(function (p) {
+        if (!p || p.tipo !== "sendflow_bajada" || !p.muestras) throw new Error("El archivo no es una bajada de SendFlow.");
+        pq = { nombre: (e.pilotoNombre ? e.pilotoNombre + " · " : "") + (p.nombre || e.titulo || "Bajada"), fecha: new Date(p.fecha || e.fecha || Date.now()).toISOString(), config: p.config || {}, notas: p.notas || "", muestras: p.muestras };
+        var base = { tipo: "sendflow_base", version: 1, exportadoEl: new Date().toISOString(), perfiles: [], ajustes: {}, bajadas: [pq] };
+        return importar(new Blob([JSON.stringify(base)], { type: "application/json" }), pq.nombre);
+      }).then(function () { return localDe(pq.nombre, pq.fecha); })
+      .then(function (l) { if (!l) throw new Error("La bajada se importó pero no se encontró en este navegador."); return abrirLocal(l.id); })
+      .then(function () { aviso(""); libre(); }, function (err) { libre(); aviso((err && err.message) || "No se pudo abrir la bajada.", "e"); });
+  }
   // Entrenador: lo que le mandaron sus pilotos (no todos los logs de todos sus pilotos). Se abre en Coach.
   function recibidosCoach(lista) {
     var sb = window.SFNube && window.SFNube.cliente && window.SFNube.cliente(); if (!sb) return;
@@ -92,8 +131,8 @@
       rec.slice(0, 20).forEach(function (e) {
         var b = el("button", "fila-config-menu"); b.type = "button";
         b.appendChild(el("span", "fila-config-titulo", (e.pilotoNombre || "Piloto") + " · " + (e.titulo || e.bajadaNombre || "Sin título")));
-        b.appendChild(el("span", "fila-config-sub", fechaTxt(e.creado) + (e.estado === "nuevo" ? " · nuevo" : "") + " · se abre en Coach"));
-        b.addEventListener("click", function () { if (window.SFSinBici) window.SFSinBici.aCoach("recibidos"); });
+        b.appendChild(el("span", "fila-config-sub", fechaTxt(e.creado) + (e.estado === "nuevo" ? " · nuevo" : "") + (e.bajadaId ? " · se abre acá, en el análisis" : " · solo video: se ve en Coach")));
+        b.addEventListener("click", function () { if (e.bajadaId) abrirEnvio(e, b); else if (window.SFSinBici) window.SFSinBici.aCoach("recibidos"); });
         bloque.appendChild(b);
       });
       lista.parentNode.insertBefore(bloque, lista);
