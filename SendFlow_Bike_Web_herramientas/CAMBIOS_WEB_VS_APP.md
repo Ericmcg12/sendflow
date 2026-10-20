@@ -169,6 +169,12 @@ Antes: +2,5 kg fijo con lluvia. Ahora (`parchar_peso_clima` en `parche_defaults.
 - (20/10, ajuste) «Enviadas por mis pilotos» lista SOLO envíos de datos sin video (`soloDatos`): los videos, con o sin datos, ya se analizan en Coach. La lista ya no se duplica al volver a entrar, y al abrir una bajada se ve el velo «Bajando… un momento» hasta que abre.
 - Sin verificar con datos reales: que el almacenamiento (R2) permita leer el archivo desde el origen de Bike (CORS de GET).
 
+## 2d-nonies) Menú de Admin, sesión «hecha» y tarjeta de hoy (20/10/2026)
+- `/admin.html`: el menú muestra también Análisis y Mensajes (mismas reglas que el sitio: acceso Sender; entrenador vinculado o rol entrenador con Coach). Antes solo Inicio, Perfil, Admin y Salir.
+- Coach, «Tu entrenamiento de hoy»: al guardar una sesión la tarjeta desaparecía (la tarjeta nueva conservaba la clase `entra` y quedaba invisible sin su animación). Corregido en `planes.js`.
+- Una sesión ya guardada como «hecha» se abre bloqueada (botones, esfuerzo y nota); solo «Todavía no» la reabre y habilita Guardar. El bloqueo es de la pantalla: la base (`coach_tarea_marcar`) no lo exige.
+- «Sacar foto» en el Perfil de Bike se oculta a propósito en equipos con mouse (`capture` no abre cámara en escritorio); aparece en el celular.
+
 ## 2e) Ayuda para medir el SAG y frases de velocidad (ideas tomadas de la revisión de sagly.at; textos propios)
 
 El SAG es un dato que se carga **antes** de analizar una bajada; el semáforo solo confirma si está en zona. Por eso la calculadora **no** va en el popup del semáforo (ahí quedó igual que antes):

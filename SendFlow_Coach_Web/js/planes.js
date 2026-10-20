@@ -102,7 +102,7 @@
     if (!h.hoy.length) l.appendChild(html(`<div class="prosa" style="font-size:13px">Hoy no tenés sesiones${h.proximaCarrera ? "" : ""}.</div>`));
     h.hoy.forEach(t => {
       const it = html(`<button type="button" class="ses-fila ${t.estado}" style="--c:${(TIPOS[t.tipo] || TIPOS.otro).c}">${chipTipo(t.tipo)}<span class="nom">${esc(t.titulo)}</span>${t.duracionMin ? `<span class="dur">${t.duracionMin} min</span>` : ""}<span class="est">${t.estado === "hecha" ? "✓ Hecha" : t.estado === "omitida" ? "No la hice" : "Pendiente"}${t.validada ? ` <span class="ses-val" title="Tu entrenador la validó">${PULGAR}</span>` : ""}</span>${(t.ejercicios || []).length ? `<span class="ej-prev">${esc(t.ejercicios.slice(0, 3).map(e => e.nombre).join(" · "))}${t.ejercicios.length > 3 ? ` · +${t.ejercicios.length - 3}` : ""}</span>` : ""}</button>`);
-      it.addEventListener("click", async () => { if (await verSesion(t, false)) { const n = await tarjetaHoy(enPlanes); if (n) c.replaceWith(n); } });
+      it.addEventListener("click", async () => { if (await verSesion(t, false)) { const n = await tarjetaHoy(enPlanes); if (n) { n.classList.remove("entra"); c.replaceWith(n); } } });   // sin .entra: sin la animación de entrada quedaba invisible
       l.appendChild(it);
     });
     return c;
@@ -320,6 +320,7 @@
   }
 
   // ======================================================================= Sesión: ver / marcar / editar
+  const marcableSesion = (t) => t.tipo !== "carrera" && t.tipo !== "descanso";
   async function verSesion(t, edita, p) {
     if (edita) return editarSesion(p, t, t.fecha);
     const ej = t.ejercicios || [];
@@ -337,12 +338,21 @@
       </div>`}
     </div>`);
     let est = t.estado;
+    // Ya guardada como «hecha»: no se puede cambiar ni volver a guardar; solo «Todavía no» la reabre
+    const bloqueada = marcableSesion(t) && t.estado === "hecha";
+    let btnGuardar = null;
+    const actGuardar = () => { if (btnGuardar) btnGuardar.disabled = bloqueada && est !== "pendiente"; };
+    if (bloqueada) {
+      $$("[data-est]", cuerpo).forEach(b => { if (b.dataset.est !== "pendiente") b.disabled = true; });
+      $$("[name=esf],[name=nota]", cuerpo).forEach(x => { x.disabled = true; });
+      const m = $(".marcar", cuerpo); if (m) m.insertBefore(html(`<small class="ayuda-chica">Ya la marcaste como hecha. Si querés cambiarla, tocá «Todavía no» y guardá.</small>`), m.firstChild);
+    }
     const pintarEst = () => { $$("[data-est]", cuerpo).forEach(b => b.classList.toggle("sel", b.dataset.est === est)); const e = $(".esf", cuerpo); if (e) e.classList.toggle("oculto", est !== "hecha"); };
-    $$("[data-est]", cuerpo).forEach(b => b.addEventListener("click", () => { est = b.dataset.est; pintarEst(); }));
+    $$("[data-est]", cuerpo).forEach(b => b.addEventListener("click", () => { est = b.dataset.est; pintarEst(); actGuardar(); }));
     const r = $("[name=esf]", cuerpo); if (r) r.addEventListener("input", () => { $(".esf-v", cuerpo).textContent = r.value; });
     pintarEst();
     const marcable = t.tipo !== "carrera" && t.tipo !== "descanso";
-    return abrirModal({ titulo: t.titulo, cuerpo, acciones: marcable ? [{ texto: "Volver", clase: "fantasma", valor: false }, { texto: "Guardar", clase: "primario", alHacer: async (c) => {
+    return abrirModal({ titulo: t.titulo, cuerpo, alAbrir: (c) => { const m = c.closest(".modal"); btnGuardar = m && m.querySelector(".modal-pie .btn.primario"); actGuardar(); }, acciones: marcable ? [{ texto: "Volver", clase: "fantasma", valor: false }, { texto: "Guardar", clase: "primario", alHacer: async (c) => {
       try {
         await rpc("coach_tarea_marcar", { p_id: t.id, d: { estado: est, esfuerzo: est === "hecha" ? +$("[name=esf]", c).value : null, nota: $("[name=nota]", c).value.trim() } });
         aviso(est === "hecha" ? "¡Bien! Sesión marcada como hecha." : est === "omitida" ? "Anotado: no la hiciste." : "Sesión pendiente.");

@@ -128,8 +128,19 @@
     $("adm-bloqueo-t").textContent = "Acceso restringido";
     $("adm-bloqueo-p").textContent = texto;
   }
+  // El menú es el mismo que en el sitio: Análisis y Mensajes según lo que tenga la cuenta (antes en Admin desaparecían)
+  function menuCompleto() {
+    Promise.all([sb.from("roles_usuario").select("rol"), sb.from("accesos").select("producto"), sb.rpc("tengo_entrenador_activo")]).then(function (r) {
+      var roles = (r[0].data || []).map(function (x) { return x.rol; });
+      var accesos = r[1].error ? ["sender", "coach", "taller"] : (r[1].data || []).map(function (x) { return x.producto; });
+      var conEntrenador = r[2].error ? false : r[2].data === true;
+      $("adm-nav-analisis").hidden = accesos.indexOf("sender") < 0;
+      $("adm-nav-mensajes").hidden = !((accesos.indexOf("sender") >= 0 && conEntrenador) || (accesos.indexOf("coach") >= 0 && roles.indexOf("entrenador") >= 0));
+    }, function () {});
+  }
   function arrancar() {
     $("adm-login").hidden = true; $("adm-salir").hidden = true;
+    menuCompleto();
     llamar({ accion: "listar" }).then(function (j) {
       yo = j.yo; cuentas = j.cuentas;
       $("adm-bloqueo").hidden = true; $("adm-panel").hidden = false; document.body.classList.remove("sin-sesion"); pintar();
