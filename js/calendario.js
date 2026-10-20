@@ -32,7 +32,7 @@
   const hoyIso = () => iso(new Date());
   const sumar = (s, n) => { const d = deIso(s); d.setDate(d.getDate() + n); return iso(d); };
   const lunes = (s) => { const d = deIso(s); d.setDate(d.getDate() - (d.getDay() + 6) % 7); return iso(d); };
-  const corta = (s) => { const d = deIso(s); return `${d.getDate()} ${MES_C[d.getMonth()]}`; };
+  const corta = (s) => { const d = deIso(s); return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`; };
   const rango = (f) => f.hasta && f.hasta !== f.desde ? `Del ${corta(f.desde)} al ${corta(f.hasta)}` : corta(f.desde);
   const cubre = (f, dia) => f.desde <= dia && (f.hasta || f.desde) >= dia;
   const tipo = (k) => TIPOS[k] || TIPOS.otro;
@@ -290,26 +290,34 @@
         celda.addEventListener("click", () => { sel = dia; $$(".cal-dia.sel", g).forEach(x => x.classList.remove("sel")); celda.classList.add("sel"); pintarPanel(); });
         g.appendChild(celda);
       }
-      pintarPanel();
     }
-    function pintarPanel() {
-      const p = $(".cal-panel", raiz); p.innerHTML = "";
+    // (v53) el detalle del día se abre en una ventana, en vez de mostrarse debajo del calendario
+    async function pintarPanel() {
+      $(".cal-panel", raiz).innerHTML = "";
       if (!sel || sel < datos._ini || sel > datos._fin) return;
-      const { fechas, sesiones } = deDia(sel);
-      const d = deIso(sel);
-      const cab = html(`<div class="cal-panel-cab"><b>${DIAS[(d.getDay() + 6) % 7]} ${corta(sel)}</b>${coach ? `<button type="button" class="btn chico" data-accion="fecha-dia-e">${ICONOS.mas}Agregar mi fecha este día</button>` : `<button type="button" class="btn chico" data-accion="fecha-dia">${ICONOS.mas}Agregar fecha este día</button>`}</div>`);
-      p.appendChild(cab);
-      const b = $("[data-accion=fecha-dia]", cab); if (b) b.addEventListener("click", async () => { if (await editar(null, sel)) recargar(); });
-      const be = $("[data-accion=fecha-dia-e]", cab); if (be) be.addEventListener("click", async () => { if (await editarE(null, sel)) recargar(); });
-      if (!fechas.length && !sesiones.length) { p.appendChild(html(`<div class="ayuda-chica">Nada este día.</div>`)); return; }
-      const l = html(`<div class="cal-panel-lista"></div>`); p.appendChild(l);
-      fechas.forEach(f => { const c = chip(f, coach); const r = html(`<div class="cal-panel-fp"></div>`); r.appendChild(c); if (f.nota) r.appendChild(html(`<small class="ayuda-chica">${esc(f.nota)}</small>`)); c.addEventListener("click", async () => { if (await abrir(f)) recargar(); }); l.appendChild(r); });
+      const dia = sel, { fechas, sesiones } = deDia(dia);
+      const d = deIso(dia);
+      const cuerpo = html(`<div class="cal-panel-modal"></div>`);
+      let cerrarVentana = () => {};
+      if (!fechas.length && !sesiones.length) cuerpo.appendChild(html(`<div class="ayuda-chica">Nada este día.</div>`));
+      else {
+        const l = html(`<div class="cal-panel-lista"></div>`); cuerpo.appendChild(l);
+      fechas.forEach(f => { const c = chip(f, coach); const r = html(`<div class="cal-panel-fp"></div>`); r.appendChild(c); if (f.nota) r.appendChild(html(`<small class="ayuda-chica">${esc(f.nota)}</small>`)); c.addEventListener("click", async () => { cerrarVentana(null); if (await abrir(f)) recargar(); }); l.appendChild(r); });
       sesiones.forEach(s => {
         const T = (window.Planes && Planes.TIPOS) || {}; const x = T[s.tipo] || { t: s.tipo, c: "#4fe3c2" };
         const it = html(`<a class="cal-panel-ses ${s.estado}" href="/plan/${esc(s.planId)}?semana=${esc(lunes(s.fecha))}" style="--c:${x.c}"><span class="ses-tipo" style="--c:${x.c}">${esc(x.t)}</span><b>${esc(s.titulo)}</b><small>${coach && !s.esMia ? esc(s.pilotoNombre) + " · " : ""}${esc(s.planTitulo)}${s.duracionMin ? " · " + s.duracionMin + " min" : ""}${s.estado === "hecha" ? " · ✓ hecha" : s.estado === "omitida" ? " · no se hizo" : ""}</small></a>`);
         l.appendChild(it);
       });
+      }
+      cuerpo.querySelectorAll(".cal-panel-ses").forEach(a => a.addEventListener("click", () => cerrarVentana(null)));
+      const acciones = [{ texto: "Volver", clase: "fantasma", valor: null }, coach
+        ? { texto: "Agregar mi fecha este día", clase: "primario", valor: "e" }
+        : { texto: "Agregar fecha este día", clase: "primario", valor: "p" }];
+      const r = await abrirModal({ titulo: `${DIAS[(d.getDay() + 6) % 7]} ${corta(dia)}`, cuerpo, acciones, alAbrir: (c, cerrar) => { cerrarVentana = cerrar; } });
+      if (r === "e") { if (await editarE(null, dia)) recargar(); }
+      else if (r === "p") { if (await editar(null, dia)) recargar(); }
     }
+
     async function pintarMias() {
       const c = $(".cal-mias", raiz); if (!c) return;
       const hoy = hoyIso();

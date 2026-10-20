@@ -36,7 +36,7 @@
   const hoyIso = () => iso(new Date());
   const sumar = (s, n) => { const d = deIso(s); d.setDate(d.getDate() + n); return iso(d); };
   const lunes = (s) => { const d = deIso(s); const k = (d.getDay() + 6) % 7; d.setDate(d.getDate() - k); return iso(d); };
-  const corta = (s) => { if (!s) return "—"; const d = deIso(s); return `${d.getDate()} ${MESES[d.getMonth()]}`; };
+  const corta = (s) => { if (!s) return "—"; const d = deIso(s); return `${String(d.getDate()).padStart(2, "0")}/${String(d.getMonth() + 1).padStart(2, "0")}/${d.getFullYear()}`; };
   const diasHasta = (s) => Math.round((deIso(s) - deIso(hoyIso())) / 864e5);
   const cuentaRegresiva = (s) => { const n = diasHasta(s); return n === 0 ? "¡Es hoy!" : n === 1 ? "Mañana" : `Faltan ${n} días`; };
   const chipTipo = (k) => `<span class="ses-tipo" style="--c:${(TIPOS[k] || TIPOS.otro).c}">${(TIPOS[k] || TIPOS.otro).t}</span>`;
@@ -284,7 +284,7 @@
   function pintarSemana(p, semana, raiz, edita, recargar) {
     const fin = sumar(semana, 6), hoy = hoyIso();
     const d0 = deIso(semana), d6 = deIso(fin);
-    $("#semTitulo", raiz).textContent = `Semana del ${d0.getDate()}${d0.getMonth() !== d6.getMonth() ? " " + MESES[d0.getMonth()] : ""} al ${d6.getDate()} ${MESES[d6.getMonth()]}`;
+    $("#semTitulo", raiz).textContent = `Semana del ${corta(iso(d0))} al ${corta(iso(d6))}`;
     const deSemana = p.tareas.filter(t => t.fecha >= semana && t.fecha <= fin);
     const contables = deSemana.filter(t => t.tipo !== "descanso" && t.tipo !== "carrera");
     const hechas = contables.filter(t => t.estado === "hecha");

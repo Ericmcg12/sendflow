@@ -1692,3 +1692,5 @@ textarea.sfa-nota { height: auto; min-height: 84px; padding: 10px 12px; resize: 
 .sfa-toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 10000; max-width: min(92vw, 460px); padding: 12px 16px; border-radius: var(--r-md, 8px);
   background: var(--panel-3, #1b2426); border: 1px solid var(--borde-2, #2e393a); border-left: 3px solid var(--cian, #4fe3c2); color: var(--ink, #f2f5f4); font: 14px/1.4 var(--sans, "IBM Plex Sans", system-ui, sans-serif); }
 .sfa-toast.error { border-left-color: #e0483f; }
+
+.titulo-pagina .saludo-nombre{color:var(--cian);}
