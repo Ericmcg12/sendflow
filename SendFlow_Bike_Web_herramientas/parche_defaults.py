@@ -69,3 +69,24 @@ def parchar_defaults(destino, aqui):
     if nuevo not in n:
         assert viejo in n, "nube-core.js cambió"
         open(rn, "w", encoding="utf-8").write(n.replace(viejo, nuevo, 1))
+
+def parchar_peso_clima(destino):
+    """(20/10/2026) El peso extra por barro/agua depende del clima y del estado de la pista (antes: +2,5 kg fijo con lluvia)."""
+    ruta = os.path.join(destino, "js", "app.js")
+    js = open(ruta, encoding="utf-8").read()
+    if "pesoExtraClima" in js:
+        return
+    tabla = ('// Peso extra estimado (kg) de barro/agua encima, según clima + estado de la pista. Estimación, no una pesada real.\n'
+             'const PESO_EXTRA_CLIMA = { lluvia: { humedo: 0.5, mojado: 1.5, barroso: 3.5 }, nieve: { humedo: 0.5, mojado: 1.5, barroso: 2.5 }, nublado: { mojado: 1, barroso: 1.5 } };\n'
+             'function pesoExtraClima(clima, estadoPista){ return ((PESO_EXTRA_CLIMA[clima] || {})[estadoPista]) || 0; }\n')
+    def rep(a, b):
+        nonlocal js
+        assert js.count(a) == 1, "app.js cambió: " + a[:70]
+        js = js.replace(a, b, 1)
+    rep("function analizarComportamiento(", tabla + "function analizarComportamiento(")
+    rep('calcularPerfilTune((peso || 75) + (clima === "lluvia" ? 2.5 : 0), estilo, nivel, clima, tempAmbiente);', 'calcularPerfilTune((peso || 75) + pesoExtraClima(clima, estadoPista), estilo, nivel, clima, tempAmbiente);')
+    rep("  const PESO_EXTRA_LLUVIA_KG = 2.5;\n  const pesoRef = (peso || 75) + (clima === \"lluvia\" ? PESO_EXTRA_LLUVIA_KG : 0);", "  const PESO_EXTRA_LLUVIA_KG = pesoExtraClima(clima, estadoPista);\n  const pesoRef = (peso || 75) + PESO_EXTRA_LLUVIA_KG;")
+    rep('pesoExtraLluvia: (clima === "lluvia" ? PESO_EXTRA_LLUVIA_KG : 0),', "pesoExtraLluvia: PESO_EXTRA_LLUVIA_KG,")
+    rep('calcularPerfilTune((cfg.peso || 75) + (cfg.clima === "lluvia" ? 2.5 : 0), cfg.estilo', 'calcularPerfilTune((cfg.peso || 75) + pesoExtraClima(cfg.clima, cfg.estadoPista), cfg.estilo')
+    rep("kg estimados de barro/agua encima por la lluvia", "kg estimados de barro/agua encima por el clima y el estado de la pista")
+    open(ruta, "w", encoding="utf-8").write(js)

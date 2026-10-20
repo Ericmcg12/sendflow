@@ -248,7 +248,8 @@ parchar_nube(destino)
 parchar_perfil_vacio(destino)
 parchar_nombre_sag(destino)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from parche_defaults import parchar_defaults
+from parche_defaults import parchar_defaults, parchar_peso_clima
 parchar_defaults(destino, aqui)
+parchar_peso_clima(destino)
 asegurar_cabeceras(destino)
 print("Semáforos con popup aplicados en", destino)

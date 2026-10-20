@@ -159,6 +159,9 @@ Un solo módulo, `piezas/calculos-bici.js` (+ `calculos-bici.css`), con un «ada
 - «Desde la nube» lista solo las bajadas propias (la política `bajada_ver` de la base deja VER las de pilotos con permiso; ahora no se listan ahí). Cada bajada tiene «Al profe» (usa el mismo envío de siempre). Un entrenador ve arriba «Enviadas por mis pilotos» (de `coach_envios_listar`), que se abren en Coach.
 - Coach · Nuevo plan: «Días de entrenamiento» (como viene / todos los días / día por medio / elegir días). Reparte las sesiones de cada semana del plan armado o de «Mis planes tipo» en esos días (`Biblioteca.generarPlan/generarPropio(..., frec)`); las carreras siempre entran.
 
+## 2d-septies) Peso extra por clima + estado de la pista (20/10/2026)
+Antes: +2,5 kg fijo con lluvia. Ahora (`parchar_peso_clima` en `parche_defaults.py`): lluvia + húmedo 0,5 · mojado 1,5 · barroso 3,5; nieve + húmedo 0,5 · mojado 1,5 · barroso 2,5; nublado + mojado 1 · barroso 1,5. Cualquier otra combinación suma 0. Es una estimación, no una pesada. La lista de estado de pista no cambió.
+
 ## 2e) Ayuda para medir el SAG y frases de velocidad (ideas tomadas de la revisión de sagly.at; textos propios)
 
 El SAG es un dato que se carga **antes** de analizar una bajada; el semáforo solo confirma si está en zona. Por eso la calculadora **no** va en el popup del semáforo (ahí quedó igual que antes):
