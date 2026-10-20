@@ -40,6 +40,13 @@
 .modo-web #btnIrANuevoPerfilDesdeHome { display: none !important; }
 /* inicio de /analisis: sin «Perfil» ni «Importar bajada» (los tres modos de importar están directamente); la bici se elige en Recorte */
 .modo-web #btnSeleccionarPerfilHome, .modo-web #btnAbrirImportar { display: none !important; }
-.modo-web .hero-iconos { grid-template-columns: repeat(4, 1fr); max-width: 600px; }
-@media (max-width: 600px) { .modo-web .hero-iconos { grid-template-columns: repeat(2, 1fr); } }
+.modo-web .hero-iconos { grid-template-columns: repeat(3, 1fr); max-width: 520px; }
+@media (max-width: 480px) { .modo-web .hero-iconos { grid-template-columns: repeat(2, 1fr); } }
+/* Desde la nube (nube-web.js): cada bajada es una fila del mismo estilo que las de Importar bajada, con «Quitar» al lado */
+.nube-fila { display: flex; gap: 8px; align-items: stretch; }
+.nube-fila .fila-config-menu { flex: 1; min-width: 0; text-align: left; }
+.nube-fila .btn { margin: 0; align-self: center; }
+.nube-fila.ocupada { opacity: .6; pointer-events: none; }
+#avisoNube.e { border-color: #e0483f; color: #ffb4ae; }
+#avisoNube.ok { border-color: #4fe3c2; color: #4fe3c2; }
 /* fin semáforos con popup */

@@ -7,7 +7,7 @@ import os, shutil, sys
 
 destino = sys.argv[1]
 aqui = os.path.join(os.path.dirname(os.path.abspath(__file__)), "piezas")
-for f in ("semaforos-iconos.js", "semaforos-popup.js", "semaforo-anim.js", "calculos-bici.js", "inicio-web.js"):
+for f in ("semaforos-iconos.js", "semaforos-popup.js", "semaforo-anim.js", "calculos-bici.js", "inicio-web.js", "nube-web.js"):
     shutil.copy(os.path.join(aqui, f), os.path.join(destino, "js", f))
 shutil.copy(os.path.join(aqui, "semaforo-anim.css"), os.path.join(destino, "css", "semaforo-anim.css"))
 shutil.copy(os.path.join(aqui, "calculos-bici.css"), os.path.join(destino, "css", "calculos-bici.css"))
@@ -36,6 +36,8 @@ for _viejo in ("sag-calculadora", "presion-neumaticos", "resorte-coil"):   # ver
     html = html.replace('\n<script src="./js/' + _viejo + '.js"></script>', "")
 if "calculos-bici.js" not in html:
     html = html.replace('<script src="./js/semaforos-popup.js"></script>', '<script src="./js/semaforos-popup.js"></script>\n<script src="./js/calculos-bici.js"></script>')
+if "nube-web.js" not in html:
+    html = html.replace('<script src="./js/calculos-bici.js"></script>', '<script src="./js/calculos-bici.js"></script>\n<script src="./js/nube-web.js"></script>')
 if "inicio-web.js" not in html:
     html = html.replace('<script src="./js/calculos-bici.js"></script>', '<script src="./js/calculos-bici.js"></script>\n<script src="./js/inicio-web.js"></script>')
 if "calculos-bici.css" not in html:
@@ -176,6 +178,36 @@ def parchar_clima(destino):
         'const NOMBRES_CLIMA = {despejado:"despejado", muy_soleado:"muy soleado", nublado:"nublado", lluvia:"lluvia", nieve:"nieve", ventoso:"ventoso", seco:"despejado", humedo:"nublado"};')
     open(ruta, "w", encoding="utf-8").write(js)
 
+def parchar_nube(destino):
+    """«Desde la nube» de /analisis: pantalla propia (nube-web.js) en vez del panel a pantalla completa; al tocar una bajada se abre directo."""
+    ruta = os.path.join(destino, "index.html"); h = open(ruta, encoding="utf-8").read()
+    if 'id="pantallaNube"' not in h:
+        flecha = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg>'
+        seccion = ('  <!-- ===================== PANTALLA NUBE (web): bajadas de la cuenta ===================== -->\n'
+                   '  <section class="pantalla" id="pantallaNube">\n    <div class="caja">\n'
+                   '      <div class="cab-suite" style="margin-bottom:10px;">\n        <h2 style="margin:0;">Desde la nube</h2>\n      </div>\n'
+                   '      <div class="aviso">Las bajadas que subió la app con tu cuenta. Tocá una para abrirla directamente en el análisis.</div>\n'
+                   '      <div class="lista-config-menu" id="listaNube"></div>\n'
+                   '      <div class="aviso" id="avisoNube" hidden></div>\n'
+                   '      <div class="fila-botones" style="margin-top:16px;">\n'
+                   '        <button class="btn secundario chico" id="btnVolverInicioNube" title="Volver al menú" aria-label="Volver al menú">' + flecha + ' Volver</button>\n      </div>\n'
+                   '    </div>\n  </section>\n\n')
+        ancla = "  <!-- ===================== PANTALLA IMPORTAR BAJADA ====================="
+        assert h.count(ancla) == 1, "index.html cambió: no se encuentra la pantalla Importar bajada"
+        open(ruta, "w", encoding="utf-8").write(h.replace(ancla, seccion + ancla, 1))
+    ruta = os.path.join(destino, "js", "app.js"); js = open(ruta, encoding="utf-8").read()
+    if "mostrarPantalla: mostrarPantalla" not in js:
+        viejo = "listarPerfilesDB: listarPerfilesDB,"
+        assert js.count(viejo) == 1, "app.js cambió: no se encuentra el export de __sfAnalisis"
+        open(ruta, "w", encoding="utf-8").write(js.replace(viejo, viejo + " mostrarPantalla: mostrarPantalla, renderizarListaGuardados: renderizarListaGuardados,", 1))
+    ruta = os.path.join(destino, "js", "embebido.js")
+    if os.path.exists(ruta):
+        e = open(ruta, encoding="utf-8").read()
+        if "pantallaNube" not in e:
+            viejo = "pantallaImportar: 1,"
+            assert viejo in e, "embebido.js cambió"
+            open(ruta, "w", encoding="utf-8").write(e.replace(viejo, "pantallaImportar: 1, pantallaNube: 1,", 1))
+
 def parchar_perfil_vacio(destino):
     """En /analisis los perfiles solo se eligen: sin perfiles, el botón «Perfil» del inicio avisa dónde cargar la bici
     (sendflow.bike/perfil) en vez de abrir el formulario de perfil nuevo de la app."""
@@ -210,6 +242,7 @@ parchar_foto(destino)
 parchar_inicio(destino)
 parchar_clima(destino)
 parchar_export(destino)
+parchar_nube(destino)
 parchar_perfil_vacio(destino)
 parchar_nombre_sag(destino)
 asegurar_cabeceras(destino)

@@ -14,7 +14,7 @@
   }
   var H = document.documentElement;
   H.classList.add("sf-embebido");
-  var INICIO = { pantallaBienvenida: 1, pantallaImportar: 1, pantallaGuardados: 1, pantallaPerfiles: 1 };
+  var INICIO = { pantallaBienvenida: 1, pantallaImportar: 1, pantallaNube: 1, pantallaGuardados: 1, pantallaPerfiles: 1 };
   var ultimo = null;
   function avisar() {
     var a = document.querySelector(".pantalla.activa"), id = a ? a.id : "pantallaBienvenida";

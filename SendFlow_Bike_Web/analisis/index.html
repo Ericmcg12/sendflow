@@ -94,6 +94,21 @@
 
   <!-- ===================== PANTALLA PERFILES DE PILOTO Y BICI ===================== -->
   <!-- ===================== PANTALLA CONFIGURACIÓN (solo accesible desde Home) ===================== -->
+  <!-- ===================== PANTALLA NUBE (web): bajadas de la cuenta ===================== -->
+  <section class="pantalla" id="pantallaNube">
+    <div class="caja">
+      <div class="cab-suite" style="margin-bottom:10px;">
+        <h2 style="margin:0;">Desde la nube</h2>
+      </div>
+      <div class="aviso">Las bajadas que subió la app con tu cuenta. Tocá una para abrirla directamente en el análisis.</div>
+      <div class="lista-config-menu" id="listaNube"></div>
+      <div class="aviso" id="avisoNube" hidden></div>
+      <div class="fila-botones" style="margin-top:16px;">
+        <button class="btn secundario chico" id="btnVolverInicioNube" title="Volver al menú" aria-label="Volver al menú"><svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 19l-7-7 7-7"/></svg> Volver</button>
+      </div>
+    </div>
+  </section>
+
   <!-- ===================== PANTALLA IMPORTAR BAJADA ===================== -->
   <section class="pantalla" id="pantallaImportar">
     <div class="caja">
@@ -1730,6 +1745,7 @@
 <script src="./js/semaforos-iconos.js"></script>
 <script src="./js/semaforos-popup.js"></script>
 <script src="./js/calculos-bici.js"></script>
+<script src="./js/nube-web.js"></script>
 <script src="./js/inicio-web.js"></script>
 </body>
 </html>
