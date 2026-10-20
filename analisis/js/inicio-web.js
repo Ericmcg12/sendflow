@@ -21,10 +21,12 @@
   }
   function listo() {
     clima();
-    [["tileImpSfb", "btnImportarSD"], ["tileImpNube", "btnImportarNube"], ["tileImpGuardadas", "btnImportarGuardadas"]].forEach(function (p) {
+    [["tileImpSfb", "btnImportarSD"], ["tileImpGuardadas", "btnImportarGuardadas"]].forEach(function (p) {
       var t = document.getElementById(p[0]), o = document.getElementById(p[1]);
       if (t && o) t.addEventListener("click", function () { o.click(); });
     });
+    var n = document.getElementById("tileImpNube");   // la nube es una pantalla propia (nube-web.js)
+    if (n) n.addEventListener("click", function () { if (window.SFNubeWeb) window.SFNubeWeb.abrir(); });
   }
   if (document.readyState === "loading") document.addEventListener("DOMContentLoaded", listo); else listo();
 })();

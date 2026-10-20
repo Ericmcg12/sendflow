@@ -244,16 +244,6 @@
     return el;
   }
 
-  function contarNube(el) {
-    Promise.all([
-      sb.from("bajadas").select("id", { count: "exact", head: true }),
-      sb.from("perfiles_equipo").select("id", { count: "exact", head: true })
-    ]).then(function (r) {
-      if (r[0].error || r[1].error) { el.textContent = "Nube lista"; return; }
-      el.textContent = (r[0].count || 0) + " bajadas · " + (r[1].count || 0) + " perfiles";
-    }, function () { el.textContent = "Sin conexión"; });
-  }
-
   /* ---------- Puente a Coach (v21) ----------
      Bike pide a la función "puente-coach" un pase de un solo uso y abre Coach con él: Coach lo canjea por
      su PROPIA sesión (no se comparte la de Bike: si los dos sitios usaran el mismo refresh token, Supabase
@@ -340,12 +330,6 @@
     if (tiene("sender")) {
       cont.appendChild(tarjeta("Mis bajadas", "Tus bajadas en pantalla grande: gráficos, mapa y comparación.",
         { url: "/bajadas", disponible: base.disponible, alHacer: function () { abrirAnalisis(""); } }));
-      var nube = tarjeta("Mi nube", "Traé a la web las bajadas y perfiles que subió tu app, y armá perfiles acá para mandarlos a la app.",
-        { url: "/bajadas", disponible: base.disponible, alHacer: function () { abrirAnalisis("#nube"); } }, "");
-      var cuenta = document.createElement("span"); cuenta.className = "insignia cuenta"; cuenta.textContent = "…";
-      nube.appendChild(cuenta);
-      cont.appendChild(nube);
-      contarNube(cuenta);
     }
     // Coach: el entrenador necesita su suscripción; el alumno entra cuando tiene Sender y un entrenador activo.
     if (tiene("coach") && roles.indexOf("entrenador") >= 0)
