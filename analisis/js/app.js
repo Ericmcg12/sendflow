@@ -1238,16 +1238,19 @@ function calcularPerfilTune(peso, estilo, nivel, clima, tempAmbiente){
   };
 }
 
+// Peso extra estimado (kg) de barro/agua encima, según clima + estado de la pista. Estimación, no una pesada real.
+const PESO_EXTRA_CLIMA = { lluvia: { humedo: 0.5, mojado: 1.5, barroso: 3.5 }, nieve: { humedo: 0.5, mojado: 1.5, barroso: 2.5 }, nublado: { mojado: 1, barroso: 1.5 } };
+function pesoExtraClima(clima, estadoPista){ return ((PESO_EXTRA_CLIMA[clima] || {})[estadoPista]) || 0; }
 function analizarComportamiento(posH, posS, velH, velS, recorridoH, recorridoS, peso, bottomOutsH, bottomOutsS, golpesH, golpesS, posSVastago, strokeS, sagMedidoH, sagMedidoS, tipoResorteH, tipoResorteS, leverageTabla, nivel, clima, estadoPista, estilo, tempAmbiente){
-  const perfil = calcularPerfilTune((peso || 75) + (clima === "lluvia" ? 2.5 : 0), estilo, nivel, clima, tempAmbiente);
+  const perfil = calcularPerfilTune((peso || 75) + pesoExtraClima(clima, estadoPista), estilo, nivel, clima, tempAmbiente);
 
   // --- Peso efectivo: suma una estimación de barro/agua si la bajada fue con
   // lluvia. Es una ESTIMACIÓN heurística (no medida), no una conversión física
   // validada — no hay forma de pesar la bici+equipo embarrados en el momento.
   // Documentado como tal en CLAUDE.md; ajustar el número si con datos reales
   // de pista se ve que queda corto o largo.
-  const PESO_EXTRA_LLUVIA_KG = 2.5;
-  const pesoRef = (peso || 75) + (clima === "lluvia" ? PESO_EXTRA_LLUVIA_KG : 0); // piloto de referencia si no se pasa peso (compatibilidad)
+  const PESO_EXTRA_LLUVIA_KG = pesoExtraClima(clima, estadoPista);
+  const pesoRef = (peso || 75) + PESO_EXTRA_LLUVIA_KG; // piloto de referencia si no se pasa peso (compatibilidad)
 
   // SAG: NO se calcula de la telemetría — no es algo que se mida andando.
   // Se mide con el método del o-ring: piloto parado, quieto, vestido con el
@@ -1468,7 +1471,7 @@ function analizarComportamiento(posH, posS, velH, velS, recorridoH, recorridoS, 
     HORQUILLA_BOTTOMOUT:{desviacion:hBottomOut.desviacion, mensaje_sugerido:hBottomOut.mensaje},
     SHOCK_BOTTOMOUT:{desviacion:sBottomOut.desviacion, mensaje_sugerido:sBottomOut.mensaje},
     sagMedidoH, sagMedidoS, sagEnRuedaH, sagEnRuedaS, maxVH, maxVS, perfil,
-    pesoUsado: pesoRef, pesoExtraLluvia: (clima === "lluvia" ? PESO_EXTRA_LLUVIA_KG : 0),
+    pesoUsado: pesoRef, pesoExtraLluvia: PESO_EXTRA_LLUVIA_KG,
     factorPista, umbralHsc, pctHscH, pctHscS,
     // Relación global rebote/compresión (todas las muestras de cada una) —
     // la que muestra el historial de set-up: cerca de 1 = equilibrado.
@@ -5982,7 +5985,7 @@ function sagDesdeLectura(l, cfg){
   return { h: mmH / cfg.recH, s: mmS / cfg.sensS };
 }
 function objetivoSagVivo(cfg){
-  const p = calcularPerfilTune((cfg.peso || 75) + (cfg.clima === "lluvia" ? 2.5 : 0), cfg.estilo, cfg.nivel, cfg.clima, null);
+  const p = calcularPerfilTune((cfg.peso || 75) + pesoExtraClima(cfg.clima, cfg.estadoPista), cfg.estilo, cfg.nivel, cfg.clima, null);
   return { h: p.sag_h_opt, s: p.sag_s_opt };
 }
 function pintarMedidorSag(id, valor, objetivo, medido){
@@ -7446,7 +7449,7 @@ function construirRecomendaciones(resIa, recH, recS, config){
   const NOMBRES_CLIMA = {despejado:"despejado", muy_soleado:"muy soleado", nublado:"nublado", lluvia:"lluvia", nieve:"nieve", ventoso:"ventoso", seco:"despejado", humedo:"nublado"};
   const NOMBRES_PISTA = {seco_suelto:"seco y suelto", compacto:"compacto", humedo:"húmedo", barroso:"barroso", mojado:"mojado"};
   const NOMBRES_NIVEL = {principiante:"principiante", medio:"intermedio", avanzado:"avanzado"};
-  const lluviaTxt = resIa.pesoExtraLluvia ? ` (incluye +${resIa.pesoExtraLluvia} kg estimados de barro/agua encima por la lluvia — estimación, no una pesada real)` : "";
+  const lluviaTxt = resIa.pesoExtraLluvia ? ` (incluye +${resIa.pesoExtraLluvia} kg estimados de barro/agua encima por el clima y el estado de la pista — estimación, no una pesada real)` : "";
   items.push(`Pista: <b>${nombrePista}</b> · piloto de <b>${peso} kg</b>${lluviaTxt} — objetivo de SAG H <b>${(resIa.perfil.sag_h_opt*100).toFixed(0)}%</b> / S <b>${(resIa.perfil.sag_s_opt*100).toFixed(0)}%</b>.`);
   items.push(`Condiciones: clima <b>${NOMBRES_CLIMA[config.clima] || config.clima}</b>${resIa.perfil.tempAmbiente != null ? ` (<b>${resIa.perfil.tempAmbiente.toFixed(0)} °C</b>)` : ""}, pista <b>${NOMBRES_PISTA[config.estadoPista] || config.estadoPista}</b>, nivel <b>${NOMBRES_NIVEL[config.nivel] || config.nivel}</b>, estilo <b>${NOMBRES_ESTILO[resIa.perfil.estilo]}</b>, presión <b>${config.presD}/${config.presT} psi</b> (del./tras.).`);
   if (resIa.sagMedidoH != null || resIa.sagMedidoS != null){
