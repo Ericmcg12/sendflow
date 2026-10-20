@@ -689,3 +689,18 @@ textarea.sfa-nota { height: auto; min-height: 84px; padding: 10px 12px; resize: 
 .hub-msj-cab .etiqueta { color: var(--oro); font: 600 11px/1 var(--mono); letter-spacing: .08em; text-transform: uppercase; }
 .hub-msj.con-nuevos { border-color: var(--oro); }
 .hub-msj-cab .btn { margin-top: 0; }
+
+/* Admin · pestaña Uso */
+.adm-pestanas { margin-bottom: 14px; }
+.uso-kpis { display: grid; grid-template-columns: repeat(auto-fill, minmax(170px, 1fr)); gap: 10px; margin-top: 14px; }
+.uso-kpi { display: grid; gap: 4px; padding: 12px 14px; }
+.uso-et { font: 600 11px/1.2 var(--mono); letter-spacing: .06em; text-transform: uppercase; color: var(--ink-dim); }
+.uso-num { font: 600 24px/1.1 var(--mono); }
+.uso-tit { margin: 22px 0 10px; font-size: 15px; }
+.uso-grilla { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.uso-graf { display: grid; gap: 4px; padding: 12px 14px; }
+.uso-sub { color: var(--ink-dim); font-size: 12px; }
+.uso-barras { width: 100%; height: auto; display: block; margin-top: 6px; }
+.uso-barras rect { fill: var(--cian); opacity: .85; }
+.uso-barras text { fill: var(--ink-dim); font: 9px var(--mono); }
+.sf-mail-hora { width: auto; min-width: 100px; height: 34px; margin-top: 4px; }

@@ -45,6 +45,8 @@
     <button id="adm-salir" class="btn" type="button" hidden>Cerrar sesión</button>
   </section>
   <div id="adm-panel" hidden>
+  <div class="tipo-tag adm-pestanas" role="tablist"><button class="btn chico sel" id="p-cuentas" type="button" role="tab">Cuentas</button><button class="btn chico" id="p-uso" type="button" role="tab">Uso</button></div>
+  <div id="adm-cuentas">
   <div class="cab-pagina"><div><h1 class="titulo-pagina">Cuentas</h1><div class="sub-pagina">Aprobá cuentas nuevas y asigná roles y productos.</div></div></div>
   <div class="admin-barra">
     <div class="tipo-tag" role="tablist">
@@ -55,6 +57,12 @@
   </div>
   <p id="adm-msg" class="mensaje" role="status" aria-live="polite" hidden></p>
   <div id="adm-lista" class="adm-lista"></div>
+  </div>
+  <div id="adm-uso" hidden>
+    <div class="cab-pagina"><div><h1 class="titulo-pagina">Uso</h1><div class="sub-pagina">Números agregados de las últimas semanas, sin datos personales. Lo calcula la base con lo que la gente hace en los sitios.</div></div></div>
+    <p id="uso-msg" class="mensaje" role="status" aria-live="polite" hidden></p>
+    <div id="uso-contenido"></div>
+  </div>
   </div>
 </div>
 </main>
