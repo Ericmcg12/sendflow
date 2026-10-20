@@ -394,6 +394,7 @@
     $("nav-admin").hidden = !esAdmin;
     $("nav-analisis").hidden = !(tiene("sender") && CFG.destinos.bike.disponible);
     $("nav-mensajes").hidden = !((tiene("sender") && conEntrenador) || (tiene("coach") && roles.indexOf("entrenador") >= 0));
+    $("nav-coach").hidden = !(CFG.destinos.coach.disponible && ((tiene("coach") && roles.indexOf("entrenador") >= 0) || (tiene("sender") && conEntrenador)));   // v55: salto rápido a Coach
     if (!$("nav-mensajes").hidden) actualizarInsigniaMensajes();
     /* v28: avisos push en este dispositivo (alumno con entrenador, o entrenador) */
     var fa = $("hub-avisos"); if (fa) fa.parentNode.removeChild(fa);
@@ -623,6 +624,7 @@
     if (e.origin !== location.origin || !e.data || e.data.sfAnalisis !== "pantalla") return;
     document.body.classList.toggle("analisis-completo", !!e.data.completa && !$("vista-analisis").hidden);
   });
+  $("nav-coach").addEventListener("click", function () { if (window.SFEditorBici && SFEditorBici.abierto()) SFEditorBici.cerrar(false); irACoach("inicio", $("nav-coach")); });
   $("nav-mensajes").addEventListener("click", function () { if (window.SFEditorBici && SFEditorBici.abierto()) SFEditorBici.cerrar(false); abrirMensajes(); });
   $("conv-volver").addEventListener("click", function () { bandeja.actual = null; $("bandeja").classList.remove("con-sel"); $("bandeja-conv").hidden = true; pintarBandeja(); });
   $("conv-ver").addEventListener("click", function () { if (bandeja.actual) irACoach("analisis/" + bandeja.actual, $("conv-ver")); });

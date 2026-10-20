@@ -378,6 +378,13 @@
         <label>Circuito / pista</label>
         <input type="text" id="rcCircuito" placeholder="Ej: pista roja">
       </div>
+      <div class="campo campo-sens" id="rcSensaciones" style="max-width:100%;">
+        <label>¿Qué sentiste en esta bajada? <span class="opcional">(opcional)</span></label>
+        <div class="sens-fila"><span>Horquilla</span><div class="sens-opc" data-sens="h"><button type="button" class="btn chico" data-v="blanda" aria-pressed="false">Se hundía de más</button><button type="button" class="btn chico" data-v="ok" aria-pressed="false">Bien</button><button type="button" class="btn chico" data-v="dura" aria-pressed="false">Dura o rebotaba</button></div></div>
+        <div class="sens-fila"><span>Shock</span><div class="sens-opc" data-sens="s"><button type="button" class="btn chico" data-v="blanda" aria-pressed="false">Se hundía de más</button><button type="button" class="btn chico" data-v="ok" aria-pressed="false">Bien</button><button type="button" class="btn chico" data-v="dura" aria-pressed="false">Dura o rebotaba</button></div></div>
+        <textarea id="rcSensNota" rows="2" maxlength="600" placeholder="Qué pasó: en qué tramo la sentiste rara, si el freno o la rueda trasera hicieron algo…" style="width:100%;resize:vertical;"></textarea>
+        <small class="ayuda">Se guarda con la bajada y después lo ves al lado de lo que dicen los datos.</small>
+      </div>
     </div>
 
     <div class="caja">
@@ -1745,6 +1752,7 @@
 <script src="./js/semaforos-iconos.js"></script>
 <script src="./js/semaforos-popup.js"></script>
 <script src="./js/calculos-bici.js"></script>
+<script src="./js/sensaciones.js"></script>
 <script src="./js/sin-bici.js"></script>
 <script src="./js/nube-web.js"></script>
 <script src="./js/inicio-web.js"></script>

@@ -2304,7 +2304,7 @@ function abrirDB(){
 // por perfil y por suspensión.
 function guardarConfigConPerfil(config){
   const p = estado.perfilActivoDatos || {};
-  return Object.assign({}, config, { perfilId: estado.perfilActivoId ?? null, perfilNubeId: estado.perfilActivoNubeId || null, perfilNombre: estado.perfilActivoNombre || "", modeloSuspH: p.modeloSuspH || "", modeloSuspS: p.modeloSuspS || "" });
+  return Object.assign({}, config, { perfilId: estado.perfilActivoId ?? null, perfilNubeId: estado.perfilActivoNubeId || null, perfilNombre: estado.perfilActivoNombre || "", sensaciones: estado.sensaciones || null, modeloSuspH: p.modeloSuspH || "", modeloSuspS: p.modeloSuspS || "" });
 }
 async function guardarBajadaEnDB(nombre, muestras, config, notas){
   const db = await abrirDB();
@@ -4602,6 +4602,7 @@ $("listaGuardados").addEventListener("click", async (ev) => {
       const registro = await leerBajadaDB(id);
       if (!registro){ $("avisoGuardados").textContent = "No se encontró esa bajada."; return; }
       await sfPerfilDeConfig(registro.config);
+      estado.sensaciones = (registro.config && registro.config.sensaciones) || null;
       conCargando("Analizando " + (registro.nombre || "bajada") + "…", () => {
         estado.config = Object.assign({}, estado.config, registro.config);
         estado.bajadaGuardadaId = id;
@@ -4775,6 +4776,7 @@ function construirResumenEquipoYPista(){
 function abrirModalNotas(){
   if (!estado.activo) return;
   construirResumenEquipoYPista();
+  { const sb = window.SFSensaciones && SFSensaciones.bloque(estado); if (sb) $("resumenNotasContenido").appendChild(sb); }
   $("textoNotasBajada").value = estado.notasBajada || "";
   $("textoNotasBajada").disabled = estado.notasSoloLectura;
   $("avisoNotasSoloLectura").classList.toggle("oculto", !estado.notasSoloLectura);
@@ -5060,6 +5062,7 @@ function mostrarAvisosBajada(avisos){
 }
 function cargarCrudo(muestras, nombreArchivo, etiquetaOrigen, opciones){
   estado.bajadaGuardadaId = null; // bajada nueva: todavía no está guardada
+  estado.sensaciones = null; if (window.SFSensaciones) SFSensaciones.limpiar();   // diario de sensaciones: arranca vacío
   estado.cortesAlAbrir = [];      // y arranca sin cortes de sectores
   estado.marcadoresAlAbrir = [];  // ni marcadores
   estado.videoSync = null;        // ni video sincronizado
@@ -5176,6 +5179,7 @@ $("btnAplicarRecorte").addEventListener("click", () => {
   let i0 = parseInt($("rangoIni").value), i1 = parseInt($("rangoFin").value);
   if (i0 > i1){ const t=i0; i0=i1; i1=t; }
   if (i1 - i0 < 4){ alert("El tramo seleccionado es demasiado corto para analizar."); return; }
+  estado.sensaciones = window.SFSensaciones ? SFSensaciones.leer() : null;
   leerCalibracionDesde("rc"); // toma lo cargado/editado en esta pantalla (partiendo del perfil precargado si se eligió uno) como la calibración real usada en esta bajada
   conCargando("Analizando bajada…", () => {
     const recorte = estado.crudo.slice(i0, i1+1);
