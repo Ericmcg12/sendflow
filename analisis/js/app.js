@@ -2238,7 +2238,7 @@ function cargarBajadaSFB(arrayBuffer, nombreArchivo, etiquetaOrigen){
     alert("La bajada no tiene datos suficientes para analizar." + (r.avisos.length ? "\n\n" + r.avisos.join("\n") : ""));
     return;
   }
-  if (r.meta && r.meta.config) estado.config = Object.assign({}, estado.config, r.meta.config);
+  if (r.meta && r.meta.config) { estado.config = Object.assign({}, estado.config, r.meta.config); sfPerfilDeConfig(r.meta.config); }
   // El .sfb trae la posición en % del largo de cada sensor (0-100); el
   // análisis trabaja en mm, igual que la demo y los CSV que exporta la app.
   const potH = estado.config.potH || estado.config.recH || 200, potS = estado.config.potS || estado.config.sensS || 75;
@@ -2301,7 +2301,7 @@ function abrirDB(){
 // por perfil y por suspensión.
 function guardarConfigConPerfil(config){
   const p = estado.perfilActivoDatos || {};
-  return Object.assign({}, config, { perfilId: estado.perfilActivoId ?? null, modeloSuspH: p.modeloSuspH || "", modeloSuspS: p.modeloSuspS || "" });
+  return Object.assign({}, config, { perfilId: estado.perfilActivoId ?? null, perfilNubeId: estado.perfilActivoNubeId || null, perfilNombre: estado.perfilActivoNombre || "", modeloSuspH: p.modeloSuspH || "", modeloSuspS: p.modeloSuspS || "" });
 }
 async function guardarBajadaEnDB(nombre, muestras, config, notas){
   const db = await abrirDB();
@@ -3453,6 +3453,7 @@ async function sfSeleccionarPerfil(id, op){
     estado.perfilActivoNombreBase = perfil.nombreBase || perfil.nombre;
     estado.perfilActivoFoto = (perfil.datos && perfil.datos.foto) || null;
     estado.perfilActivoDatos = perfil.datos || null;
+    estado.perfilActivoNubeId = perfil.nubeId || null;
     try{ localStorage.setItem("sf_perfil_activo", String(id)); }catch(e){}
     actualizarIndicadorPerfilActivoHome();
     return true;
@@ -3463,12 +3464,26 @@ async function sfAutoPerfil(op){
   if (estado.perfilActivoId != null && estado.perfilActivoDatos) return true;
   let lista = [];
   try{ lista = await listarPerfilesDB(); }catch(e){}
+  const propios = lista.filter(p => p.nubePropio !== false);   // primero las bicis propias (un entrenador también recibe las de sus pilotos)
+  if (propios.length) lista = propios;
   if (!lista.length) return false;
   let guardado = null;
   try{ guardado = parseInt(localStorage.getItem("sf_perfil_activo"), 10); }catch(e){}
   let elegido = lista.find(p => p.id === guardado);
   if (!elegido) elegido = lista.slice().sort((a, b) => String(b.fecha || "").localeCompare(String(a.fecha || "")))[0];
   return sfSeleccionarPerfil(elegido.id, op);
+}
+// Una bajada guardada (en este navegador, en la nube o en un .sfb) trae el perfil con el que se analizó: se vuelve a activar,
+// así el mantenimiento sigue atado a esa bici. Entre dispositivos los ids locales cambian: se busca por el id de la cuenta.
+async function sfPerfilDeConfig(cfg){
+  if (!cfg) return false;
+  let lista = [];
+  try{ lista = await listarPerfilesDB(); }catch(e){}
+  let p = null;
+  if (cfg.perfilNubeId) p = lista.find(x => x.nubeId === cfg.perfilNubeId);
+  else if (cfg.perfilId != null) p = lista.find(x => x.id === cfg.perfilId);
+  if (!p && cfg.perfilNombre) p = lista.find(x => x.nombre === cfg.perfilNombre);
+  return p ? sfSeleccionarPerfil(p.id, { sinConfig: true }) : false;
 }
 $("listaSeleccionarPerfil").addEventListener("click", async (ev) => {
   const fila = ev.target.closest("[data-seleccionar-perfil]");
@@ -4439,9 +4454,10 @@ async function actualizarSelectorPerfilesComo(idSelector, prefijo, valorForzado)
   try{
     const perfiles = await listarPerfilesDB();
     perfiles.sort((a,b) => (a.nombre||"").localeCompare(b.nombre||""));
-    sel.innerHTML = `<option value="">— sin perfil, calibración manual —</option>` +
+    sel.innerHTML = (idSelector === "rcSelectorPerfil" ? "" : `<option value="">— sin perfil, calibración manual —</option>`) +
       perfiles.map(p => `<option value="${p.id}">${p.nombre}</option>`).join("");
     if (perfiles.some(p => String(p.id) === valorActual)) sel.value = valorActual;
+    if (idSelector === "rcSelectorPerfil" && sel.value && String(estado.perfilActivoId) !== sel.value) await sfSeleccionarPerfil(parseInt(sel.value, 10), { sinConfig: true });
   }catch(e){ /* el selector queda solo con la opción manual */ }
 }
 function actualizarSelectorPerfilesBT(){ return actualizarSelectorPerfilesComo("selectorPerfilBT", "bt"); }
@@ -4459,11 +4475,11 @@ $("selectorPerfilBT").addEventListener("change", async () => {
 });
 $("rcSelectorPerfil").addEventListener("change", async () => {
   const id = parseInt($("rcSelectorPerfil").value, 10);
-  if (!id){ estado.perfilActivoDatos = null; return; }
+  if (!id){ return; }
   try{
     const perfil = await leerPerfilDB(id);
     if (!perfil) return;
-    estado.perfilActivoDatos = perfil.datos || null;
+    await sfSeleccionarPerfil(id, { sinConfig: true });
     const circuitoEscrito = $("rcCircuito").value; // el nombre de pista no es parte de ningún perfil — no debe borrarse al elegir uno
     escribirCamposCalibracion("rc", Object.assign({}, estado.config, extraerConfigDePerfilCompleto(perfil.datos)));
     $("rcCircuito").value = circuitoEscrito;
@@ -4582,6 +4598,7 @@ $("listaGuardados").addEventListener("click", async (ev) => {
     try{
       const registro = await leerBajadaDB(id);
       if (!registro){ $("avisoGuardados").textContent = "No se encontró esa bajada."; return; }
+      await sfPerfilDeConfig(registro.config);
       conCargando("Analizando " + (registro.nombre || "bajada") + "…", () => {
         estado.config = Object.assign({}, estado.config, registro.config);
         estado.bajadaGuardadaId = id;

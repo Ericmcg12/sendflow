@@ -619,6 +619,7 @@
   }
   $("nav-analisis").addEventListener("click", function () { abrirAnalisis(""); });
   window.addEventListener("message", function (e) {
+    if (e.origin === location.origin && e.data && e.data.sfAnalisis === "coach" && /^[\w\-\/]+$/.test(String(e.data.ruta || ""))) { irACoach(String(e.data.ruta)); return; }   // v54: «Recibidos» del entrenador
     if (e.origin !== location.origin || !e.data || e.data.sfAnalisis !== "pantalla") return;
     document.body.classList.toggle("analisis-completo", !!e.data.completa && !$("vista-analisis").hidden);
   });
