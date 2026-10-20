@@ -166,6 +166,7 @@ Antes: +2,5 kg fijo con lluvia. Ahora (`parchar_peso_clima` en `parche_defaults.
 - «Desde la nube» → «Enviadas por mis pilotos»: al tocar un envío con datos del Sender se baja el .sfpb de Coach (función `archivos-coach`, acción `url`, que ya verifica el permiso), se guarda en este navegador con el formato de respaldo y se abre en el análisis, con todos los gráficos. Las marcas y comentarios siguen en Coach. Envíos solo-video se ven en Coach. Solo aparecen los que el piloto mandó (`coach_envios_listar`), no todas sus bajadas.
 - «Al profe» (mandar a Coach) está en cada bajada de la nube.
 - Abrir/descargar por WiFi del datalogger es solo de la app: oculto en la web (`#btnImportarWifi`, `#btnConectarWifi`).
+- (20/10, ajuste) «Enviadas por mis pilotos» lista SOLO envíos de datos sin video (`soloDatos`): los videos, con o sin datos, ya se analizan en Coach. La lista ya no se duplica al volver a entrar, y al abrir una bajada se ve el velo «Bajando… un momento» hasta que abre.
 - Sin verificar con datos reales: que el almacenamiento (R2) permita leer el archivo desde el origen de Bike (CORS de GET).
 
 ## 2e) Ayuda para medir el SAG y frases de velocidad (ideas tomadas de la revisión de sagly.at; textos propios)

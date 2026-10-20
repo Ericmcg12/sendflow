@@ -10,6 +10,9 @@
   function aviso(t, tipo) { var a = $("avisoNube"); if (!a) return; a.textContent = t || ""; a.className = "aviso" + (tipo ? " " + tipo : ""); a.hidden = !t; }
   function tam(b) { if (!b) return ""; return b > 1048576 ? (b / 1048576).toFixed(1).replace(".", ",") + " MB" : Math.max(1, Math.round(b / 1024)) + " KB"; }
   function fechaTxt(f) { try { return new Date(f).toLocaleString("es-AR", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" }); } catch (e) { return f || ""; } }
+  // Señal de «trabajando»: el mismo velo del análisis, para que no haya que volver a tocar. Si todo sale bien lo cierra el propio análisis.
+  function cargando(txt) { var o = $("overlayCargando"), t = $("overlayCargandoTexto"); if (!o || !t) return; t.textContent = txt; o.classList.remove("oculto"); }
+  function listoCargando(txt) { var o = $("overlayCargando"), t = $("overlayCargandoTexto"); if (o && t && (txt == null || t.textContent === txt)) o.classList.add("oculto"); }
   function sinConexion() { return navigator.onLine === false; }
   function clave(nombre, fecha) { return (nombre || "") + "|" + fecha; }
 
@@ -73,12 +76,12 @@
     var fecha = new Date(fila.fecha).toISOString();
     var libre = function () { delete fila_el.dataset.ocupado; fila_el.classList.remove("ocupada"); };
     localDe(nombre, fecha).then(function (l) {
-      if (l) { aviso("Abriendo «" + nombre + "»…"); return l.id; }
+      if (l) { cargando("Abriendo «" + nombre + "»…"); return l.id; }
       if (sinConexion()) throw new Error("Sin conexión: esta bajada todavía no está en este navegador.");
-      aviso("Bajando «" + nombre + "»…");
+      cargando("Bajando «" + nombre + "»… un momento");
       return window.SFNube.bajarBajada(fila).then(function (blob) { return importar(blob, nombre); }).then(function () { return localDe(nombre, fecha); })
-        .then(function (n) { if (!n) throw new Error("La bajada se importó pero no se encontró en este navegador."); aviso("Abriendo «" + nombre + "»…"); return n.id; });
-    }).then(accion === "profe" ? enviarLocal : abrirLocal).then(function () { aviso(""); libre(); }, function (e) { libre(); aviso((e && e.message) || window.SFNube.msg(e), "e"); });
+        .then(function (n) { if (!n) throw new Error("La bajada se importó pero no se encontró en este navegador."); cargando("Abriendo «" + nombre + "»…"); return n.id; });
+    }).then(accion === "profe" ? enviarLocal : abrirLocal).then(function () { aviso(""); libre(); setTimeout(function () { listoCargando(); }, 2500); }, function (e) { listoCargando(); libre(); aviso((e && e.message) || window.SFNube.msg(e), "e"); });
   }
 
   // Entrenador: baja la bajada que mandó un piloto (.sfpb de Coach), la guarda en este navegador (como en un respaldo) y la abre en el análisis.
@@ -104,7 +107,7 @@
     var sb = window.SFNube.cliente();
     if (!e.bajadaId) { libre(); aviso("Este envío es solo un video, sin datos del Sender: se ve en Coach.", "e"); return; }
     if (sinConexion()) { libre(); aviso("Sin conexión.", "e"); return; }
-    aviso("Bajando la bajada de " + (e.pilotoNombre || "tu piloto") + "…");
+    var txtC = "Bajando la bajada de " + (e.pilotoNombre || "tu piloto") + "… un momento"; cargando(txtC);
     var pq;
     sb.rpc("coach_bajada_ver", { p_id: e.bajadaId }).then(function (r) {
       if (r.error) throw new Error(r.error.message);
@@ -118,33 +121,38 @@
         return importar(new Blob([JSON.stringify(base)], { type: "application/json" }), pq.nombre);
       }).then(function () { return localDe(pq.nombre, pq.fecha); })
       .then(function (l) { if (!l) throw new Error("La bajada se importó pero no se encontró en este navegador."); return abrirLocal(l.id); })
-      .then(function () { aviso(""); libre(); }, function (err) { libre(); aviso((err && err.message) || "No se pudo abrir la bajada.", "e"); });
+      .then(function () { aviso(""); libre(); setTimeout(function () { listoCargando(); }, 2500); }, function (err) { listoCargando(); libre(); aviso((err && err.message) || "No se pudo abrir la bajada.", "e"); });
   }
   // Entrenador: lo que le mandaron sus pilotos (no todos los logs de todos sus pilotos). Se abre en Coach.
-  function recibidosCoach(lista) {
+  var cargaActual = 0;
+  function recibidosCoach(lista, token) {
     var sb = window.SFNube && window.SFNube.cliente && window.SFNube.cliente(); if (!sb) return;
     sb.rpc("coach_envios_listar").then(function (r) {
-      var rec = (!r.error && r.data && r.data.recibidos) || [];
-      if (!rec.length || !lista.isConnected) return;
-      var bloque = el("div", "nube-recibidos");
+      // solo las bajadas de datos (sin video): un video, con o sin datos, ya se analiza en Coach
+      var rec = ((!r.error && r.data && r.data.recibidos) || []).filter(function (x) { return x.soloDatos && x.bajadaId; });
+      if (token !== cargaActual || !rec.length || !lista.isConnected) return;
+      var bloque = el("div", "nube-recibidos nube-extra");
       bloque.appendChild(el("div", "nube-sec", "Enviadas por mis pilotos"));
       rec.slice(0, 20).forEach(function (e) {
         var b = el("button", "fila-config-menu"); b.type = "button";
         b.appendChild(el("span", "fila-config-titulo", (e.pilotoNombre || "Piloto") + " · " + (e.titulo || e.bajadaNombre || "Sin título")));
-        b.appendChild(el("span", "fila-config-sub", fechaTxt(e.creado) + (e.estado === "nuevo" ? " · nuevo" : "") + (e.bajadaId ? " · se abre acá, en el análisis" : " · solo video: se ve en Coach")));
-        b.addEventListener("click", function () { if (e.bajadaId) abrirEnvio(e, b); else if (window.SFSinBici) window.SFSinBici.aCoach("recibidos"); });
+        b.appendChild(el("span", "fila-config-sub", fechaTxt(e.creado) + (e.estado === "nuevo" ? " · nuevo" : "") + " · se abre acá, en el análisis"));
+        b.addEventListener("click", function () { abrirEnvio(e, b); });
         bloque.appendChild(b);
       });
       lista.parentNode.insertBefore(bloque, lista);
-      lista.parentNode.insertBefore(el("div", "nube-sec", "Mis bajadas en la nube"), lista);
+      var tit = el("div", "nube-sec nube-extra", "Mis bajadas en la nube"); lista.parentNode.insertBefore(tit, lista);
     });
   }
   function cargar() {
     var lista = $("listaNube"); if (!lista) return;
+    var token = ++cargaActual;
+    Array.prototype.forEach.call(document.querySelectorAll("#pantallaNube .nube-extra"), function (n) { n.remove(); });   // no se acumulan las listas al volver a entrar
     lista.textContent = ""; lista.appendChild(el("div", "vacio-guardados", "Buscando…")); aviso("");
     Promise.all([window.SFNube.bajadasNube(), window.SFNube.bajadasLocales()]).then(function (r) {
       var nube = r[0], locales = {}; r[1].forEach(function (b) { locales[clave(b.nombre, b.fecha)] = 1; });
-      lista.textContent = ""; recibidosCoach(lista);
+      if (token !== cargaActual) return;
+      lista.textContent = ""; recibidosCoach(lista, token);
       if (!nube.length) { lista.appendChild(el("div", "vacio-guardados", "Todavía no hay bajadas en tu cuenta. En la app, subilas desde la nube.")); return; }
       nube.forEach(function (fila) {
         var nombre = (fila.metadatos && fila.metadatos.nombre) || "Bajada";
