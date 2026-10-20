@@ -1,8 +1,9 @@
 /* Calculadoras de la bici (calculos-bici.js): botón «Calcular» y ventana. Sirve en el sitio y en la app de análisis.
    Sigue el brief de diseño (04_DESIGN_BRIEF): inputs de 42 px y radio 4, botones de radio 2 con hover oro, labels en mayúsculas,
    modal de radio 8 con cabecera / cuerpo / pie y salida con «Volver» (flecha), nunca con una X. */
-.sfc-par { display: flex; align-items: center; gap: 8px; }
-.sfc-par > input.sfc-corto { width: 96px !important; min-width: 0; flex: none; }
+.sfc-par { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; max-width: 100%; min-width: 0; }
+.sfc-par > input.sfc-corto { width: 64px !important; min-width: 0; flex: 0 0 64px; }
+.sfc-par > .sfc-btn { padding: 0 10px; font-size: 11px; letter-spacing: .06em; flex: 0 1 auto; min-width: 0; }
 .sfc-b { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 42px; margin: 0 !important; padding: 0 16px; border: 1px solid var(--borde-2, #2e393a); border-radius: 2px;
   background: transparent; color: var(--ink, var(--texto, #f2f5f4)); font: 600 12px/1 var(--mono, "Roboto Mono", ui-monospace, monospace); letter-spacing: .08em; text-transform: uppercase; cursor: pointer; white-space: nowrap; flex: none; }
 .sfc-b:hover { border-color: var(--oro, #ffbd00); color: var(--oro, #ffbd00); }
