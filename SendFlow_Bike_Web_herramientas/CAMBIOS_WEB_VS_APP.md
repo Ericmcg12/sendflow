@@ -242,3 +242,12 @@ El SAG es un dato que se carga **antes** de analizar una bajada; el semáforo so
 - `deploy-bike-web`: solo el contenido de `SendFlow_Bike_Web` para bajar un ZIP liviano. Sin historial; no hacer merge de ella.
 - `deploy-coach-web`: lo mismo para `SendFlow_Coach_Web` (el sitio Coach). Sin historial; no hacer merge de ella.
   Hay que actualizarla (copiar el sitio) cada vez que cambie.
+
+## 2d-quindecies) Confirmar el lugar de las clases presenciales (20/10/2026)
+Solo web (Coach y el mensaje «Hoy» de Bike); la app no se toca. Requiere `nube/coach_v28_confirmar_lugar.sql` (ya aplicado) y la edge function `aviso-diario` v3 (ya desplegada).
+- El lugar que se define en el plan es el **lugar base**. Cada clase nace «sin confirmar» y los pilotos **no reciben aviso con lugar** hasta que el entrenador confirma.
+- Inicio de Coach: tarjeta «Confirmá el lugar de tus clases» con las clases de hoy a +2 días: **Se mantiene** o **Cambiar lugar** (con opción «cambiar también las próximas clases que estaban en ese lugar»). Al confirmar sale el push a los pilotos que prendieron «Recordarme las clases presenciales»: «Clase confirmada» o «¡Cambio de lugar!».
+- Push al entrenador (opt-out, Perfil → «Avisarme para confirmar el lugar de las clases»): a las 18 h del día anterior y a las 8 h del mismo día si sigue sin confirmar. El horario es el local del entrenador (zona de `notif_prefs`).
+- Si el entrenador cambia lugar, horario o día de una clase ya confirmada, vuelve a «sin confirmar». El recordatorio de 2 horas antes solo sale si el lugar está confirmado; el aviso de la sesión del día dice «lugar a confirmar».
+- Chips «lugar a confirmar» / «Cambió el lugar» en sesiones del plan, detalle y en la línea «Hoy» de Bike. Archivos: `SendFlow_Coach_Web/js/clases-confirmar.js` (nuevo), `planes.js`, `app.js`, `avisos-email.js` (idéntico en ambos sitios), `css/coach.css`, `SendFlow_Bike_Web/js/app.js`.
+- Probado en la base con transacción revertida (por confirmar → confirmar con cambio → aviso con `cambio:true` → segundo aviso vacío). **No probado:** entrega real del push y la tarjeta con una sesión real.

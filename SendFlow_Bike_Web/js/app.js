@@ -300,7 +300,7 @@
       if (!h.tienePlan) return;
       var TIP = { bici: "Bici", tecnica: "Técnica", gimnasio: "Gimnasio", recuperacion: "Recuperación", carrera: "Carrera", descanso: "Descanso", otro: "Otro" };
       var hoy = h.hoy || [];
-      var txt = !hoy.length ? "Hoy no tenés sesiones en tu plan." : "Hoy: " + hoy.map(function (x) { return (TIP[x.tipo] || "") + " · " + x.titulo + (x.modalidad === "presencial" ? " · Presencial" + (x.hora ? " " + x.hora : "") + (x.lugar ? " · " + x.lugar : "") : "") + (x.duracionMin ? " (" + x.duracionMin + " min)" : "") + (x.estado === "hecha" ? " ✓" : ""); }).join(" — ");
+      var txt = !hoy.length ? "Hoy no tenés sesiones en tu plan." : "Hoy: " + hoy.map(function (x) { return (TIP[x.tipo] || "") + " · " + x.titulo + (x.modalidad === "presencial" ? " · Presencial" + (x.hora ? " " + x.hora : "") + (x.estado === "pendiente" && x.lugarConfirmado === false ? " · lugar a confirmar" : (x.lugar ? " · " + x.lugar : "")) : "") + (x.duracionMin ? " (" + x.duracionMin + " min)" : "") + (x.estado === "hecha" ? " ✓" : ""); }).join(" — ");
       if (h.proximaCarrera) { var d = h.proximaCarrera.dias; txt += "  ·  " + (d === 0 ? "¡Carrera hoy! " : d === 1 ? "Carrera mañana: " : "Faltan " + d + " días: ") + h.proximaCarrera.titulo; }
       plan.textContent = txt; plan.hidden = false;
       if (ruta === "inicio" && hoy.some(function (x) { return x.estado === "pendiente" && x.tipo !== "descanso"; })) ruta = "planes";

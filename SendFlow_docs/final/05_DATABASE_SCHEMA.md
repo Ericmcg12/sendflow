@@ -195,3 +195,11 @@ Función `SECURITY DEFINER` (solo `authenticated`; exige entrenador) que devuelv
 - `tareas_plan` + `modalidad text default 'online' ('online'|'presencial')`, `hora time`, `lugar text (≤120)`. `coach_tarea_json`, `calendario_de`, `coach_plan_cargar`, `coach_tarea_guardar` y `coach_plan_a_grupo` los leen/escriben.
 - `notif_prefs` + `push_clase boolean default false`; `notif_prefs_clase_guardar(p_activo)`; `aviso_clase_tomar()` (solo `service_role`): clases presenciales de hoy que empiezan dentro de 2 horas. SQL: `nube/coach_v27_presencial.sql`.
 
+
+### coach_v28 (20/10/2026): confirmar el lugar de las clases presenciales
+- `tareas_plan` + `lugar_confirmado boolean default false`, `lugar_confirmado_en`, `lugar_cambiado boolean default false`, `avisado_clase_en`, `pedido_confirmar_en`, `recordado_confirmar_en`. `notif_prefs` + `push_confirma boolean default true` (el entrenador recibe el pedido de confirmar).
+- El lugar del plan es el «lugar base»; cada clase nace sin confirmar. `coach_tarea_guardar` vuelve a «sin confirmar» si cambia lugar, horario o día (o deja de ser presencial). `coach_tarea_json` + `lugarConfirmado`, `lugarCambiado`.
+- `coach_clases_por_confirmar()` (entrenador): clases de hoy a +2 días sin confirmar, agrupadas por día/hora/lugar/título. `coach_clase_confirmar(p_ids, p_lugar, p_futuras)`: mantiene o cambia el lugar; `p_futuras` cambia también las próximas sin confirmar de esos planes que tenían el mismo lugar.
+- Solo `service_role`: `aviso_clase_confirmada_tomar(p_coach)` (clases confirmadas aún no avisadas; solo pilotos con `push_clase`; con `p_coach null` solo las confirmadas hace >15 min, respaldo del cron) y `aviso_confirmar_clase_tomar()` (18 h del día anterior y 8 h del mismo día, hora local del entrenador, una sola vez por clase).
+- `aviso_clase_tomar` (recordatorio 2 h antes) ahora exige lugar confirmado; `aviso_sesion_diaria_tomar` marca `confirmado` y omite el lugar si no está confirmado. `notif_prefs_leer` + `push_confirma`, `entrenador`; `notif_prefs_confirma_guardar(p_activo)`.
+- Edge Function `aviso-diario` v3 (verify_jwt false): con la sesión del entrenador y `{accion:"confirmada"}` avisa «Clase confirmada» o «¡Cambio de lugar!»; el cron pide confirmar al entrenador y envía las confirmadas pendientes.

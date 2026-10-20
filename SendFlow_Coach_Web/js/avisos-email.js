@@ -99,6 +99,21 @@
       });
       lista.appendChild(l);
     })();
+    /* v57 (coach_v28.sql): el entrenador recibe el pedido de confirmar el lugar de la clase (18 h del día anterior y 8 h del mismo día). Prendido por defecto; solo push. */
+    if (prefs.entrenador === true) (function () {
+      var l = el("label", "sf-mail-op"), fila = el("span", "sf-mail-fila"), c = el("input");
+      c.type = "checkbox"; c.checked = prefs.push_confirma !== false;
+      fila.appendChild(c); fila.appendChild(document.createTextNode(" Avisarme para confirmar el lugar de las clases"));
+      l.appendChild(fila); l.appendChild(el("small", "ayuda", "Un día antes de cada clase presencial sin confirmar te llega una notificación para mantener o cambiar el lugar; los pilotos reciben su aviso recién cuando confirmás. Nunca por mail."));
+      c.addEventListener("change", function () {
+        var v = c.checked; c.disabled = true;
+        (v && window.SFAvisos ? SFAvisos.estado().then(function (est) { if (est !== "activo") return SFAvisos.activar(); }) : Promise.resolve())
+          .then(function () { return sb.rpc("notif_prefs_confirma_guardar", { p_activo: v }); })
+          .then(function (r) { if (r.error) throw r.error; c.disabled = false; decir(v ? "Listo: te avisamos para confirmar el lugar de las clases." : "Listo: no te avisamos más. Igual podés confirmar desde el Inicio.", "ok"); })
+          .catch(function (err) { c.disabled = false; c.checked = !v; decir(/notif_prefs_confirma_guardar/.test((err && err.message) || "") && /(does not exist|Could not find)/i.test((err && err.message) || "") ? "Falta aplicar coach_v28.sql en Supabase." : errTxt(err), "error"); });
+      });
+      lista.appendChild(l);
+    })();
     cont.appendChild(lista);
     cont.appendChild(el("p", "ayuda sf-mail-nota", "Los avisos en pantalla y las notificaciones siguen igual. Los mails de tu cuenta (contraseña, invitaciones) llegan siempre."));
     cont.appendChild(msg);
