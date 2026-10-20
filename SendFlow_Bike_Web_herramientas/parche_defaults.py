@@ -43,10 +43,10 @@ def parchar_defaults(destino, aqui):
         i0 = js.index("// (copia web) selección de perfil reutilizable")
         i1 = js.index('$("listaSeleccionarPerfil").addEventListener("click"', i0)
         js = js[:i0] + open(os.path.join(aqui, "perfil-auto.js"), encoding="utf-8").read() + js[i1:]
-    reemplazar('guardarConfigConPerfil(config){\n  const p = estado.perfilActivoDatos || {};\n  return Object.assign({}, config, { perfilId: estado.perfilActivoId ?? null, modeloSuspH',
+    if "perfilNubeId: estado.perfilActivoNubeId" not in js: reemplazar('guardarConfigConPerfil(config){\n  const p = estado.perfilActivoDatos || {};\n  return Object.assign({}, config, { perfilId: estado.perfilActivoId ?? null, modeloSuspH',
                'guardarConfigConPerfil(config){\n  const p = estado.perfilActivoDatos || {};\n  return Object.assign({}, config, { perfilId: estado.perfilActivoId ?? null, perfilNubeId: estado.perfilActivoNubeId || null, perfilNombre: estado.perfilActivoNombre || "", modeloSuspH')
     # al abrir una bajada (guardada, .sfb, WiFi) se activa el perfil con el que se analizó
-    reemplazar("      const registro = await leerBajadaDB(id);\n      if (!registro){ $(\"avisoGuardados\").textContent = \"No se encontró esa bajada.\"; return; }\n      conCargando(",
+    if "await sfPerfilDeConfig(registro.config)" not in js: reemplazar("      const registro = await leerBajadaDB(id);\n      if (!registro){ $(\"avisoGuardados\").textContent = \"No se encontró esa bajada.\"; return; }\n      conCargando(",
                "      const registro = await leerBajadaDB(id);\n      if (!registro){ $(\"avisoGuardados\").textContent = \"No se encontró esa bajada.\"; return; }\n      await sfPerfilDeConfig(registro.config);\n      conCargando(")
     reemplazar("  if (r.meta && r.meta.config) estado.config = Object.assign({}, estado.config, r.meta.config);\n",
                "  if (r.meta && r.meta.config) { estado.config = Object.assign({}, estado.config, r.meta.config); sfPerfilDeConfig(r.meta.config); }\n")
@@ -99,3 +99,41 @@ def parchar_peso_clima(destino):
     rep('calcularPerfilTune((cfg.peso || 75) + (cfg.clima === "lluvia" ? 2.5 : 0), cfg.estilo', 'calcularPerfilTune((cfg.peso || 75) + pesoExtraClima(cfg.clima, cfg.estadoPista), cfg.estilo')
     rep("kg estimados de barro/agua encima por la lluvia", "kg estimados de barro/agua encima por el clima y el estado de la pista")
     open(ruta, "w", encoding="utf-8").write(js)
+
+
+def parchar_sensaciones(destino):
+    """(20/10/2026) Diario de sensaciones en Recorte: qué sintió el piloto (horquilla, shock, texto) guardado con la bajada
+    (config.sensaciones) y mostrado en «Notas y resumen» junto a los datos. Ver piezas/sensaciones.js."""
+    ruta = os.path.join(destino, "js", "app.js")
+    js = open(ruta, encoding="utf-8").read()
+    if "SFSensaciones" not in js:
+        def rep(a, b):
+            nonlocal js
+            assert js.count(a) == 1, "app.js cambió: " + a[:70]
+            js = js.replace(a, b, 1)
+        rep("  estado.bajadaGuardadaId = null; // bajada nueva: todavía no está guardada\n",
+            "  estado.bajadaGuardadaId = null; // bajada nueva: todavía no está guardada\n  estado.sensaciones = null; if (window.SFSensaciones) SFSensaciones.limpiar();   // diario de sensaciones: arranca vacío\n")
+        rep('  leerCalibracionDesde("rc"); // toma lo cargado',
+            '  estado.sensaciones = window.SFSensaciones ? SFSensaciones.leer() : null;\n  leerCalibracionDesde("rc"); // toma lo cargado')
+        rep("perfilNombre: estado.perfilActivoNombre || \"\", modeloSuspH", "perfilNombre: estado.perfilActivoNombre || \"\", sensaciones: estado.sensaciones || null, modeloSuspH")
+        rep("      await sfPerfilDeConfig(registro.config);\n", "      await sfPerfilDeConfig(registro.config);\n      estado.sensaciones = (registro.config && registro.config.sensaciones) || null;\n")
+        rep("  construirResumenEquipoYPista();\n  $(\"textoNotasBajada\").value",
+            "  construirResumenEquipoYPista();\n  { const sb = window.SFSensaciones && SFSensaciones.bloque(estado); if (sb) $(\"resumenNotasContenido\").appendChild(sb); }\n  $(\"textoNotasBajada\").value")
+        open(ruta, "w", encoding="utf-8").write(js)
+    rh = os.path.join(destino, "index.html")
+    h = open(rh, encoding="utf-8").read()
+    if 'id="rcSensaciones"' not in h:
+        viejo = '        <input type="text" id="rcCircuito" placeholder="Ej: pista roja">\n      </div>\n'
+        assert viejo in h, "index.html cambió: campo de circuito"
+        bloque = ('      <div class="campo campo-sens" id="rcSensaciones" style="max-width:100%;">\n'
+                  '        <label>¿Qué sentiste en esta bajada? <span class="opcional">(opcional)</span></label>\n'
+                  '        <div class="sens-fila"><span>Horquilla</span><div class="sens-opc" data-sens="h"><button type="button" class="btn chico" data-v="blanda" aria-pressed="false">Se hundía de más</button><button type="button" class="btn chico" data-v="ok" aria-pressed="false">Bien</button><button type="button" class="btn chico" data-v="dura" aria-pressed="false">Dura o rebotaba</button></div></div>\n'
+                  '        <div class="sens-fila"><span>Shock</span><div class="sens-opc" data-sens="s"><button type="button" class="btn chico" data-v="blanda" aria-pressed="false">Se hundía de más</button><button type="button" class="btn chico" data-v="ok" aria-pressed="false">Bien</button><button type="button" class="btn chico" data-v="dura" aria-pressed="false">Dura o rebotaba</button></div></div>\n'
+                  '        <textarea id="rcSensNota" rows="2" maxlength="600" placeholder="Qué pasó: en qué tramo la sentiste rara, si el freno o la rueda trasera hicieron algo…" style="width:100%;resize:vertical;"></textarea>\n'
+                  '        <small class="ayuda">Se guarda con la bajada y después lo ves al lado de lo que dicen los datos.</small>\n'
+                  '      </div>\n')
+        h = h.replace(viejo, viejo + bloque, 1)
+        if "sensaciones.js" not in h:
+            assert '<script src="./js/calculos-bici.js"></script>' in h
+            h = h.replace('<script src="./js/calculos-bici.js"></script>', '<script src="./js/calculos-bici.js"></script>\n<script src="./js/sensaciones.js"></script>', 1)
+        open(rh, "w", encoding="utf-8").write(h)

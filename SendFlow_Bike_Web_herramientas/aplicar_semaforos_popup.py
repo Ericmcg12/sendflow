@@ -7,7 +7,7 @@ import os, shutil, sys
 
 destino = sys.argv[1]
 aqui = os.path.join(os.path.dirname(os.path.abspath(__file__)), "piezas")
-for f in ("semaforos-iconos.js", "semaforos-popup.js", "semaforo-anim.js", "calculos-bici.js", "inicio-web.js", "nube-web.js", "sin-bici.js"):
+for f in ("semaforos-iconos.js", "semaforos-popup.js", "semaforo-anim.js", "calculos-bici.js", "inicio-web.js", "nube-web.js", "sin-bici.js", "sensaciones.js"):
     shutil.copy(os.path.join(aqui, f), os.path.join(destino, "js", f))
 shutil.copy(os.path.join(aqui, "semaforo-anim.css"), os.path.join(destino, "css", "semaforo-anim.css"))
 shutil.copy(os.path.join(aqui, "calculos-bici.css"), os.path.join(destino, "css", "calculos-bici.css"))
@@ -248,8 +248,9 @@ parchar_nube(destino)
 parchar_perfil_vacio(destino)
 parchar_nombre_sag(destino)
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-from parche_defaults import parchar_defaults, parchar_peso_clima
+from parche_defaults import parchar_defaults, parchar_peso_clima, parchar_sensaciones
 parchar_defaults(destino, aqui)
 parchar_peso_clima(destino)
+parchar_sensaciones(destino)
 asegurar_cabeceras(destino)
 print("Semáforos con popup aplicados en", destino)

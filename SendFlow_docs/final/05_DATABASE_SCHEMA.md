@@ -181,3 +181,6 @@ Diseño completo en `claude/PERFILES_Y_MODOS_APP.md`. Se ejecuta después de `co
 - Ayudas internas sin permiso para usuarios: `calendario_fecha_normalizar`. Avisos: `aviso_fecha_preparar(p_usuario, p_fecha, p_origen 'piloto'|'agenda')` (solo `service_role`, una vez por fecha, no avisa fechas pasadas).
 - Edge Functions: `avisos-coach` v6 (tipos `fecha_piloto` y `fecha_agenda`: mail + push, respetan «Devoluciones y avisos») y `calendario-ics` (incluye `fechasEntrenador`; sigue sin verificación de JWT, protegido por el token).
 - Front: `coach-web/piezas/calendario.js`, `agenda-chat.js` (+ css) y `coach-web/aplicar_v52_agenda.py` (parches de Coach y de Bike).
+
+### coach_v25 (20/10/2026): `coach_resumen_pilotos(p_dias int default 28)`
+Función `SECURITY DEFINER` (solo `authenticated`; exige entrenador) que devuelve `{hoy, dias, pilotos:[{usuarioId, nombre, sinMarcar:{n, primera, planId, dias}, ultima, ultimaRespuesta, venc, hechas, cumpl, esfuerzo, tendencia, semanas:[{lunes, esfuerzo, delta}]}]}` para los pilotos con vínculo activo y sesiones en los últimos 60 días. No cuenta como falta de respuesta los días con una fecha del piloto con «no entreno», viaje o visita médica. Sin tablas nuevas. SQL: `SendFlow_Bike_Web_herramientas/nube/coach_v25_resumen_pilotos.sql`.

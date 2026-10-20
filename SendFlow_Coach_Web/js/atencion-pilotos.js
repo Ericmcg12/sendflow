@@ -1,7 +1,7 @@
 // ============================================================================
 // atencion-pilotos.js — Inicio del entrenador: a quién mirar hoy y cómo vienen todos sus pilotos.
-// Sin cambios en la base: usa coach_calendario_datos (sesiones y fechas de todos los pilotos), coach_plan_ver (esfuerzo
-// percibido de los planes con sesiones marcadas) y coach_pilotos_listar (para abrir la ficha).
+// Una sola consulta: coach_resumen_pilotos (coach_v25.sql) calcula todo en la base. Si todavía no está esa función, se usa el camino
+// anterior (coach_calendario_datos + coach_plan_ver, una consulta por plan). coach_pilotos_listar sirve para abrir la ficha.
 //   · «Sin responder»: un piloto lleva X días sin marcar sus sesiones. Solo cuentan los días en que tenía sesiones cargadas
 //     y NO avisó en su calendario que no iba a entrenar (fecha con «no entreno», viaje o visita médica).
 //   · «Esfuerzo alto»: el esfuerzo percibido supera en 2 o más puntos a la intensidad planificada en las dos últimas semanas.
@@ -69,6 +69,31 @@
     });
   }
 
+  // coach_v25.sql: el resumen ya viene calculado por la base
+  function desdeResumen(r, hoy) {
+    return ((r && r.pilotos) || []).map(x => {
+      const sm = x.sinMarcar || {};
+      const p = { id: x.usuarioId, nombre: x.nombre || "Piloto", ses: [{}], semanas: (x.semanas || []).map(w => ({ lunes: w.lunes, esfuerzo: w.esfuerzo == null ? null : +w.esfuerzo, delta: w.delta == null ? null : +w.delta })),
+        diasSin: sm.dias || 0, sinMarcar: Array.from({ length: sm.n || 0 }, (_, i) => i ? {} : { fecha: sm.primera, planId: sm.planId }),
+        cumpl: x.cumpl == null ? null : +x.cumpl, esfuerzo: x.esfuerzo == null ? null : +x.esfuerzo, tendencia: x.tendencia == null ? null : +x.tendencia,
+        ultimaRespuesta: x.ultimaRespuesta || x.ultima || null };
+      const u = p.semanas.filter(s => s.delta != null).slice(-2);
+      p.esfAlto = u.length === 2 && dias(u[1].lunes, hoy) < 15 && dias(u[0].lunes, u[1].lunes) <= 14 && u.every(s => s.delta >= SALTO_ESFUERZO) ? prom(u.map(s => s.delta)) : null;
+      return p;
+    });
+  }
+
+  async function cargarPilotos(hoy) {
+    try { return desdeResumen(await rpc("coach_resumen_pilotos", { p_dias: 28 }), hoy); }
+    catch (e) {
+      if (!/coach_resumen_pilotos|does not exist|Could not find/i.test(e.message || "")) throw e;
+      const cal = await rpc("coach_calendario_datos", { p_desde: sumar(hoy, -60), p_hasta: hoy });   // camino anterior
+      const pilotos = armarPilotos(cal || {}, hoy);
+      try { await sumarEsfuerzo(pilotos, hoy); } catch (e2) { pilotos.forEach(p => { p.semanas = []; p.hechas = []; p.esfuerzo = null; p.tendencia = null; p.esfAlto = null; p.ultimaRespuesta = p.ultima; }); }
+      return pilotos;
+    }
+  }
+
   const hace = (f, hoy) => { if (!f) return "—"; const n = dias(f, hoy); return n <= 0 ? "hoy" : n === 1 ? "ayer" : `hace ${n} días`; };
   const spark = (sem) => {
     const v = sem.filter(s => s.esfuerzo != null).slice(-8).map(s => s.esfuerzo); if (v.length < 2) return "";
@@ -79,11 +104,9 @@
   async function tarjeta() {
     if (!window.UI || !API || !API.sb) return null;
     const hoy = iso(new Date());
-    let cal, lista = [];
-    try { cal = await rpc("coach_calendario_datos", { p_desde: sumar(hoy, -60), p_hasta: hoy }); } catch (e) { return null; }
-    const pilotos = armarPilotos(cal || {}, hoy);
+    let pilotos, lista = [];
+    try { pilotos = await cargarPilotos(hoy); } catch (e) { return null; }
     if (!pilotos.length) return null;
-    try { await sumarEsfuerzo(pilotos, hoy); } catch (e) { pilotos.forEach(p => { p.semanas = []; p.hechas = []; p.esfuerzo = null; p.tendencia = null; p.esfAlto = null; p.ultimaRespuesta = p.ultima; }); }
     try { lista = ((await rpc("coach_pilotos_listar")).pilotos || []); } catch (e) { /* sin ficha */ }
     const ficha = (uid) => { const x = lista.find(p => p.usuarioId === uid); return x ? "/piloto/" + x.id : null; };
 

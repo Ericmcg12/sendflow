@@ -187,6 +187,13 @@ Antes: +2,5 kg fijo con lluvia. Ahora (`parchar_peso_clima` en `parche_defaults.
 - Tabla «Cómo vienen»: cumplimiento 4 semanas, esfuerzo, evolución, última respuesta y estado de cada piloto; se abre su ficha.
 - `coach-web/piezas/app.js` no se actualizó: el engarce en `app.js` (Inicio) y `index.html` está hecho directo sobre `SendFlow_Coach_Web`.
 
+## 2d-duodecies) Resumen de pilotos en la base, menú «Coach» en Bike, diario de sensaciones, Coach reconstruible (20/10/2026)
+- **Base (coach_v25.sql, aplicada):** `coach_resumen_pilotos(p_dias)` calcula en la base, en una sola consulta, lo que mira el Inicio de Coach (sin responder, cumplimiento, esfuerzo, tendencia, semanas). Solo entrenadores; solo sus pilotos con vínculo activo. `atencion-pilotos.js` la usa y, si todavía no existe, cae al camino anterior.
+- **Bike · menú:** botón «Coach» (salto rápido, como «Volver a Bike» en Coach) para quien tiene Coach como entrenador o es piloto con entrenador.
+- **/analisis · Recorte:** «¿Qué sentiste en esta bajada?» (horquilla, shock, texto). Se guarda con la bajada (`config.sensaciones`), viaja a la nube / .sfb / entrenador y se ve en «Notas y resumen» junto a topes y SAG dinámico (sin veredicto automático). `piezas/sensaciones.js` + `parchar_sensaciones`.
+- **Coach reconstruible:** la fuente de verdad es `SendFlow_Coach_Web/`. El generador (`coach-web/historico/`) quedó archivado: necesita el Coach original en PHP, que no está en el repo. Herramientas nuevas: `coach-web/verificar_coach.py` (revisión estática) y `publicar_rama.sh bike|coach` (arma la rama de descarga). Ver `coach-web/LEEME_COACH.md`.
+- **Auditoría de espacio (solo lectura):** un envío a Coach no se copia al pasar a análisis (el análisis apunta al mismo archivo) y las devoluciones (dibujos, etiquetas) son JSON en la base, no archivos. El peso real son los videos (836 MB en 4 envíos); las bajadas pesan KB. Hallazgos: 1 subida incompleta de 795 MB (11/10) y 2 archivos sin referencia; las miniaturas viajan en base64 dentro de cada lista (22–79 KB cada una).
+
 ## 2e) Ayuda para medir el SAG y frases de velocidad (ideas tomadas de la revisión de sagly.at; textos propios)
 
 El SAG es un dato que se carga **antes** de analizar una bajada; el semáforo solo confirma si está en zona. Por eso la calculadora **no** va en el popup del semáforo (ahí quedó igual que antes):
