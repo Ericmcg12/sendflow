@@ -263,6 +263,7 @@
       if (seccion === "inicio") { await (esCoach() ? inicioCoach(v) : inicioPiloto(v)); ofrecerAvisos(v); montarMensajes(v);
     if (esCoach() && window.SFEntrenadores) SFEntrenadores.pintarSolicitudes($("[data-slot=solicitudes]", v));   // v51
     // entrenador: tarjeta con lo que marcaron los pilotos (coach_v16.sql), arriba del saludo
+    if (esCoach() && window.AtencionPilotos) AtencionPilotos.tarjeta().then(c => { const s = $("[data-slot=plan]", v); if (c && s && s.isConnected) { s.insertBefore(c, s.firstChild); entradaEscalonada(s, 0); } }).catch(() => {});   // v55: a quién mirar hoy
     if (esCoach() && window.Planes) Planes.actividad().then(c => { const s = $("[data-slot=plan]", v); if (c && s && s.isConnected) { s.appendChild(c); entradaEscalonada(s, 0); } }).catch(() => {}); }
       else if (seccion === "pilotos" && esCoach()) await pantallaPilotos(v);
       else if (seccion === "piloto" && id && esCoach()) await pantallaPiloto(v, id);

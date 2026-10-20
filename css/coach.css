@@ -1736,3 +1736,17 @@ textarea.sfa-nota { height: auto; min-height: 84px; padding: 10px 12px; resize: 
 .hp-ev-fila{display:flex;gap:10px;align-items:flex-start;} .hp-ev-fila small{display:block;color:var(--ink-dim);font-size:12px;margin-top:2px;}
 .hp-punto{flex:none;width:10px;height:10px;border-radius:50%;margin-top:5px;background:var(--cian);} .hp-ev-fila.omitida .hp-punto{background:var(--rojo);}
 .hp-nota{display:block;margin-top:4px;color:var(--ink);font-size:13px;font-style:italic;}
+
+/* v55: atención con tus pilotos (Inicio del entrenador) */
+.atencion-pilotos{margin-bottom:14px;}
+.ap-alertas{display:flex;flex-direction:column;gap:8px;margin-top:10px;}
+.ap-alerta{display:flex;gap:10px;align-items:center;padding:10px 12px;border:1px solid var(--borde);border-left:3px solid var(--rojo);border-radius:var(--r-md);background:var(--panel-2,transparent);}
+.ap-alerta.esf{border-left-color:var(--oro);}
+.ap-alerta p{flex:1;margin:0;font-size:13.5px;line-height:1.45;} .ap-alerta .btn{margin:0;flex:none;}
+.ap-punto{flex:none;width:9px;height:9px;border-radius:50%;background:var(--rojo);} .ap-alerta.esf .ap-punto{background:var(--oro);}
+.ap-fila{grid-template-columns:minmax(0,1.5fr) .8fr .6fr 1.5fr 1fr .9fr;color:inherit;text-decoration:none;}
+a.ap-fila:hover{background:rgba(255,255,255,.03);}
+.ap-chip{display:inline-block;padding:2px 8px;border-radius:999px;font:600 11px var(--sans);border:1px solid var(--borde-2);}
+.ap-chip.rojo{color:var(--rojo);border-color:var(--rojo);} .ap-chip.oro{color:var(--oro);border-color:var(--oro);} .ap-chip.ok{color:var(--cian);border-color:transparent;}
+.ap-mejora{color:var(--cian);font-weight:500;} .ap-sube{color:var(--rojo);font-weight:500;}
+@media (max-width:760px){.ap-fila{grid-template-columns:1.4fr .7fr .6fr .9fr;} .ap-fila>span:nth-child(4),.ap-fila>span:nth-child(5){display:none;}}
