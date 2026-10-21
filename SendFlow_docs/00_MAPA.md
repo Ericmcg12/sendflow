@@ -29,7 +29,7 @@
 
 ## Mercado y estrategia
 - [Foco de producto: dos ruedas (DH y enduro), no multideporte](01_PRD.md) (PRD §1 y §9) — decisión de Eric del 21/10.
-- [Análisis competitivo y foco de producto (21/10/2026)](ANALISIS_COMPETITIVO_2026-10-21.md): SportSense y otros, matriz de funciones, riesgos y plan que no depende del hardware. *(Hay una copia idéntica subida desde GitHub: [SendFlow_analisis_competitivo_2026-10-21.md](SendFlow_analisis_competitivo_2026-10-21.md); conviene borrar una.)*
+- [Análisis competitivo y foco de producto (21/10/2026)](ANALISIS_COMPETITIVO_2026-10-21.md): SportSense y otros, matriz de funciones, riesgos y plan que no depende del hardware.
 - [Revisión de informes externos (15/10)](REVISION_EXTERNA_2026-10-15.md): qué se tomó y qué no de cuatro informes de otras IA.
 
 ## Referencia técnica (subordinada a los 01–07)
@@ -39,4 +39,4 @@
 - [Arquitectura general (viva, antigua)](architecture.md) · [Cámaras de pista (FASE 8, etapa posterior)](CAMARAS_PISTA.md) · [Programa integral de pretemporada DH](plan_integral_dh.md) (material de entrenamiento, base de la biblioteca de Coach).
 
 ## Qué sigue
-[Plan de implementación §1 y FASE 4](06_IMPLEMENTATION_PLAN.md) y [pendientes del PRD §6.4](01_PRD.md): respuestas rápidas, clip de video, resumen semanal por mail, selector principiante/profesional, probar el push real en iPhone/Android, probar la ventana «Subir archivos» con la base real y un video real, decidir si «Nuevo análisis» pasa por la biblioteca, y el plan de la biblioteca de referencia (PRD C40 i).
+[Plan de implementación §1 y FASE 4](06_IMPLEMENTATION_PLAN.md) y [pendientes del PRD §6.4](01_PRD.md): respuestas rápidas, clip de video, resumen semanal por mail, selector principiante/profesional, probar el push real en iPhone/Android decidir si «Nuevo análisis» pasa por la biblioteca, y el plan de la biblioteca de referencia (PRD C40 i).
