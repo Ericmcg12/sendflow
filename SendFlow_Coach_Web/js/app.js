@@ -265,6 +265,7 @@
     // entrenador: tarjeta con lo que marcaron los pilotos (coach_v16.sql), arriba del saludo
     if (esCoach() && window.AtencionPilotos) AtencionPilotos.tarjeta().then(c => { const s = $("[data-slot=plan]", v); if (c && s && s.isConnected) { s.insertBefore(c, s.firstChild); entradaEscalonada(s, 0); } }).catch(() => {});   // v55: a quién mirar hoy
     if (esCoach() && window.ClasesConfirmar) ClasesConfirmar.tarjeta().then(c => { const s = $("[data-slot=plan]", v); if (c && s && s.isConnected) { s.insertBefore(c, s.firstChild); entradaEscalonada(s, 0); } }).catch(() => {});   // v57: confirmar el lugar de las clases
+    if (esCoach() && window.AsistenciaClase) AsistenciaClase.tarjetaCoach().then(c => { const s = $("[data-slot=plan]", v); if (c && s && s.isConnected) { s.insertBefore(c, s.firstChild); entradaEscalonada(s, 0); } }).catch(() => {});   // v58: quién va a la clase
     if (esCoach() && window.Planes) Planes.actividad().then(c => { const s = $("[data-slot=plan]", v); if (c && s && s.isConnected) { s.appendChild(c); entradaEscalonada(s, 0); } }).catch(() => {}); }
       else if (seccion === "pilotos" && esCoach()) await pantallaPilotos(v);
       else if (seccion === "piloto" && id && esCoach()) await pantallaPiloto(v, id);
@@ -446,7 +447,7 @@
     if (window.Planes) {
       const arriba = html(`<div class="inicio-arriba"></div>`);
       const h0 = $("[data-slot=plan]", v); if (h0) h0.appendChild(arriba); else v.prepend(arriba);
-      Promise.all([Planes.seguimiento().catch(() => null), Planes.tarjetaHoy(false).catch(() => null)]).then(([s, c]) => { if (s) arriba.appendChild(s); if (c) arriba.appendChild(c); entradaEscalonada(arriba, 70); });
+      Promise.all([Planes.seguimiento().catch(() => null), Planes.tarjetaHoy(false).catch(() => null), window.AsistenciaClase ? AsistenciaClase.tarjetaPiloto().catch(() => null) : null]).then(([s, c, as]) => { if (as) arriba.appendChild(as); if (s) arriba.appendChild(s); if (c) arriba.appendChild(c); entradaEscalonada(arriba, 70); });   // v58: ¿vas a la clase?
     }
   }
   function contarCategorias(analisis) {

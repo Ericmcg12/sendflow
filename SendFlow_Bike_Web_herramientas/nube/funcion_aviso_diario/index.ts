@@ -1,6 +1,8 @@
 // @ts-nocheck
 // Edge Function "aviso-diario" (20/10/2026): push con la sesión del día y recordatorio de clases presenciales. SOLO push, nunca mail,
 // y SOLO a quien lo prendió en su Perfil (notif_prefs.push_sesion / push_clase, coach_v26.sql y coach_v27.sql).
+// v4 (21/10/2026): asistencia a clases. El cron pregunta al piloto «¿Vas a la clase de hoy?» 6 h antes (nunca antes de las 8:00 locales; solo a quien prendió «Preguntarme si voy»)
+//   y 2 h antes envía al entrenador un resumen único (van / no van / sin responder). Respuesta en Coach (tarjeta del Inicio del piloto).
 // v3 (20/10/2026): el aviso de una clase presencial sale RECIÉN cuando el entrenador confirma el lugar (coach_v28.sql). Dos entradas nuevas:
 //   · con la sesión del entrenador (Authorization: Bearer <jwt>, body {accion:"confirmada"}): avisa a los pilotos de las clases que acaba de confirmar;
 //   · el cron cada hora: pide al entrenador que confirme (18 h del día anterior y 8 h del mismo día si sigue sin confirmar) y, de respaldo, avisa las confirmadas que no se enviaron.
@@ -109,7 +111,24 @@ Deno.serve(async (req) => {
         pedidos++;
       }
     } catch (e) { console.error("aviso_confirmar_clase_tomar", e.message); }
-    return j({ ok: true, usuarios: (lista || []).length, clases: (clases || []).length, pedidos, enviados });
+    // asistencia: pregunta al piloto (6 h antes) y resumen al entrenador (2 h antes)
+    let preguntas = 0, resumenes = 0;
+    try {
+      for (const q of (await rpc("aviso_asistencia_preguntar_tomar", {}) || [])) {
+        let subs = []; try { subs = await rpc("push_destino", { p_usuario: q.usuarioId }); } catch (e) { console.error("push_destino", e.message); continue; }
+        enviados += await enviar(subs, { title: "¿Vas a la clase de hoy?", body: `${q.titulo || "Clase"} · ${q.hora}${q.lugar ? " · " + q.lugar : ""}. Contale a tu entrenador si vas.` }, "asistencia:" + q.hora, "inicio");
+        preguntas++;
+      }
+    } catch (e) { console.error("aviso_asistencia_preguntar_tomar", e.message); }
+    try {
+      for (const g of (await rpc("aviso_asistencia_resumen_tomar", {}) || [])) {
+        let subs = []; try { subs = await rpc("push_destino", { p_usuario: g.coachId }); } catch (e) { console.error("push_destino", e.message); continue; }
+        const p = [`van ${g.voy}`, `no van ${g.noVoy}`]; if (g.sin) p.push(`sin responder ${g.sin}`);
+        enviados += await enviar(subs, { title: `Asistencia a la clase de ${g.hora}`, body: `${p.join(" · ")}${g.lugar ? " · " + g.lugar : ""}` }, "resumen-asistencia:" + g.hora, "inicio");
+        resumenes++;
+      }
+    } catch (e) { console.error("aviso_asistencia_resumen_tomar", e.message); }
+    return j({ ok: true, usuarios: (lista || []).length, clases: (clases || []).length, pedidos, preguntas, resumenes, enviados });
   } catch (e) {
     console.error("aviso-diario", e && e.stack || e);
     return j({ error: "Error del servidor." }, 500);

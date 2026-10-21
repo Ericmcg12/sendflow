@@ -251,3 +251,12 @@ Solo web (Coach y el mensaje «Hoy» de Bike); la app no se toca. Requiere `nube
 - Si el entrenador cambia lugar, horario o día de una clase ya confirmada, vuelve a «sin confirmar». El recordatorio de 2 horas antes solo sale si el lugar está confirmado; el aviso de la sesión del día dice «lugar a confirmar».
 - Chips «lugar a confirmar» / «Cambió el lugar» en sesiones del plan, detalle y en la línea «Hoy» de Bike. Archivos: `SendFlow_Coach_Web/js/clases-confirmar.js` (nuevo), `planes.js`, `app.js`, `avisos-email.js` (idéntico en ambos sitios), `css/coach.css`, `SendFlow_Bike_Web/js/app.js`.
 - Probado en la base con transacción revertida (por confirmar → confirmar con cambio → aviso con `cambio:true` → segundo aviso vacío). **No probado:** entrega real del push y la tarjeta con una sesión real.
+
+## 2d-sexdecies) Asistencia a las clases presenciales (21/10/2026)
+Solo web; requiere `nube/coach_v29_asistencia.sql` (aplicado) y `aviso-diario` v4 (desplegada). La app no se toca.
+- Piloto (opt-in aparte, Perfil → «Preguntarme si voy a la clase», apagado por defecto): 6 h antes de la clase, y nunca antes de las 8:00 locales, push «¿Vas a la clase de hoy?». Responde «Voy» / «No voy» en la tarjeta del Inicio de Coach (puede cambiarla hasta que empiece; tocar de nuevo la quita). Solo clases con lugar ya confirmado.
+- Entrenador (Perfil → «Avisarme quién va a cada clase», prendido por defecto): un solo push 2 h antes con «van X · no van Y · sin responder Z», y tarjeta «Quién va a la clase» en su Inicio con los nombres. «Sin responder» incluye a quien no tiene los avisos prendidos. Si a ningún piloto se le preguntó ni respondió, no se manda resumen.
+- Si se cambia el día o el horario de la clase, se borran las respuestas.
+- iPhone: el push solo funciona con el sitio agregado a la pantalla de inicio (Compartir → Agregar a inicio), sea Coach o Bike. Los avisos de planes/clases abren Coach; para pilotos conviene instalar Coach. Sin push, el piloto igual ve y responde la tarjeta al entrar.
+- Archivos: `SendFlow_Coach_Web/js/asistencia-clase.js` (nuevo), `app.js`, `index.html`, `avisos-email.js` (idéntico en ambos sitios).
+- Probado en la base con transacción revertida (pregunta única, responder, resumen único). **No probado:** push real ni la tarjeta con datos reales.
