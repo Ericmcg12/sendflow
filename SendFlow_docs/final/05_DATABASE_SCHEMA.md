@@ -253,3 +253,6 @@ Columnas nuevas de `tareas_plan`: `modalidad`, `hora`, `lugar`, `lugar_confirmad
 ### coach_v33 (21/10/2026)
 **coach_v33_mensajes_directos.sql:** `coach_conversacion_directa(p_piloto)` (entrenador; el piloto debe tener cuenta; crea o devuelve la conversación directa: fila de `coach_analisis` con `contenido->>'directo' = 'true'`, `duracion` 0, sin video); `coach_analisis_listar` excluye las directas; `coach_conversaciones` devuelve `directo`. El CHECK de `tipo` no se tocó. Las directas cuentan en `admin_uso_resumen` como análisis (sin corregir).
 
+### coach_v34 y coach_v35 (21/10/2026)
+**coach_v34_biblioteca_editable.sql:** `coach_ejercicios_propios` gana `base_id`, `facil`, `descanso`; `coach_ejercicios_limpios` conserva `facil`, `descanso` y `bloque` (A–Z); `coach_ejercicios_propios_listar` y `coach_ejercicio_propio_guardar` (modifica por `id`, permite renombrar, error si el nombre ya existe). Correr antes de usar los campos nuevos.
+**coach_v35_plan_reemplazar.sql:** `coach_plan_reemplazar(p_plan, p_desde, p_hasta, d)` borra solo sesiones pendientes, no presenciales y no carrera del rango y carga las nuevas; devuelve `{ok, borradas, cargadas, protegidas}`. Solo `authenticated`.

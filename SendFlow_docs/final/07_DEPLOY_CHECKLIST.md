@@ -200,6 +200,7 @@ Orden recomendado (la base y las funciones de borde **ya están aplicadas en pro
 - Volver atrás: redesplegar la versión anterior de `aviso-diario` (v3 o v2) y subir el ZIP anterior; las columnas y funciones nuevas no estorban a las versiones viejas de los sitios.
 
 ### Coach v59 (21/10/2026): ventana única «Subir archivos»
+- [ ] SQL `coach_v34_biblioteca_editable.sql` y después `coach_v35_plan_reemplazar.sql` corridos **antes** de subir el sitio (sin v34 la biblioteca avisa «Falta correr coach_v34.sql»; sin v35 no se puede cambiar la semana tipo de una fase de un plan ya creado).
 - [ ] SQL `coach_v30_etiquetas_archivo.sql` corrido **antes** de subir el sitio (si no, la ventana funciona pero avisa que no pudo guardar motivo y situación).
 - [ ] Sitio: ZIP de `deploy-coach-web` a Cloudflare Pages. La fuente es `SendFlow_Coach_Web/`; verificar que `js/app.js`, `js/api.js` y `js/archivos.js` coinciden en las dos ramas antes de volver a correr `publicar_rama.sh coach`.
 - [ ] Como entrenador: **Subir archivos** abre una sola ventana con «¿A dónde va este archivo?», Motivo, Situación, Fecha, Título y Pista; no existe «Analizarlo ahora». Subir una foto, un documento y un video con etiquetas: quedan en la biblioteca con sus etiquetas y el filtro por situación los separa.
