@@ -214,6 +214,7 @@
       return rpc("coach_comentarios_listar", { p_id: m[1] });
     }
     if (es(/^comentarios\/([^/]+)$/) && metodo === "DELETE") return limpiarArchivos(await rpc("coach_comentario_borrar", { p_id: m[1] }));
+    if (ruta === "conversacion-directa" && metodo === "POST") return rpc("coach_conversacion_directa", { p_piloto: cuerpo.pilotoId });   // v63 (coach_v33.sql)
     if (ruta === "imagenes") return rpc("coach_imagenes_listar");   // v35: biblioteca de capturas
     // v37 (coach_v18.sql): fotos y documentos que se pasan piloto y entrenador
     if (ruta === "archivos-lista") return rpc("coach_archivos_listar");
