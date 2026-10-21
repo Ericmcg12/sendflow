@@ -11,7 +11,7 @@
 // ============================================================================
 (function () {
   "use strict";
-  const { $, $$, html, esc, aviso, abrirModal, ICONOS } = UI;
+  const { $, $$, html, esc, aviso, abrirModal, confirmar, ICONOS } = UI;
 
   const CATS = { fuerza: "Piernas", core: "Core", superior: "Tren superior", potencia: "Potencia", movilidad: "Movilidad", tecnica: "Técnica en bici", bici: "Trabajo en bici", recup: "Recuperación", otro: "Otros" };
 
@@ -71,7 +71,7 @@
   ];
   const EJERCICIOS = EJ.map(([id, nombre, cat, series, reps, carga, tiempo, nota]) => ({ id, nombre, cat, series, reps, carga, tiempo, nota }));
   const EJ_ID = Object.fromEntries(EJERCICIOS.map(e => [e.id, e]));
-  const conv = (e) => ({ nombre: e.nombre, series: e.series || "", reps: e.reps || "", carga: e.carga || "", tiempo: e.tiempo || "", nota: e.nota || "" });
+  const conv = (e) => ({ nombre: e.nombre, series: e.series || "", reps: e.reps || "", carga: e.carga || "", tiempo: e.tiempo || "", nota: e.nota || "", facil: e.facil || "", descanso: e.descanso || "", bloque: e.bloque || "" });
 
   // [id, tipo, título, descripción, minutos, intensidad, [ids de ejercicios]]
   const SES = [
@@ -193,45 +193,107 @@
     }
     return data;
   }
-  const propiosListar = async () => (await rpc("coach_ejercicios_propios_listar")).ejercicios || [];
-  const propioGuardar = (e) => rpc("coach_ejercicio_propio_guardar", { d: e });
+  // v66: «Mis ejercicios» en memoria. Un ejercicio de SendFlow que modificaste queda como copia tuya (baseId = id del original) y lo reemplaza.
+  let cachePropios = [];
+  const propiosListar = async () => { cachePropios = (await rpc("coach_ejercicios_propios_listar")).ejercicios || []; return cachePropios; };
+  const precargar = () => propiosListar().catch(() => cachePropios);
+  const propioConv = (p) => ({ id: "p" + p.id, pid: p.id, nombre: p.nombre, cat: p.categoria || "otro", series: p.series, reps: p.reps, carga: p.carga, tiempo: p.tiempo, nota: p.nota, facil: p.facil || "", descanso: p.descanso || "", baseId: p.baseId || null, propio: true });
+  const listaEfectiva = (propios) => { const tapados = new Set((propios || []).filter(p => p.baseId).map(p => p.baseId)); return (propios || []).map(propioConv).concat(EJERCICIOS.filter(e => !tapados.has(e.id))); };
+  const buscarEfectivo = (n) => { const k = String(n || "").trim().toLowerCase(); return k ? (listaEfectiva(cachePropios).find(e => e.nombre.toLowerCase() === k) || null) : null; };
+  const nombresEfectivos = () => listaEfectiva(cachePropios).map(e => e.nombre);
+  const propioGuardar = async (e) => {
+    const r = await rpc("coach_ejercicio_propio_guardar", { d: e });
+    if (r && r.ejercicio && r.ejercicio.facil === undefined) throw new Error("Falta correr coach_v34.sql en Supabase (versión más fácil, descanso y modificar ejercicios).");
+    return r;
+  };
   const propioBorrar = (id) => rpc("coach_ejercicio_propio_borrar", { p_id: id });
 
   const resumen = (e) => [e.series ? (e.reps ? e.series + "×" + e.reps : e.series + " series") : (e.reps || ""), e.carga, e.tiempo].filter(Boolean).join(" · ");
 
+  // ---------- v66 (C68): bloque, descanso y «versión más fácil» de cada ejercicio de una sesión ----------
+  // Los ejercicios seguidos con la misma letra de bloque forman una superserie (2) o un circuito (3 o más): se hacen uno detrás de otro y el
+  // descanso se cumple al terminar la ronda. Sin letra, cada ejercicio va solo y su descanso es entre series.
+  const LETRAS = ["A", "B", "C", "D", "E", "F"];
+  function masEjercicio(f, e) {
+    const cont = html(`<div class="ej-mas">
+      <label>Bloque<select class="input" name="eb"><option value="">Solo</option>${LETRAS.map(l => `<option value="${l}" ${e.bloque === l ? "selected" : ""}>${l}</option>`).join("")}</select></label>
+      <label>Descanso (s)<input class="input" name="ed" type="number" min="0" max="3600" step="5" value="${e.descanso || ""}" placeholder="60"></label>
+      <label class="ej-facil">Versión más fácil<input class="input" name="ef" maxlength="120" value="${esc(e.facil || "")}" placeholder="Sentadilla goblet"></label></div>`);
+    const tiene = !!(e.bloque || e.descanso || e.facil);
+    cont.hidden = !tiene;
+    const bt = $(".ej-bt", f);
+    if (bt) { const b = html(`<button type="button" class="btn icono chico fantasma" data-mas title="Bloque, descanso y versión más fácil" aria-label="Más opciones del ejercicio" aria-expanded="${tiene}">⋯</button>`); b.addEventListener("click", () => { cont.hidden = !cont.hidden; b.setAttribute("aria-expanded", String(!cont.hidden)); }); bt.insertBefore(b, bt.firstChild); }
+    f.appendChild(cont);
+  }
+  const leerMas = (f) => { const g = (n) => { const x = $(`[name=${n}]`, f); return x ? x.value.trim() : ""; }; return { bloque: g("eb"), descanso: g("ed"), facil: g("ef") }; };
+
+  // ---------- v66: crear o modificar un ejercicio (de «Mis ejercicios» o de SendFlow: en ese caso queda una copia tuya que lo reemplaza) ----------
+  // base: {} = nuevo · {pid, ...} = uno mío · {id, ...} = de SendFlow. Devuelve "guardado", "borrado" o null.
+  async function editarEjercicio(base) {
+    base = base || {};
+    const esPropio = !!base.pid, deSendflow = !esPropio && !!base.id && !!EJ_ID[base.id];
+    const cuerpo = html(`<div class="form-grilla ej-form">
+      ${deSendflow ? `<div class="campo ancho"><div class="aviso-correccion">Es un ejercicio de SendFlow. Si lo modificás queda <b>tu copia</b> en su lugar; la original no se pierde y vuelve si borrás tu copia. Los planes que ya armaste no cambian.</div></div>` : ""}
+      ${esPropio && base.baseId ? `<div class="campo ancho"><div class="aviso-correccion">Es tu copia de un ejercicio de SendFlow. Con «Volver al original» se borra tu copia y vuelve el de SendFlow.</div></div>` : ""}
+      <div class="campo ancho"><label>Nombre</label><input class="input" name="nombre" maxlength="120" value="${esc(base.nombre || "")}" placeholder="Sentadilla con barra"></div>
+      <div class="campo"><label>Categoría</label><select class="input" name="cat">${Object.entries(CATS).map(([k, t]) => `<option value="${k}" ${k === (base.cat || "otro") ? "selected" : ""}>${t}</option>`).join("")}</select></div>
+      <div class="campo"><label>Series</label><input class="input" name="series" type="number" min="0" max="999" value="${base.series || ""}"></div>
+      <div class="campo"><label>Repeticiones</label><input class="input" name="reps" maxlength="20" value="${esc(base.reps || "")}" placeholder="6 · 8 por pierna · 30 s"></div>
+      <div class="campo"><label>Carga</label><input class="input" name="carga" maxlength="40" value="${esc(base.carga || "")}" placeholder="70–80 % del máximo"></div>
+      <div class="campo"><label>Tiempo</label><input class="input" name="tiempo" maxlength="20" value="${esc(base.tiempo || "")}" placeholder="45 s"></div>
+      <div class="campo"><label>Descanso (segundos)</label><input class="input" name="descanso" type="number" min="0" max="3600" step="5" value="${base.descanso || ""}" placeholder="90"></div>
+      <div class="campo ancho"><label>Versión más fácil <span class="opcional">(para cuando le cuesta)</span></label><input class="input" name="facil" maxlength="120" value="${esc(base.facil || "")}" placeholder="Sentadilla goblet"></div>
+      <div class="campo ancho"><label>Nota técnica</label><textarea class="input" name="nota" maxlength="300" placeholder="Cómo se hace, en qué fijarse">${esc(base.nota || "")}</textarea></div></div>`);
+    const acc = [{ texto: "Volver", clase: "fantasma", valor: null }];
+    if (esPropio) acc.push({ texto: base.baseId ? "Volver al original" : "Borrar", clase: "peligro", alHacer: async () => {
+      if (!(await confirmar(base.baseId ? "¿Borrar tu copia y volver al ejercicio original de SendFlow? Los planes ya armados no cambian." : "¿Borrar este ejercicio de tu biblioteca? Los planes ya armados no cambian.", base.baseId ? "Volver al original" : "Borrar"))) return false;
+      try { await propioBorrar(base.pid); await propiosListar(); return "borrado"; } catch (e) { aviso(e.message, "error"); return false; }
+    } });
+    acc.push({ texto: "Guardar", clase: "primario", alHacer: async (c) => {
+      const nombre = $("[name=nombre]", c).value.trim();
+      if (!nombre) { aviso("Poné el nombre del ejercicio.", "oro"); return false; }
+      const d = { nombre, categoria: $("[name=cat]", c).value, series: $("[name=series]", c).value, reps: $("[name=reps]", c).value.trim(), carga: $("[name=carga]", c).value.trim(),
+        tiempo: $("[name=tiempo]", c).value.trim(), nota: $("[name=nota]", c).value.trim(), facil: $("[name=facil]", c).value.trim(), descanso: $("[name=descanso]", c).value };
+      if (esPropio) { d.id = base.pid; if (base.baseId) d.baseId = base.baseId; }
+      if (deSendflow) d.baseId = base.id;
+      try { await propioGuardar(d); await propiosListar(); aviso("Ejercicio guardado.", "oro"); return "guardado"; } catch (e) { aviso(e.message, "error"); return false; }
+    } });
+    return abrirModal({ titulo: esPropio ? "Modificar ejercicio" : deSendflow ? "Modificar ejercicio de SendFlow" : "Nuevo ejercicio", cuerpo, acciones: acc });
+  }
+
   // ---------- Selector de ejercicios ----------
   async function elegirEjercicios() {
-    let propios = [], errProp = "";
-    try { propios = await propiosListar(); } catch (e) { errProp = e.message; }
-    const propiosConv = propios.map(p => ({ id: "p" + p.id, pid: p.id, nombre: p.nombre, cat: p.categoria || "otro", series: p.series, reps: p.reps, carga: p.carga, tiempo: p.tiempo, nota: p.nota, propio: true }));
+    let errProp = "";
+    try { await propiosListar(); } catch (e) { errProp = e.message; }
     let cat = "todos", q = "";
     const sel = new Map();
     const cuerpo = html(`<div class="bib">
-      <input class="input" name="q" placeholder="Buscar ejercicio…" autocomplete="off">
+      <div class="bib-busca"><input class="input" name="q" placeholder="Buscar ejercicio…" autocomplete="off"><button type="button" class="btn chico" data-nuevo-ej>${ICONOS.mas}Nuevo</button></div>
       <div class="bib-cats">${[["todos", "Todos"], ["mios", "Mis ejercicios"]].concat(Object.entries(CATS).filter(([k]) => k !== "otro")).map(([k, t]) => `<button type="button" class="bib-cat ${k === "todos" ? "sel" : ""}" data-cat="${k}">${t}</button>`).join("")}</div>
       <div class="bib-lista"></div>
       <div class="bib-pie"><span class="bib-cuenta">Elegí uno o varios.</span></div>
     </div>`);
     const lista = $(".bib-lista", cuerpo), cuenta = $(".bib-cuenta", cuerpo);
-    const todos = () => propiosConv.concat(EJERCICIOS);
+    const todos = () => listaEfectiva(cachePropios);
     const pintar = () => {
       lista.innerHTML = "";
       const f = todos().filter(e => (cat === "todos" || (cat === "mios" ? e.propio : e.cat === cat)) && (!q || (e.nombre + " " + (CATS[e.cat] || "")).toLowerCase().includes(q)));
-      if (!f.length) lista.appendChild(html(`<div class="bib-vacio">${cat === "mios" ? (errProp ? esc(errProp) : "Todavía no guardaste ejercicios propios. Cuando agregues uno a mano, tocá la estrella para guardarlo acá.") : "No hay ejercicios con ese nombre."}</div>`));
+      if (!f.length) lista.appendChild(html(`<div class="bib-vacio">${cat === "mios" ? (errProp ? esc(errProp) : "Todavía no tenés ejercicios propios. Tocá «Nuevo», modificá uno de SendFlow con ✎, o guardá uno con la estrella al armar una sesión.") : "No hay ejercicios con ese nombre."}</div>`));
       f.forEach(e => {
         const el = html(`<label class="bib-item ${sel.has(e.id) ? "sel" : ""}"><input type="checkbox" ${sel.has(e.id) ? "checked" : ""}>
-          <span class="bib-txt"><b>${esc(e.nombre)}</b><small>${esc(resumen(e))}${e.propio ? " · mío" : ""}</small></span>
-          ${e.propio ? `<button type="button" class="bib-x" title="Borrar de mis ejercicios" aria-label="Borrar">×</button>` : ""}</label>`);
+          <span class="bib-txt"><b>${esc(e.nombre)}</b><small>${esc(resumen(e))}${e.facil ? " · más fácil: " + esc(e.facil) : ""}${e.propio ? (e.baseId ? " · modificado" : " · mío") : ""}</small></span>
+          <button type="button" class="bib-x bib-ed" title="Modificar este ejercicio" aria-label="Modificar">✎</button></label>`);
         $("input", el).addEventListener("change", (ev) => { if (ev.target.checked) sel.set(e.id, e); else sel.delete(e.id); el.classList.toggle("sel", ev.target.checked); cuenta.textContent = sel.size ? `${sel.size} elegido${sel.size > 1 ? "s" : ""}` : "Elegí uno o varios."; });
-        const x = $(".bib-x", el);
-        if (x) x.addEventListener("click", async (ev) => {
+        $(".bib-x", el).addEventListener("click", async (ev) => {
           ev.preventDefault(); ev.stopPropagation();
-          try { await propioBorrar(e.pid); const i = propiosConv.indexOf(e); if (i >= 0) propiosConv.splice(i, 1); sel.delete(e.id); pintar(); } catch (err) { aviso(err.message, "error"); }
+          const r = await editarEjercicio(e);
+          if (r) { sel.delete(e.id); cuenta.textContent = sel.size ? `${sel.size} elegido${sel.size > 1 ? "s" : ""}` : "Elegí uno o varios."; pintar(); }
         });
         lista.appendChild(el);
       });
     };
     $("[name=q]", cuerpo).addEventListener("input", (ev) => { q = ev.target.value.trim().toLowerCase(); pintar(); });
+    $("[data-nuevo-ej]", cuerpo).addEventListener("click", async () => { if (await editarEjercicio({})) pintar(); });
     $$(".bib-cat", cuerpo).forEach(b => b.addEventListener("click", () => { cat = b.dataset.cat; $$(".bib-cat", cuerpo).forEach(x => x.classList.toggle("sel", x === b)); pintar(); }));
     pintar();
     return abrirModal({ titulo: "Elegir ejercicios", cuerpo, acciones: [{ texto: "Volver", clase: "fantasma", valor: null },
@@ -256,7 +318,8 @@
     const fila = (e) => {
       const f = html(`<div class="ej-fila"><input class="input" name="en" placeholder="Ejercicio" maxlength="120" value="${esc(e.nombre || "")}"><input class="input" name="es" type="number" min="0" max="999" placeholder="Series" value="${e.series || ""}"><input class="input" name="er" placeholder="Reps" maxlength="20" value="${esc(e.reps || "")}"><input class="input" name="ec" placeholder="Carga o tiempo" maxlength="40" value="${esc([e.carga, e.tiempo].filter(Boolean).join(" · "))}"><span class="ej-bt"><button type="button" class="btn icono chico peligro" aria-label="Quitar">${ICONOS.cerrar}</button></span></div>`);
       f.dataset.nota = e.nota || "";
-      $("button", f).addEventListener("click", () => f.remove());
+      masEjercicio(f, e);
+      $("[aria-label=Quitar]", f).addEventListener("click", () => f.remove());
       ejs.appendChild(f);
     };
     (base.ejercicios || []).forEach(fila);
@@ -266,7 +329,7 @@
     return abrirModal({ titulo: base.id || base.baseId ? "Modificar sesión tipo" : "Nueva sesión tipo", cuerpo, acciones: [{ texto: "Volver", clase: "fantasma", valor: false }, { texto: "Guardar", clase: "primario", alHacer: async (c) => {
       const titulo = $("[name=titulo]", c).value.trim();
       if (!titulo) { aviso("Ponele un nombre a la sesión.", "oro"); return false; }
-      const ejercicios = $$(".ej-fila", c).map(f => ({ nombre: $("[name=en]", f).value.trim(), series: $("[name=es]", f).value, reps: $("[name=er]", f).value.trim(), carga: $("[name=ec]", f).value.trim(), nota: f.dataset.nota || "" })).filter(e => e.nombre);
+      const ejercicios = $$(".ej-fila", c).map(f => Object.assign({ nombre: $("[name=en]", f).value.trim(), series: $("[name=es]", f).value, reps: $("[name=er]", f).value.trim(), carga: $("[name=ec]", f).value.trim(), nota: f.dataset.nota || "" }, leerMas(f))).filter(e => e.nombre);
       const d = { tipo: $("[name=tipo]", c).value, titulo, descripcion: $("[name=desc]", c).value.trim(), duracionMin: $("[name=dur]", c).value || null, intensidad: tocoInt ? $("[name=int]", c).value : null, ejercicios };
       if (base.baseId) d.baseId = base.baseId;
       try {
@@ -314,8 +377,10 @@
   const plantillaBorrar = (id) => rpc("coach_plantilla_borrar", { p_id: id });
   // Los ejercicios escritos a mano quedan en «Mis ejercicios» sin tener que tocar la estrella
   async function autoGuardar(lista) {
-    const nuevos = (lista || []).filter(e => e.nombre && !EJERCICIOS.some(b => b.nombre.toLowerCase() === e.nombre.toLowerCase()));
-    await Promise.allSettled(nuevos.map(e => propioGuardar({ nombre: e.nombre, categoria: "otro", series: e.series, reps: e.reps, carga: e.carga, nota: e.nota })));
+    await precargar();   // v66: lo que ya existe (de SendFlow o tuyo) no se pisa
+    const nuevos = (lista || []).filter(e => e.nombre && !buscarEfectivo(e.nombre));
+    await Promise.allSettled(nuevos.map(e => propioGuardar({ nombre: e.nombre, categoria: "otro", series: e.series, reps: e.reps, carga: e.carga, nota: e.nota, facil: e.facil, descanso: e.descanso })));
+    if (nuevos.length) await precargar();
   }
   // Plan propio: sesiones con semana/día relativos al lunes de inicio → fechas reales
   function generarPropio(d, desde, frec) {
@@ -330,5 +395,87 @@
     return { desde, hasta: sumar(lun, semanas * 7 - 1), fases, sesiones };
   }
 
-  window.Biblioteca = { CATS, EJERCICIOS, SESIONES, PLANES, sesionDe, generarPlan, elegirEjercicios, elegirSesion, propiosListar, propioGuardar, propioBorrar, plantillasListar, plantillaGuardar, plantillaBorrar, autoGuardar, generarPropio, nombresEjercicios: () => EJERCICIOS.map(e => e.nombre), buscar: (n) => EJERCICIOS.find(e => e.nombre.toLowerCase() === String(n || "").trim().toLowerCase()) || null, conv };
+
+  // ---------- v66: planes tipo (los de SendFlow se convierten al formato propio para poder copiarlos, usarlos y modificarlos) ----------
+  // Formato propio: { tipo, descripcion, semanas, fases: [{nombre, tipo, sem: [a, b], objetivo}], sesiones: [{sem, dia (0 = lunes), tipo, titulo, ...}], baseId? }
+  const planADatos = (pl) => {
+    const sesiones = [];
+    pl.fases.forEach(f => { for (let w = f.sem[0]; w <= f.sem[1]; w++) f.patron.forEach((id, k) => { if (!id) return; const x = sesionDe(id); if (x) sesiones.push(Object.assign({ sem: w, dia: k }, x)); }); });
+    return { tipo: pl.tipo, descripcion: pl.descripcion, semanas: pl.semanas, fases: pl.fases.map(f => ({ nombre: f.nombre, tipo: f.tipo, sem: [f.sem[0], f.sem[1]], objetivo: f.objetivo || "" })), sesiones };
+  };
+  const nombreCorto = (t) => String(t || "").replace(/ · .*$/, "");
+
+  // ---------- v66: pantalla «Mi biblioteca» del entrenador (ejercicios, sesiones tipo y planes tipo) ----------
+  // ctx: { alUsarPlan(valor) }  · valor = "a:<id>" (de SendFlow) o "m:<id>" (tuyo)
+  async function pantalla(raiz, ctx) {
+    ctx = ctx || {};
+    let tab = "ejercicios", cat = "todos", q = "", propios = [], sesMias = [], planesMios = [];
+    const err = { ej: "", ses: "", pl: "" };
+    const cargar = async () => {
+      try { propios = await propiosListar(); err.ej = ""; } catch (e) { propios = []; err.ej = e.message; }
+      try { sesMias = await plantillasListar("sesion"); err.ses = ""; } catch (e) { sesMias = []; err.ses = e.message; }
+      try { planesMios = await plantillasListar("plan"); err.pl = ""; } catch (e) { planesMios = []; err.pl = e.message; }
+    };
+    const TABS = [["ejercicios", "Ejercicios"], ["sesiones", "Sesiones tipo"], ["planes", "Planes tipo"]];
+    const tag = (t) => `<span class="bpan-tag">${t}</span>`;
+    const vacio = (t) => `<div class="bib-vacio">${t}</div>`;
+    const resEj = (e) => [resumen(e), e.descanso ? "descanso " + e.descanso + " s" : ""].filter(Boolean).join(" · ");
+    const cuerpoEjercicios = () => {
+      const f = listaEfectiva(propios).filter(e => (cat === "todos" || (cat === "mios" ? e.propio : e.cat === cat)) && (!q || (e.nombre + " " + (CATS[e.cat] || "")).toLowerCase().includes(q)));
+      return `<div class="bpan-barra"><input class="input" name="q" placeholder="Buscar ejercicio…" value="${esc(q)}" autocomplete="off"><button type="button" class="btn primario chico" data-nuevo>${ICONOS.mas}Nuevo ejercicio</button></div>
+        <div class="bib-cats">${[["todos", "Todos"], ["mios", "Míos"]].concat(Object.entries(CATS).filter(([k]) => k !== "otro")).map(([k, t]) => `<button type="button" class="bib-cat ${k === cat ? "sel" : ""}" data-cat="${k}">${t}</button>`).join("")}</div>
+        ${err.ej ? vacio(esc(err.ej)) : ""}
+        <div class="bpan-lista">${f.length ? f.map(e => `<div class="bpan-fila"><div class="bpan-txt"><b>${esc(e.nombre)}</b>${e.propio ? tag(e.baseId ? "Modificado" : "Mío") : tag("SendFlow")}${tag(esc(CATS[e.cat] || "Otros"))}
+            <small>${esc(resEj(e))}</small>${e.facil ? `<small>Más fácil: ${esc(e.facil)}</small>` : ""}</div>
+          <div class="bpan-acc"><button type="button" class="btn chico" data-ed="${esc(e.id)}">${ICONOS.editar}Modificar</button></div></div>`).join("") : vacio("No hay ejercicios con ese filtro.")}</div>`;
+    };
+    const sesDeSendflow = () => { const tapadas = new Set(sesMias.map(m => m.datos.baseId).filter(Boolean)); return SESIONES.filter(x => x.ej.length && !tapadas.has(x.id)); };
+    const cuerpoSesiones = () => `<div class="bpan-barra"><span class="ayuda-chica">Sesiones armadas que cargás de un toque al armar un plan. Si modificás una de SendFlow queda tu copia en su lugar.</span><button type="button" class="btn primario chico" data-nueva-ses>${ICONOS.mas}Nueva sesión tipo</button></div>
+      ${err.ses ? vacio(esc(err.ses)) : ""}
+      <div class="bpan-lista">${sesMias.map(m => `<div class="bpan-fila"><div class="bpan-txt"><b>${esc(m.titulo)}</b>${tag(m.datos.baseId ? "Modificada" : "Mía")}${tag(esc(TIPOS_SES[m.datos.tipo] || "Otro"))}
+          <small>${m.datos.duracionMin ? m.datos.duracionMin + " min · " : ""}${(m.datos.ejercicios || []).length} ejercicio${(m.datos.ejercicios || []).length === 1 ? "" : "s"}${m.datos.intensidad ? " · intensidad " + m.datos.intensidad + "/10" : ""}</small></div>
+          <div class="bpan-acc"><button type="button" class="btn chico" data-ses-mia="${esc(m.id)}">${ICONOS.editar}Modificar</button><button type="button" class="btn chico peligro" data-ses-borrar="${esc(m.id)}">${m.datos.baseId ? "Volver a la original" : "Borrar"}</button></div></div>`).join("")}
+        ${sesDeSendflow().map(x => `<div class="bpan-fila"><div class="bpan-txt"><b>${esc(x.titulo)}</b>${tag("SendFlow")}${tag(esc(TIPOS_SES[x.tipo] || "Otro"))}<small>${x.duracionMin} min · intensidad ${x.intensidad}/10 · ${x.ej.length} ejercicio${x.ej.length > 1 ? "s" : ""}</small></div>
+          <div class="bpan-acc"><button type="button" class="btn chico" data-ses-id="${esc(x.id)}">${ICONOS.editar}Modificar</button></div></div>`).join("")}</div>`;
+    const planesDeSendflow = () => { const tapados = new Set(planesMios.map(m => m.datos.baseId).filter(Boolean)); return PLANES.filter(x => !tapados.has(x.id)); };
+    const cuerpoPlanes = () => `<div class="bpan-barra"><span class="ayuda-chica">Planes completos con sus fases y sesiones. «Crear plan» abre Nuevo plan con este ya elegido; «Duplicar» te deja una copia para cambiar sin tocar el original.</span></div>
+      ${err.pl ? vacio(esc(err.pl)) : ""}
+      <div class="bpan-lista">${planesMios.map(m => { const d = m.datos || {}; return `<div class="bpan-fila"><div class="bpan-txt"><b>${esc(m.titulo)}</b>${tag(d.baseId ? "Modificado" : "Mío")}
+          <small>${d.semanas || "?"} semana${d.semanas === 1 ? "" : "s"} · ${(d.sesiones || []).filter(x => x.tipo !== "descanso").length} sesiones · ${(d.fases || []).map(f => esc(f.nombre)).join(", ") || "sin fases"}</small></div>
+          <div class="bpan-acc"><button type="button" class="btn chico primario" data-usar="m:${esc(m.id)}">Crear plan</button><button type="button" class="btn chico" data-dup-mio="${esc(m.id)}">Duplicar</button><button type="button" class="btn chico peligro" data-plan-borrar="${esc(m.id)}">${d.baseId ? "Volver al original" : "Borrar"}</button></div></div>`; }).join("")}
+        ${planesDeSendflow().map(x => { const d = planADatos(x); return `<div class="bpan-fila"><div class="bpan-txt"><b>${esc(nombreCorto(x.titulo))}</b>${tag("SendFlow")}
+          <small>${x.semanas} semana${x.semanas === 1 ? "" : "s"} · ${d.sesiones.filter(y => y.tipo !== "descanso").length} sesiones · ${x.fases.map(f => esc(f.nombre)).join(", ")}</small></div>
+          <div class="bpan-acc"><button type="button" class="btn chico primario" data-usar="a:${esc(x.id)}">Crear plan</button><button type="button" class="btn chico" data-dup-id="${esc(x.id)}">Duplicar</button></div></div>`; }).join("")}</div>`;
+    const pintar = () => {
+      raiz.innerHTML = `<div class="vista-plan bpan-tabs" role="group" aria-label="Qué querés ver">${TABS.map(([k, t]) => `<button type="button" data-tab="${k}" class="${k === tab ? "sel" : ""}">${t}</button>`).join("")}</div>
+        <div class="bpan-cuerpo">${tab === "ejercicios" ? cuerpoEjercicios() : tab === "sesiones" ? cuerpoSesiones() : cuerpoPlanes()}</div>`;
+      $$("[data-tab]", raiz).forEach(b => b.addEventListener("click", () => { tab = b.dataset.tab; pintar(); }));
+      const bq = $("[name=q]", raiz);
+      if (bq) { bq.addEventListener("input", (ev) => { q = ev.target.value.trim().toLowerCase(); const pos = ev.target.selectionStart; pintar(); const n = $("[name=q]", raiz); n.focus(); n.setSelectionRange(pos, pos); }); }
+      $$(".bib-cat", raiz).forEach(b => b.addEventListener("click", () => { cat = b.dataset.cat; pintar(); }));
+      const bn = $("[data-nuevo]", raiz); if (bn) bn.addEventListener("click", async () => { if (await editarEjercicio({})) { await cargar(); pintar(); } });
+      $$("[data-ed]", raiz).forEach(b => b.addEventListener("click", async () => { const e = listaEfectiva(propios).find(x => x.id === b.dataset.ed); if (e && await editarEjercicio(e)) { await cargar(); pintar(); } }));
+      const bs = $("[data-nueva-ses]", raiz); if (bs) bs.addEventListener("click", async () => { if (await editarSesionTipo({ tipo: "gimnasio", ejercicios: [] })) { await cargar(); pintar(); } });
+      $$("[data-ses-id]", raiz).forEach(b => b.addEventListener("click", async () => { const x = sesionDe(b.dataset.sesId); if (x && await editarSesionTipo(Object.assign({ baseId: b.dataset.sesId }, x))) { await cargar(); pintar(); } }));
+      $$("[data-ses-mia]", raiz).forEach(b => b.addEventListener("click", async () => { const m = sesMias.find(x => x.id === b.dataset.sesMia); if (m && await editarSesionTipo(Object.assign({ id: m.id, titulo: m.titulo }, m.datos))) { await cargar(); pintar(); } }));
+      $$("[data-ses-borrar]", raiz).forEach(b => b.addEventListener("click", async () => {
+        const m = sesMias.find(x => x.id === b.dataset.sesBorrar); if (!m) return;
+        if (!(await confirmar(m.datos.baseId ? "¿Borrar tu copia y volver a la sesión original de SendFlow? Los planes ya armados no cambian." : "¿Borrar esta sesión tipo? Los planes ya armados no cambian.", m.datos.baseId ? "Volver a la original" : "Borrar"))) return;
+        try { await plantillaBorrar(m.id); await cargar(); pintar(); } catch (e) { aviso(e.message, "error"); }
+      }));
+      $$("[data-usar]", raiz).forEach(b => b.addEventListener("click", () => { if (ctx.alUsarPlan) ctx.alUsarPlan(b.dataset.usar); }));
+      const duplicar = async (titulo, datos) => { try { await plantillaGuardar("plan", titulo, datos); await cargar(); pintar(); aviso("Copia guardada en Planes tipo.", "oro"); } catch (e) { aviso(e.message, "error"); } };
+      $$("[data-dup-id]", raiz).forEach(b => b.addEventListener("click", () => { const x = PLANES.find(y => y.id === b.dataset.dupId); if (x) duplicar(nombreCorto(x.titulo) + " (copia)", planADatos(x)); }));
+      $$("[data-dup-mio]", raiz).forEach(b => b.addEventListener("click", () => { const m = planesMios.find(y => y.id === b.dataset.dupMio); if (m) { const d = Object.assign({}, m.datos); delete d.baseId; duplicar(m.titulo + " (copia)", d); } }));
+      $$("[data-plan-borrar]", raiz).forEach(b => b.addEventListener("click", async () => {
+        const m = planesMios.find(x => x.id === b.dataset.planBorrar); if (!m) return;
+        if (!(await confirmar(m.datos.baseId ? "¿Borrar tu copia y volver al plan original de SendFlow?" : "¿Borrar este plan tipo? Los planes ya creados con él no cambian.", m.datos.baseId ? "Volver al original" : "Borrar"))) return;
+        try { await plantillaBorrar(m.id); await cargar(); pintar(); } catch (e) { aviso(e.message, "error"); }
+      }));
+    };
+    raiz.innerHTML = `<div class="vacio">Cargando tu biblioteca…</div>`;
+    await cargar(); pintar();
+  }
+
+  window.Biblioteca = { CATS, EJERCICIOS, SESIONES, PLANES, sesionDe, generarPlan, elegirEjercicios, elegirSesion, propiosListar, propioGuardar, propioBorrar, plantillasListar, plantillaGuardar, plantillaBorrar, autoGuardar, generarPropio, nombresEjercicios: nombresEfectivos, buscar: buscarEfectivo, conv, precargar, pantalla, planADatos, editarSesionTipo, editarEjercicio, masEjercicio, leerMas, listaEfectiva, getPropios: () => cachePropios };
 })();
