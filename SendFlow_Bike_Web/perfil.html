@@ -27,6 +27,7 @@
     <button class="nav-item" id="nav-mensajes" data-ruta="mensajes" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/></svg><span>Mensajes</span><b class="nav-insignia" id="nav-mensajes-n" hidden></b></button>
     <button class="nav-item" id="nav-perfil" data-ruta="perfil" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c1-4.5 4.2-7 8-7s7 2.5 8 7"/></svg><span>Perfil</span><b id="nav-perfil-insignia" class="nav-insignia" hidden></b></button>
     <a class="nav-item" id="nav-admin" href="/admin.html" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 4.5-3.2 8-8 9-4.8-1-8-4.5-8-9V6z"/><path d="M9 12l2 2 4-4"/></svg><span>Admin</span></a>
+    <button class="nav-item volver-coach" id="nav-coach" data-ruta="coach" type="button" hidden><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg><span>Ir a Coach</span></button>
     <button class="nav-item" id="btn-salir" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4H5v16h4"/><path d="M16 8l4 4-4 4M20 12H9"/></svg><span>Salir</span></button>
   </div>
   <div class="nav-pie" id="nav-pie"></div>
@@ -112,6 +113,7 @@
     </div>
 
     <div id="hub-invitaciones"></div>
+    <div id="hub-mensajes"></div>
     <div id="hub-tarjetas" class="rejilla"></div>
 
 
@@ -245,6 +247,7 @@
 <script src="/js/config.js"></script>
 <script src="/js/avisos-push.js"></script>
 <script src="/js/avisos-email.js"></script>
+<script src="/js/fecha-dmy.js"></script>
 <script src="/js/editor-bici.js"></script>
 <script src="/js/calculos-bici.js"></script>
 <script src="/js/mi-perfil.js"></script>
