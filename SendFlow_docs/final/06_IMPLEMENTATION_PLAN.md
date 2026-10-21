@@ -168,6 +168,7 @@ Etapa 2d — Validación con datos reales
 
 ### FASE 6 — Lanzamiento público
 **Entrega:** registro abierto a otros pilotos y entrenadores.
+**Condición de Eric (21/10/2026):** hoy **no hay cuentas reales**, solo cuentas de prueba suyas; no se abre al público hasta tener **un Sender completo y funcional y un sitio estable y completo**, probados con datos reales en situaciones reales. Por eso no hace falta migrar ni pedir el descargo (W14) a usuarios existentes: las cuentas de prueba lo aceptan al primer ingreso, o se recrean.
 
 - [ ] Términos, privacidad y consentimiento (W9) y **descargo de lesiones al abrir la cuenta (W14)**, revisión de un abogado (ley argentina + GDPR). Región de la base para producción.
 - [ ] Supabase Pro y revisión de términos comerciales de Cloudflare/Supabase.
