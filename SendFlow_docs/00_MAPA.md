@@ -30,6 +30,7 @@
 ## Mercado y estrategia
 - [Foco de producto: dos ruedas (DH y enduro), no multideporte](01_PRD.md) (PRD §1 y §9) — decisión de Eric del 21/10.
 - [Análisis competitivo y foco de producto (21/10/2026)](ANALISIS_COMPETITIVO_2026-10-21.md): SportSense y otros, matriz de funciones, riesgos y plan que no depende del hardware.
+- [Anexo: MTB Fit (21/10/2026)](ANEXO_MTB_FIT_2026-10-21.md): qué es, qué se vio dentro de la app y qué se usa para los planes del coach (decisiones C67 a C73).
 - [Revisión de informes externos (15/10)](REVISION_EXTERNA_2026-10-15.md): qué se tomó y qué no de cuatro informes de otras IA.
 
 ## Referencia técnica (subordinada a los 01–07)

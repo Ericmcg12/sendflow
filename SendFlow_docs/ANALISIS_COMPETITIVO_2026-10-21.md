@@ -259,3 +259,7 @@ Que otra app tenga lo mismo no basta [Probable]: el coach tiene sus alumnos, su 
 3. Planes y funciones de [Trailmetry](https://trailmetry.com/) (producto reciente) y cualquier vista de coach en Trailmetry o BYB.
 4. Versión y reseñas de la app de SportSense.
 5. Estado de Coach (v52 a v58) y del hardware: cambian cada semana.
+
+## Anexo
+
+- [MTB Fit](ANEXO_MTB_FIT_2026-10-21.md): app de entrenamiento físico para ciclistas de MTB (biblioteca de gimnasio sobre Trainerize), revisada con capturas de la app el 21/10/2026.
