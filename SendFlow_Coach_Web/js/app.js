@@ -845,28 +845,43 @@
     if (d < 86400) return "hace " + Math.round(d / 3600) + " h";
     return new Date(s).toLocaleDateString("es-AR", { day: "2-digit", month: "2-digit", year: "numeric" });
   };
+  // v63: lista de pilotos con cuenta para escribirles directo
+  async function elegirPilotoMensaje() {
+    let todos = []; try { todos = (await API.get("pilotos")).pilotos || []; } catch (e) { aviso(e.message, "error"); return null; }
+    const con = todos.filter(p => p.usuarioId), sin = todos.length - con.length;
+    if (!con.length) { aviso("Tus pilotos todavía no tienen cuenta. Cuando la creen, vas a poder escribirles acá.", "oro"); return null; }
+    const cuerpo = html(`<div><div class="cc-lista">${con.map(p => `<button type="button" class="tarjeta gr-tarjeta" data-id="${esc(p.id)}" style="flex-direction:row;align-items:center;gap:12px">${avatar(p)}<b>${esc(p.nombre)}</b></button>`).join("")}</div>
+      ${sin ? `<p class="ayuda" style="margin-top:10px">${sin} ${sin === 1 ? "piloto no aparece porque todavía no tiene" : "pilotos no aparecen porque todavía no tienen"} cuenta.</p>` : ""}</div>`);
+    return new Promise(res => {
+      let cerrar = null;
+      $$("[data-id]", cuerpo).forEach(b => b.addEventListener("click", () => { res(con.find(p => p.id === b.dataset.id)); const x = cuerpo.closest(".modal-fondo"); if (x) x.querySelector(".modal-pie button").click(); }));
+      abrirModal({ titulo: "¿A quién le escribís?", cuerpo, acciones: [{ texto: "Volver", clase: "fantasma", valor: null }] }).then(() => res(null));
+    });
+  }
   async function pantallaMensajes(v, idSel) {
     clearInterval(relojBandeja);
     let conv = (await API.get("conversaciones")).conversaciones || [];
     const raiz = html(`<div class="bandeja ${idSel ? "con-sel" : ""}">
       <div class="cab-pagina entra"><div><h1 class="titulo-pagina">Mensajes</h1>
-        <div class="sub-pagina">${esCoach() ? "Lo que te escriben tus pilotos sobre sus análisis." : "Lo que hablás con tu entrenador sobre cada devolución."}</div></div></div>
+        <div class="sub-pagina">${esCoach() ? "Lo que te escriben tus pilotos, o escribile vos a quien quieras." : "Lo que hablás con tu entrenador sobre cada devolución."}</div></div>
+        ${esCoach() ? `<button type="button" class="btn primario" data-accion="nuevo-mensaje">${ICONOS.mas}Nuevo mensaje</button>` : ""}</div>
       <div class="bandeja-cuerpo entra"><div class="bandeja-lista"></div><div class="bandeja-conv"></div></div></div>`);
     v.appendChild(raiz);
     const lista = $(".bandeja-lista", raiz), panel = $(".bandeja-conv", raiz);
     let actual = idSel || null;
+    const vacias = {};   // conversaciones directas recién abiertas, sin mensajes todavía
     const otro = (c) => c.soyCoach ? (c.pilotoNombre || "Piloto") : (c.coachNombre || "Entrenador");
     const pintarLista = () => {
       lista.innerHTML = "";
       if (!conv.length) {
-        lista.appendChild(html(`<div class="vacio">Todavía no hay mensajes.<br>Las conversaciones empiezan desde un análisis, en su pestaña <b>Mensajes</b>.</div>`));
+        lista.appendChild(html(`<div class="vacio">Todavía no hay mensajes.<br>${esCoach() ? "Tocá <b>Nuevo mensaje</b> para escribirle a un piloto." : "Las conversaciones empiezan desde un análisis, en su pestaña <b>Mensajes</b>."}</div>`));
         return;
       }
       conv.forEach(c => {
         const el = html(`<button type="button" class="conv-item ${c.analisisId === actual ? "sel" : ""} ${c.sinLeer ? "sin-leer" : ""}">
           <div class="avatar" style="--c:#4fe3c2">${esc(iniciales(otro(c)))}</div>
           <div class="conv-txt"><div class="conv-fila"><b>${esc(otro(c))}</b><span class="conv-hora">${haceCuanto(c.ultimo)}</span></div>
-            <div class="conv-tit">${esc(c.titulo || "Sin título")}</div>
+            <div class="conv-tit">${c.directo ? "Mensaje directo" : esc(c.titulo || "Sin título")}</div>
             <div class="conv-ult">${c.ultimoEsMio ? "Vos: " : ""}${esc(c.ultimoTexto || "")}</div></div>
           ${c.sinLeer ? `<b class="insignia">${c.sinLeer}</b>` : ""}</button>`);
         el.addEventListener("click", () => {
@@ -885,8 +900,8 @@
       if (!silencioso) {
         pintarLista();
         panel.innerHTML = `<div class="conv-cab"><button type="button" class="btn icono fantasma conv-volver" aria-label="Volver a Mensajes" title="Volver">${ICONOS.volver}</button>
-          <div class="conv-cab-txt"><b>${esc(c ? otro(c) : "")}</b><span>${esc(c ? (c.titulo || "Sin título") : "")}</span></div>
-          <a class="btn chico" href="/analisis/${esc(id)}">${ICONOS.video}Abrir análisis</a></div>
+          <div class="conv-cab-txt"><b>${esc(c ? otro(c) : "")}</b><span>${esc(c ? (c.directo ? "Mensaje directo" : (c.titulo || "Sin título")) : "")}</span></div>
+          ${c && c.directo ? "" : `<a class="btn chico" href="/analisis/${esc(id)}">${ICONOS.video}Abrir análisis</a>`}</div>
           <div class="msj-lista conv-mensajes"><p class="ayuda">Cargando…</p></div>
           <div class="msj-nuevo"><textarea class="input" maxlength="2000" placeholder="Escribí tu respuesta…"></textarea><small class="ayuda-enter">Enter envía · Shift+Enter, otra línea</small>
             <div class="msj-pie"><span class="ayuda-chica">${c && c.soyCoach ? "Le llega a " + esc(otro(c)) + " (y un mail de aviso)." : "Le llega a tu entrenador (y un mail de aviso)."}</span>
@@ -927,12 +942,27 @@
     }
     async function refrescar() {
       try { conv = (await API.get("conversaciones")).conversaciones || []; } catch (e) { return; }
+      Object.keys(vacias).forEach(k => { if (conv.some(x => x.analisisId === k)) delete vacias[k]; else conv.unshift(vacias[k]); });   // v63: conversación directa todavía sin mensajes
       pintarLista();
       if (actual) await abrir(actual, true);
       actualizarAvisos();
     }
     pintarLista();
     if (actual) abrir(actual); else pintarPanelVacio();
+    const bn = $("[data-accion=nuevo-mensaje]", raiz);
+    if (bn) bn.addEventListener("click", async () => {   // v63: escribirle a un piloto sin abrir un análisis
+      const piloto = await elegirPilotoMensaje();
+      if (!piloto) return;
+      try {
+        const r = await API.post("conversacion-directa", { pilotoId: piloto.id });
+        let c = conv.find(x => x.analisisId === r.analisisId);
+        if (!c) { c = { analisisId: r.analisisId, titulo: "Mensajes directos", directo: true, soyCoach: true, pilotoNombre: r.pilotoNombre || piloto.nombre, coachNombre: "", ultimo: new Date().toISOString(), ultimoTexto: "", total: 0, sinLeer: 0 }; vacias[c.analisisId] = c; conv.unshift(c); }
+        actual = r.analisisId; raiz.classList.add("con-sel");
+        history.pushState(null, "", "/mensajes/" + r.analisisId);
+        pintarLista(); abrir(r.analisisId);
+        const ta = $("textarea", panel); if (ta) ta.focus();
+      } catch (e) { aviso(e.message, "error"); }
+    });
     relojBandeja = setInterval(() => {
       if (!location.pathname.startsWith("/mensajes")) { clearInterval(relojBandeja); return; }
       if (document.visibilityState === "visible") refrescar();

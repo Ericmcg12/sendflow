@@ -249,3 +249,7 @@ Columnas nuevas de `tareas_plan`: `modalidad`, `hora`, `lugar`, `lugar_confirmad
 ### coach_v31 y coach_v32 (21/10/2026)
 - **coach_v31_clip_comentario.sql:** `coach_comentarios.t_fin numeric` (fin del clip; `t` es el inicio); `coach_comentario_json` devuelve `tFin`; función nueva `coach_comentario_clip(p_id, p_texto, p_t, p_t_fin)` (authenticated; fin > inicio, máx. 30 s, mismo tope de 500 comentarios). `coach_comentario_crear` no cambia.
 - **coach_v32_resumen_semanal.sql:** `notif_prefs.mail_resumen_semanal` (default true) y `ultimo_resumen_semanal`; `notif_prefs_resumen_semanal(p_activo)` (entrenador, lee/guarda); `aviso_resumen_semanal_tomar(p_ignorar_dia, p_coach)` (solo service_role: marca la semana y devuelve los datos por entrenador).
+
+### coach_v33 (21/10/2026)
+**coach_v33_mensajes_directos.sql:** `coach_conversacion_directa(p_piloto)` (entrenador; el piloto debe tener cuenta; crea o devuelve la conversación directa: fila de `coach_analisis` con `contenido->>'directo' = 'true'`, `duracion` 0, sin video); `coach_analisis_listar` excluye las directas; `coach_conversaciones` devuelve `directo`. El CHECK de `tipo` no se tocó. Las directas cuentan en `admin_uso_resumen` como análisis (sin corregir).
+

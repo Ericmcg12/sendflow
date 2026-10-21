@@ -530,6 +530,7 @@
   // ======================================================================= Abrir
   async function abrir(v, id) {
     const { analisis: a } = await API.get("analisis/" + id);
+    if (!(a.duracion > 0)) { history.replaceState(null, "", "/mensajes/" + id); if (window.CoachApp && CoachApp.navegar) CoachApp.navegar("/mensajes/" + id); return; }   // v63: es una conversación directa, no un análisis
     const edita = !!a.puedeEditar;
     const pilotos = edita ? (await API.get("pilotos")).pilotos : [];
     const piloto = a.pilotoId ? (pilotos.find(p => p.id === a.pilotoId) || { id: a.pilotoId, nombre: a.pilotoNombre || "" }) : null;

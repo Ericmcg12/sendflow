@@ -278,3 +278,6 @@ Solo web; la app no se toca. SQL aplicado en producción: `nube/coach_v31_clip_c
 
 ## 2d-unvicies) Pilotos: secciones y tarjetas de grupo (Coach v62, 21/10/2026)
 Solo Coach. Pilotos → título de sección «Pilotos» (cian, como «Grupos») y tarjeta «+ Agregar piloto» al final de la lista (se quitó el botón de arriba). Las tarjetas de grupo muestran el nombre más grande y los avatares de sus pilotos (hasta 5 y «+N»). Sin foto propia del grupo (haría falta una columna nueva). Archivos: `app.js`, `grupos.js`, `css/coach.css`.
+
+## 2d-duovicies) Mensajes directos (Coach v63, 21/10/2026)
+Solo Coach. SQL aplicado: `nube/coach_v33_mensajes_directos.sql`. Mensajes → **Nuevo mensaje** → lista de pilotos con cuenta → conversación directa (sin abrir análisis). Una por piloto; no se lista como análisis. Si alguien abre `/analisis/<id>` de una directa, `estudio.js` lo manda a `/mensajes/<id>` (así los enlaces de los avisos caen bien). Archivos: `app.js`, `api.js`, `estudio.js`. El aviso por mail/push al piloto dice «comentario en Mensajes directos» (texto genérico de `avisos-coach`). No probado en producción.
