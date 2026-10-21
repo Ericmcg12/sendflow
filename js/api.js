@@ -209,6 +209,7 @@
     // v5 (11/10/2026): conversación de entrenamiento
     if (es(/^analisis\/([^/]+)\/visto$/) && metodo === "POST") return rpc("coach_analisis_visto", { p_id: m[1] });
     if (es(/^analisis\/([^/]+)\/comentarios$/)) {
+      if (metodo === "POST" && cuerpo.tFin != null) return rpc("coach_comentario_clip", { p_id: m[1], p_texto: cuerpo.texto || "", p_t: cuerpo.t, p_t_fin: cuerpo.tFin });   // v61 (coach_v31.sql)
       if (metodo === "POST") return rpc("coach_comentario_crear", { p_id: m[1], p_texto: cuerpo.texto || "", p_t: cuerpo.t == null ? null : cuerpo.t, p_archivo: cuerpo.archivoId || null });
       return rpc("coach_comentarios_listar", { p_id: m[1] });
     }

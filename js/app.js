@@ -914,7 +914,7 @@
         l.forEach(k => {
           caja.appendChild(html(`<div class="burbuja ${k.esMio ? "mia" : ""} ${k.deCoach ? "de-coach" : "de-piloto"}" data-ini="${esc(iniciales(k.esMio ? USUARIO.nombre : (k.autorNombre || "?")))}">
             <div class="cab"><b>${esc(k.esMio ? "Vos" : (k.autorNombre || ""))}</b><span>${haceCuanto(k.creado)}</span>
-              ${k.t != null ? `<a class="ir" href="/analisis/${esc(id)}?t=${k.t}" title="Ver ese momento del video">${tiempo(k.t, false)}</a>` : ""}</div>
+              ${k.t != null ? `<a class="ir ${k.tFin != null ? "clip" : ""}" href="/analisis/${esc(id)}?t=${k.t}${k.tFin != null ? "&fin=" + k.tFin : ""}" title="${k.tFin != null ? "Ver el clip" : "Ver ese momento del video"}">${k.tFin != null ? "▶ " + tiempo(k.t, false) + " – " + tiempo(k.tFin, false) : tiempo(k.t, false)}</a>` : ""}</div>
             ${k.archivoId ? (k.archivoClase === "documento" ? `<a class="doc-msj" data-doc="${esc(k.archivoId)}" href="#" target="_blank" rel="noopener" title="Abrir el documento"><b>${esc((k.archivoNombre || "documento").split(".").pop().toUpperCase().slice(0, 4))}</b><span>${esc(k.archivoNombre || "Documento")}</span></a>` : `<img class="snap-msj" data-arch="${esc(k.archivoId)}" alt="Captura" title="Tocá para verla grande">`) : ""}<div class="txt">${k.archivoId && (k.texto === "📷 Captura" || String(k.texto).startsWith("📎 ")) ? "" : esc(k.texto)}</div>${k.esMio && k.leido ? `<div class="leido">Leído ✓</div>` : ""}</div>`));
         });
         if (window.SFAgendaChat) SFAgendaChat.decorar(caja, l, { analisisId: id, soyCoach: !!(c && c.soyCoach), pilotoNombre: c ? c.pilotoNombre : "" });   // v52
