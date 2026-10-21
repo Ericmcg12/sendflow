@@ -68,11 +68,13 @@
   /* ---------------- presión de neumáticos ---------------- */
   // Fórmula propia: carga por rueda y ancho de cubierta (exponente 1,5: más aire, menos presión) con factores de ajuste.
   var REPARTO = { D: 0.45, T: 0.55 }, C0 = 1.83, EXP_ANCHO = 1.5, MIN_PSI = 12, MAX_PSI = 45;
+  // La presión sube menos que el peso (exponente 0,65 sobre 94 kg): con 151 kg el cálculo lineal daba 29/35 y la real era 23/29.
+  var C_REF = 94, EXP_CARGA = 0.65;
   var F_ESTILO = { xc: 1.05, trail: 1, enduro: 0.97, dh: 0.95 }, F_CARCASA = { liviana: 1.08, trail: 1, enduro: 0.95, dh: 0.9 };
   var F_SISTEMA = { tubeless: 1, camara: 1.12 }, F_PISTA = { compacto: 1.04, seco_suelto: 1, humedo: 0.97, barroso: 0.95, mojado: 0.94 }, F_INSERTO = { si: 0.94, no: 1 };
   var pPres = null;
   function psi(rueda, carga, ancho, ins, carcasa) {
-    var p = C0 * REPARTO[rueda] * carga / Math.pow(ancho, EXP_ANCHO) * F_ESTILO[$("pnEstilo").value] * F_CARCASA[carcasa] * F_SISTEMA[$("pnSistema").value] * F_PISTA[$("pnPista").value] * F_INSERTO[ins];
+    var p = C0 * REPARTO[rueda] * C_REF * Math.pow(carga / C_REF, EXP_CARGA) / Math.pow(ancho, EXP_ANCHO) * F_ESTILO[$("pnEstilo").value] * F_CARCASA[carcasa] * F_SISTEMA[$("pnSistema").value] * F_PISTA[$("pnPista").value] * F_INSERTO[ins];
     return Math.max(MIN_PSI, Math.min(MAX_PSI, p));
   }
   function presCalc() {
