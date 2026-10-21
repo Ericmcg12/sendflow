@@ -183,3 +183,18 @@ Cada subida **reemplaza el sitio entero**: siempre la carpeta completa del zip, 
 - [ ] Perfil → «Cerrar mi cuenta» (escribir BORRAR) → se borra todo y vuelve a la bienvenida. Admin → «Eliminar con todos sus datos» usa la misma purga (antes dejaba archivos).
 - [ ] Perfil → «Espacio usado: X de 15 GB»; aviso al 90 %; al 100 % no deja subir. El admin cambia el límite por cuenta.
 - [ ] App en modo Profesional: una bajada de un piloto con cuenta queda en la cuenta del piloto. Textos sin celu/tablet; demo «Pista de demostración».
+
+### Coach v52–v58 + Bike (20–21/10/2026): agenda, grupos, clases presenciales, avisos
+Orden recomendado (la base y las funciones de borde **ya están aplicadas en producción**; esto sirve para repetirlo en otra base y para verificar):
+- [ ] SQL, en este orden, una sentencia a la vez si el editor se cuelga (no hay `DROP` ni `FOR … LOOP` a propósito): `coach_v24.sql` → `coach_v25_resumen_pilotos.sql` → `coach_v26_uso_grupos_aviso.sql` → `coach_v27_presencial.sql` → `coach_v28_confirmar_lugar.sql` → `coach_v29_asistencia.sql` → `seguridad_arreglo_archivos_20261020.sql`. (Si el trigger de v29 ya existe, ignorar «already exists».)
+- [ ] Supabase → Vault: secreto `aviso_diario_secreto` (lo crea `coach_v26`). Extensiones `pg_cron` y `pg_net` activas. Cron `aviso-sesion-diaria` (`0 * * * *`) presente y activo.
+- [ ] Edge Functions: `aviso-diario` **v4** (código de `nube/funcion_aviso_diario/index.ts`, **Verify JWT desactivado**; usa `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`), `avisos-coach` v9 (Verify JWT sí), `calendario-ics` v2, `archivos-coach` v9 (Verify JWT sí).
+- [ ] Prueba de la función de borde: llamar con el secreto y ver `{"ok":true,"usuarios":…,"clases":…,"pedidos":…,"preguntas":…,"resumenes":…,"enviados":…}`; sin la cabecera `x-cron-secret` y sin `Authorization` devuelve 401.
+- [ ] Cloudflare → Workers y Pages → cada proyecto → Metrics → Web Analytics → Enable (sin tocar código).
+- [ ] Sitios: bajar las ramas `deploy-coach-web` y `deploy-bike-web` como ZIP y subir **las dos carpetas completas** a Cloudflare Pages (cada subida reemplaza todo el sitio).
+- [ ] Probar: Bike → «Ir a Coach →» y Coach → «← Volver a Bike» (mismo estilo); Admin → pestaña **Uso** con números; Nuevo plan con «Días de entrenamiento»; sesión «hecha» / «no la hice» queda bloqueada y solo «Todavía no» la reabre; Pilotos → Grupos → crear y copiar un plan; ficha del piloto → Historial de entrenamiento; Inicio de Coach → «Atención con tus pilotos».
+- [ ] Clases presenciales: crear un plan presencial para un piloto de prueba → la clase dice «lugar a confirmar» → Inicio de Coach → «Confirmá el lugar» → **Se mantiene** (o **Cambiar lugar**) → el piloto que prendió «Recordarme las clases presenciales» recibe «Clase confirmada» / «¡Cambio de lugar!». Cambiar el lugar o la hora de una clase confirmada la vuelve a «sin confirmar».
+- [ ] Asistencia: piloto de prueba prende «Preguntarme si voy a la clase»; con una clase confirmada de hoy dentro de 6 h o menos (y después de las 8:00) llega «¿Vas a la clase de hoy?»; responder **Voy / No voy** en el Inicio de Coach; 2 h antes el entrenador recibe un solo resumen y ve «Quién va a la clase».
+- [ ] **iPhone:** el push solo funciona con el sitio agregado a la pantalla de inicio (Compartir → Agregar a inicio); probar con Coach instalado.
+- [ ] Antes de usarlo con pilotos reales: dejar el usuario de prueba `prueba1@gmail.com` hasta que Eric diga que se borra.
+- Volver atrás: redesplegar la versión anterior de `aviso-diario` (v3 o v2) y subir el ZIP anterior; las columnas y funciones nuevas no estorban a las versiones viejas de los sitios.

@@ -208,3 +208,35 @@ Función `SECURITY DEFINER` (solo `authenticated`; exige entrenador) que devuelv
 - `tareas_plan` + `asistencia ('voy'|'no_voy'|null)`, `asistencia_en`, `pregunta_asistencia_en`, `resumen_asistencia_en`; trigger `tareas_plan_reset_asistencia` las borra si cambia día, horario o modalidad. `notif_prefs` + `push_asistencia` (piloto, default false) y `push_resumen_asist` (entrenador, default true); `notif_prefs_asistencia_guardar(p_pregunta, p_resumen)`; `notif_prefs_leer` las devuelve.
 - Piloto: `piloto_asistencia_pendientes()` (clases confirmadas de hoy y mañana) y `piloto_asistencia_responder(p_id, p_valor)`. Entrenador: `coach_asistencia_clases()`.
 - Solo `service_role`: `aviso_asistencia_preguntar_tomar()` (6 h antes, nunca antes de las 8:00 locales, una vez por clase, solo clases con lugar confirmado y pilotos con `push_asistencia`) y `aviso_asistencia_resumen_tomar()` (2 h antes, un resumen por clase, solo si a algún piloto se le preguntó o respondió). Edge Function `aviso-diario` v4.
+
+### Resumen de funciones agregadas entre el 20 y el 21/10/2026 (coach_v24 … coach_v29)
+Todas `SECURITY DEFINER` con `search_path = public`, sin `execute` para `public`/`anon`. «Entrenador» = `coach_exigir_entrenador()`.
+
+| Función | Quién la ejecuta | Qué hace | Script |
+|---|---|---|---|
+| `coach_fechas_entrenador_listar/guardar/borrar` | entrenador | Agenda propia del entrenador (la ven sus pilotos) | v24 |
+| `coach_fecha_para_piloto(_borrar)`, `coach_fecha_para_analisis` | entrenador | Cargar/borrar una fecha en el calendario de un piloto | v24 |
+| `aviso_fecha_preparar` | `service_role` | Decide a quién avisar de una fecha (una vez por fecha) | v24 |
+| `coach_resumen_pilotos(p_dias)` | entrenador | Sin responder, cumplimiento, esfuerzo, tendencia por piloto | v25 |
+| `admin_uso_resumen(p_semanas)` | admin | Números agregados de uso | v26 |
+| `coach_grupos_listar/guardar/borrar`, `coach_plan_a_grupo` | entrenador | Grupos de pilotos y copia de un plan a un grupo | v26 |
+| `notif_prefs_push_guardar(p_activo, p_hora, p_zona)` | cualquier usuario (lo suyo) | Aviso con la sesión del día | v26 |
+| `aviso_diario_secreto`, `aviso_sesion_diaria_tomar` | `service_role` | Secreto del cron y sesiones a avisar | v26 (y v28: `confirmado`) |
+| `notif_prefs_clase_guardar(p_activo)`, `aviso_clase_tomar` | usuario / `service_role` | Recordatorio de clase 2 h antes (v28: solo lugar confirmado) | v27 |
+| `coach_clases_por_confirmar()` | entrenador | Clases de hoy a +2 días sin confirmar | v28 |
+| `coach_clase_confirmar(p_ids, p_lugar, p_futuras)` | entrenador | Mantener o cambiar el lugar (y las próximas con el mismo lugar) | v28 |
+| `aviso_clase_confirmada_tomar(p_coach)` | `service_role` | Clases confirmadas aún no avisadas a los pilotos | v28 |
+| `aviso_confirmar_clase_tomar()` | `service_role` | Pedido al entrenador de confirmar (18 h / 8 h) | v28 |
+| `notif_prefs_confirma_guardar(p_activo)` | entrenador | Apagar/prender el pedido de confirmación | v28 |
+| `piloto_asistencia_pendientes()`, `piloto_asistencia_responder(p_id, p_valor)` | piloto | Sus clases de hoy y mañana; responder voy / no_voy / null | v29 |
+| `coach_asistencia_clases()` | entrenador | Quién va a cada clase (hoy y mañana) | v29 |
+| `aviso_asistencia_preguntar_tomar()`, `aviso_asistencia_resumen_tomar()` | `service_role` | Pregunta al piloto (6 h antes) y resumen al entrenador (2 h antes) | v29 |
+| `notif_prefs_asistencia_guardar(p_pregunta, p_resumen)` | usuario | Prender/apagar los avisos de asistencia | v29 |
+| `tareas_plan_reset_asistencia` (trigger) | — | Borra respuestas/marcas si cambia día, hora o modalidad | v29 |
+| `coach_tarea_json`, `coach_tarea_guardar`, `notif_prefs_leer` | (existentes, ampliadas) | Suman modalidad/hora/lugar, confirmación del lugar y las preferencias nuevas | v27–v29 |
+
+Columnas nuevas de `tareas_plan`: `modalidad`, `hora`, `lugar`, `lugar_confirmado`, `lugar_confirmado_en`, `lugar_cambiado`, `avisado_clase_en`, `pedido_confirmar_en`, `recordado_confirmar_en`, `asistencia`, `asistencia_en`, `pregunta_asistencia_en`, `resumen_asistencia_en`. Columnas nuevas de `notif_prefs`: `push_sesion`, `push_hora`, `zona`, `ultimo_aviso_sesion`, `push_clase`, `push_confirma`, `push_asistencia`, `push_resumen_asist`. Tablas nuevas: `coach_fechas_entrenador`, `coach_grupos`, `coach_grupo_miembros`.
+
+**Arreglo de permisos (20/10, `seguridad_arreglo_archivos_20261020.sql`):** la revisión del 19/10 había quitado `execute` a `authenticated` en `coach_uid()`, `coach_puede_ver_archivo(uuid)` y `coach_es_entrenador(uuid)`; `archivos-coach` las llama con la sesión del usuario, así que «Enviar al profe» fallaba con `permission denied for function coach_uid`. Se devolvió el permiso solo a esas tres.
+
+**Orden de aplicación en una base nueva:** `coach_v24` → `coach_v25_resumen_pilotos` → `coach_v26_uso_grupos_aviso` → `coach_v27_presencial` → `coach_v28_confirmar_lugar` → `coach_v29_asistencia` → `seguridad_arreglo_archivos_20261020`. Todos se pueden volver a correr (el trigger de v29 falla con «ya existe» si se repite: ignorar ese error).

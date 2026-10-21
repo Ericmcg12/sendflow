@@ -12,6 +12,8 @@
 | 06 | `final/06_IMPLEMENTATION_PLAN.md` — Plan | Cómo está el proyecto hoy y las etapas que siguen. |
 | 07 | `final/07_DEPLOY_CHECKLIST.md` — Checklist de despliegue | Pasos y orden para cada despliegue de la nube y los sitios, y cuándo volver atrás. |
 
+**Actualizado el 21/10/2026:** los documentos 01 (§5 W10–W13, §6.4 C51–C60), 02 (§5.1 y §5.3), 03 (recorridos nuevos), 05 (resumen de funciones coach_v24–v29), 06 y 07 incluyen lo hecho el 20–21/10. Detalle fino de la web respecto de la app: `SendFlow_Bike_Web_herramientas/CAMBIOS_WEB_VS_APP.md`; cómo reconstruir y publicar Coach: `SendFlow_Bike_Web_herramientas/coach-web/LEEME_COACH.md`.
+
 Copia local: `F:\Users\Eric\Documents\claude\telemetry\SendFlow_docs\final\`.
 
 ## Decisiones cerradas el 10/10 al armar estos documentos
