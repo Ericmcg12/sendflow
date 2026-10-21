@@ -53,11 +53,26 @@
       <div class="cab-pagina entra"><div><h1 class="titulo-pagina">${coach ? "Planes" : "Mi plan"}</h1>
         <div class="sub-pagina">${coach ? "Los planes de entrenamiento de tus alumnos: fases, sesiones por día y carreras." : "Lo que te armó tu entrenador. Marcá cada sesión cuando la hagas."}</div></div>
         ${coach ? `<button class="btn primario" data-accion="nuevo">${ICONOS.mas}Nuevo plan</button>` : ""}</div>
-      <div id="hoyPlan"></div>
+      ${coach && window.Biblioteca ? `<div class="vista-plan entra" role="group" aria-label="Planes o biblioteca"><button type="button" data-ptab="planes">Planes</button><button type="button" data-ptab="biblioteca">Mi biblioteca</button></div>` : ""}
+      <div id="panelPlanes"><div id="hoyPlan"></div>
       <div class="grilla g3" id="listaPlanes"></div>
-      <div id="calPlan"></div></div>`));
+      <div id="calPlan"></div></div>
+      <div id="bibPantalla" hidden></div></div>`));
     if (window.CoachCalendario) { const cp = $("#calPlan", v); if (!coach) $("#hoyPlan", v).after(cp); CoachCalendario.seccionLista(cp, { coach, fichas: fs }).catch(() => {}); }   // v48
     if (coach) $("[data-accion=nuevo]", v).addEventListener("click", async () => { const p = await editarPlan(null, fs); if (p) window.irA("/plan/" + p.id); });
+    // v66: «Mi biblioteca» (ejercicios, sesiones tipo y planes tipo) como segunda pestaña de Planes
+    if (coach && window.Biblioteca) {
+      const usar = async (valor) => { const p = await editarPlan(null, fs, { plantilla: valor }); if (p) window.irA("/plan/" + p.id); };
+      const mostrar = (tab) => {
+        const bib = tab === "biblioteca";
+        $$("[data-ptab]", v).forEach(b => b.classList.toggle("sel", b.dataset.ptab === tab));
+        $("#panelPlanes", v).hidden = bib; $("#bibPantalla", v).hidden = !bib; $("[data-accion=nuevo]", v).hidden = bib;
+        const url = new URL(location.href); if (bib) url.searchParams.set("tab", "biblioteca"); else url.searchParams.delete("tab"); history.replaceState(history.state, "", url);
+        if (bib) Biblioteca.pantalla($("#bibPantalla", v), { alUsarPlan: usar });
+      };
+      $$("[data-ptab]", v).forEach(b => b.addEventListener("click", () => mostrar(b.dataset.ptab)));
+      mostrar(new URLSearchParams(location.search).get("tab") === "biblioteca" ? "biblioteca" : "planes");
+    }
     else { const t = await tarjetaHoy(true); if (t) $("#hoyPlan", v).appendChild(t); }
     const g = $("#listaPlanes", v);
     if (!planes.length) {
@@ -224,9 +239,10 @@
           <div style="min-width:0"><h1 class="titulo-pagina" style="font-size:22px">${esc(p.titulo)}</h1>
           <div class="sub-pagina">${edita ? sello(p.pilotoNombre, colP) + " · " : "De " + esc(p.entrenadorNombre) + " · "}${esc(TIPOS_PLAN[p.tipo] || "")} · ${corta(p.desde)} → ${corta(p.hasta)}</div></div>
         </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="cal-acciones-plan" style="display:contents"></span>${edita ? `<button class="btn chico" data-accion="editar">${ICONOS.editar}Plan y fases</button>${window.Grupos ? `<button class="btn chico" data-accion="grupo" title="Crear una copia de este plan para cada piloto de un grupo">${ICONOS.mas}Copiar a un grupo</button>` : ""}<button class="btn chico peligro" data-accion="borrar" aria-label="Borrar plan" title="Borrar plan">${ICONOS.basura}</button>` : ""}</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="cal-acciones-plan" style="display:contents"></span>${edita ? `<button class="btn chico" data-accion="editar">${ICONOS.editar}Plan y fases</button>${window.Biblioteca ? `<button class="btn chico" data-accion="plan-tipo" title="Guardar este plan en tu biblioteca para usarlo con otros pilotos">${ICONOS.mas}Guardar como plan tipo</button>` : ""}${window.Grupos ? `<button class="btn chico" data-accion="grupo" title="Crear una copia de este plan para cada piloto de un grupo">${ICONOS.mas}Copiar a un grupo</button>` : ""}<button class="btn chico peligro" data-accion="borrar" aria-label="Borrar plan" title="Borrar plan">${ICONOS.basura}</button>` : ""}</div>
       </div>
       ${p.descripcion ? `<p class="prosa entra plan-desc">${esc(p.descripcion)}</p>` : ""}
+      <div class="vista-plan entra" role="group" aria-label="Cómo ver el plan"><button type="button" data-vista="semana">Semana</button><button type="button" data-vista="resumen">Resumen del plan</button></div>
       <div class="fases-barra entra" id="fasesBarra"></div>
       <div class="semana-cab entra">
         <button class="btn icono chico" data-sem="-1" aria-label="Semana anterior">‹</button>
@@ -237,20 +253,32 @@
         ${edita ? `<button class="btn chico" data-accion="copiar" title="Repetir las sesiones de esta semana en la siguiente">Copiar a la semana siguiente</button>` : ""}
       </div>
       <div class="semana-grilla entra" id="semGrilla"></div>
+      <div class="resumen-plan" id="resumenPlan" hidden></div>
     </div>`);
     v.appendChild(raiz);
     if (window.CoachCalendario) CoachCalendario.accionesPlan($(".cal-acciones-plan", raiz), p, edita, async () => { p._fechas = await CoachCalendario.fechasDePlan(p, edita); pintarFases(p, $("#fasesBarra", raiz)); pintar(); });
     pintarFases(p, $("#fasesBarra", raiz));
+    // v65: dos vistas del mismo plan: «Semana» (la grilla de siempre) y «Resumen del plan» (todo el plan en una lista)
+    let vista = new URLSearchParams(location.search).get("vista") === "resumen" ? "resumen" : "semana";
+    const recargar = async () => { const r = await rpc("coach_plan_ver", { p_id: id }); Object.assign(p, r.plan); pintarFases(p, $("#fasesBarra", raiz)); pintar(); };
     const pintar = () => {
-      const url = new URL(location.href); url.searchParams.set("semana", semana); history.replaceState(history.state, "", url);
-      pintarSemana(p, semana, raiz, edita, async () => { const r = await rpc("coach_plan_ver", { p_id: id }); Object.assign(p, r.plan); pintarFases(p, $("#fasesBarra", raiz)); pintar(); });
+      const url = new URL(location.href);
+      if (vista === "resumen") { url.searchParams.set("vista", "resumen"); url.searchParams.delete("semana"); } else { url.searchParams.set("semana", semana); url.searchParams.delete("vista"); }
+      history.replaceState(history.state, "", url);
+      $$("[data-vista]", raiz).forEach(b => b.classList.toggle("sel", b.dataset.vista === vista));
+      const esRes = vista === "resumen";
+      $(".semana-cab", raiz).hidden = esRes; $("#semGrilla", raiz).hidden = esRes; $("#resumenPlan", raiz).hidden = !esRes;
+      if (esRes) pintarResumen(p, $("#resumenPlan", raiz), edita, recargar, (lun) => { semana = lun; vista = "semana"; pintar(); });
+      else pintarSemana(p, semana, raiz, edita, recargar);
     };
+    $$("[data-vista]", raiz).forEach(b => b.addEventListener("click", () => { vista = b.dataset.vista; pintar(); }));
     $$("[data-sem]", raiz).forEach(b => b.addEventListener("click", () => {
       semana = b.dataset.sem === "hoy" ? lunes(hoyIso()) : sumar(semana, 7 * +b.dataset.sem); pintar();
     }));
     if (edita) {
-      $("[data-accion=editar]", raiz).addEventListener("click", async () => { const r = await editarPlan(p, fs); if (r) { window.CoachApp.navegar(); } });
+      $("[data-accion=editar]", raiz).addEventListener("click", async () => { const r = await editarPlan(p, fs, { alCambiar: recargar }); if (r) { window.CoachApp.navegar(); } });
       const bg = $("[data-accion=grupo]", raiz); if (bg) bg.addEventListener("click", () => Grupos.copiarPlan(p));
+      const bpt = $("[data-accion=plan-tipo]", raiz); if (bpt) bpt.addEventListener("click", () => guardarComoPlanTipo(p));
       $("[data-accion=borrar]", raiz).addEventListener("click", async () => {
         if (!(await confirmar(`¿Borrar el plan "${p.titulo}" con todas sus sesiones? El piloto deja de verlo.`, "Borrar"))) return;
         try { await rpc("coach_plan_borrar", { p_id: p.id }); aviso("Plan borrado."); window.irA("/planes"); } catch (e) { aviso(e.message, "error"); }
@@ -322,8 +350,110 @@
     }
   }
 
+  // ======================================================================= Resumen del plan (v65)
+  // Todo el plan en una sola lista: semana por semana, con la fase, los totales y, en cada sesión, sus ejercicios. Cada sesión se
+  // puede abrir (el entrenador la edita; el piloto la ve y la marca). Estado de la vista (filtro y desplegados) solo en pantalla.
+  const dm = (s) => corta(s).slice(0, 5);
+  const resEj = (e) => { const x = e.series ? (e.reps ? e.series + "×" + e.reps : e.series + " series") : (e.reps || ""); return e.nombre + (x ? " " + x : ""); };
+  const minTxt = (m) => m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? " " + (m % 60) + " min" : ""}` : `${m} min`;
+  function pintarResumen(p, el, edita, recargar, irSemana, previa) {
+    const hoy = hoyIso();
+    const tareas = (p.tareas || []).slice().sort((a, b) => a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : (a.orden || 0) - (b.orden || 0));
+    const fases = (p.fases || []).filter(f => f.desde && f.hasta);
+    if (!el._est) el._est = { filtro: new Set(), abiertas: new Set(), todo: false };
+    const est = el._est;
+    const fechas = tareas.map(t => t.fecha);
+    const ini = lunes(p.desde || fechas[0] || hoy);
+    const fin = [p.hasta, fechas[fechas.length - 1]].filter(Boolean).sort().pop() || sumar(ini, 6);
+    const semanas = []; for (let s = ini; s <= fin && semanas.length < 260; s = sumar(s, 7)) semanas.push(s);
+    const contables = tareas.filter(t => t.tipo !== "descanso" && t.tipo !== "carrera");
+    const hechas = contables.filter(t => t.estado === "hecha").length, minutos = contables.reduce((n, t) => n + (Number(t.duracionMin) || 0), 0);
+    const tipos = [...new Set(tareas.map(t => t.tipo))].filter(k => TIPOS[k]);
+    const visible = (t) => !est.filtro.size || est.filtro.has(t.tipo);
+    const abierta = (t) => est.todo || est.abiertas.has(t.id);
+
+    const detalle = (t) => {
+      const ej = t.ejercicios || [];
+      return `<div class="res-det">
+        ${t.descripcion ? `<p class="prosa">${esc(t.descripcion)}</p>` : ""}
+        ${ej.length ? tablaEj(ej) : (t.descripcion ? "" : `<p class="ayuda-chica">Esta sesión no tiene ejercicios cargados.</p>`)}
+        ${t.notaPiloto ? `<p class="ses-nota">Nota del piloto: “${esc(t.notaPiloto)}”</p>` : ""}
+        ${previa ? "" : `<div class="res-acc"><button type="button" class="btn chico ${edita ? "primario" : ""}" data-abrir="${esc(t.id)}">${edita ? ICONOS.editar + "Editar sesión" : "Abrir y marcar"}</button></div>`}
+      </div>`;
+    };
+    const fila = (t) => {
+      const ej = t.ejercicios || [], dd = deIso(t.fecha);
+      const vencida = t.fecha < hoy && t.estado === "pendiente" && t.tipo !== "descanso" && t.tipo !== "carrera";
+      const meta = [t.modalidad === "presencial" ? "Presencial" + (t.hora ? " " + t.hora : "") : "", t.duracionMin ? t.duracionMin + " min" : "", t.intensidad ? "int. " + t.intensidad : "", ej.length ? ej.length + (ej.length === 1 ? " ejerc." : " ejerc.") : ""].filter(Boolean).join(" · ");
+      const estado = t.estado === "hecha" ? `<span class="ok">✓${t.esfuerzo ? " " + t.esfuerzo : ""}</span>` : t.estado === "omitida" ? `<span class="no">✗</span>` : (vencida ? `<span class="venc">sin marcar</span>` : "");
+      const abre = abierta(t);
+      return `<article class="res-ses ${t.estado} tipo-${t.tipo}" style="--c:${(TIPOS[t.tipo] || TIPOS.otro).c}" data-id="${esc(t.id)}">
+        <button type="button" class="res-cab" aria-expanded="${abre}" data-tog="${esc(t.id)}">
+          <span class="res-dia">${DIAS[(dd.getDay() + 6) % 7]} ${String(dd.getDate()).padStart(2, "0")}</span>${chipTipo(t.tipo)}
+          <span class="res-tit">${esc(t.titulo)}</span><span class="res-meta">${esc(meta)}</span>${estado}<span class="res-flecha" aria-hidden="true">▾</span>
+        </button>
+        ${!abre && ej.length ? `<div class="res-ej">${ej.slice(0, 4).map(e => esc(resEj(e))).join(" · ")}${ej.length > 4 ? ` · +${ej.length - 4}` : ""}</div>` : ""}
+        ${abre ? detalle(t) : ""}
+      </article>`;
+    };
+
+    const bloques = semanas.map((lun, i) => {
+      const dom = sumar(lun, 6);
+      const ts = tareas.filter(t => t.fecha >= lun && t.fecha <= dom);
+      const ls = ts.filter(visible);
+      const fs = fases.filter(f => f.desde <= dom && f.hasta >= lun);
+      const empiezan = fs.filter(f => f.desde >= lun || i === 0);
+      const cont = ts.filter(t => t.tipo !== "descanso" && t.tipo !== "carrera");
+      const min = cont.reduce((n, t) => n + (Number(t.duracionMin) || 0), 0), hh = cont.filter(t => t.estado === "hecha").length;
+      return `${empiezan.map(f => `<div class="res-fase" style="--c:${(FASES[f.tipo] || FASES.base).c}"><b>${esc(f.nombre)}</b><span>${corta(f.desde)} → ${corta(f.hasta)}</span>${f.objetivo ? `<em>${esc(f.objetivo)}</em>` : ""}${edita ? `<button type="button" class="btn chico res-fase-bt" data-fase="${fases.indexOf(f)}" title="Armar la semana tipo de esta fase y repetirla en todas sus semanas">${ICONOS.editar}Semana tipo de la fase</button>` : ""}</div>`).join("")}
+      <section class="res-sem ${lun <= hoy && hoy <= dom ? "actual" : ""}" data-sem="${lun}">
+        <header><b>Semana ${i + 1}</b><span>${dm(lun)} – ${dm(dom)}</span>${fs.map(f => `<span class="fase-chip" style="--c:${(FASES[f.tipo] || FASES.base).c}">${esc(f.nombre)}</span>`).join("")}
+          <span class="res-tot">${cont.length ? `${cont.length} ${cont.length === 1 ? "sesión" : "sesiones"}${min ? " · " + minTxt(min) : ""}${hh ? ` · hechas ${hh}/${cont.length}` : ""}` : "Sin sesiones"}</span>
+          <span class="res-sem-acc">${previa ? "" : `<button type="button" class="btn chico fantasma" data-ir="${lun}">Ver semana</button>`}${edita ? `<button type="button" class="btn chico" data-mas="${lun}" title="Agregar una sesión en esta semana">${ICONOS.mas}Sesión</button>` : ""}</span></header>
+        ${ls.length ? ls.map(fila).join("") : (ts.length ? `<p class="ayuda-chica res-vacio">Ninguna sesión de esta semana coincide con el filtro.</p>` : "")}
+      </section>`;
+    }).join("");
+
+    el.innerHTML = `<div class="res-barra">
+      <div class="res-totales"><b>${semanas.length}</b> ${semanas.length === 1 ? "semana" : "semanas"} · <b>${contables.length}</b> ${contables.length === 1 ? "sesión" : "sesiones"}${minutos ? " · " + minTxt(minutos) : ""}${contables.length ? ` · hechas <b>${hechas}</b>/${contables.length}` : ""}</div>
+      <div class="res-ctl">${tipos.length > 1 ? `<div class="filtro-tipos res-filtro" role="group" aria-label="Filtrar por tipo de sesión">${tipos.map(k => `<button type="button" data-f="${k}" class="${est.filtro.has(k) ? "sel" : ""}" style="--c:${TIPOS[k].c}">${TIPOS[k].t}</button>`).join("")}</div>` : ""}
+        <button type="button" class="btn chico fantasma" data-todo>${est.todo ? "Contraer todo" : "Desplegar todo"}</button></div>
+    </div>
+    ${tareas.length ? bloques : `<div class="vacio">${edita ? "Este plan todavía no tiene sesiones. Agregalas desde la vista Semana (+ en cada día) o cargá una semana tipo." : "Tu entrenador todavía no cargó sesiones en este plan."}</div>`}`;
+
+    const vuelve = () => pintarResumen(p, el, edita, recargar, irSemana, previa);
+    $$("[data-f]", el).forEach(b => b.addEventListener("click", () => { const k = b.dataset.f; est.filtro.has(k) ? est.filtro.delete(k) : est.filtro.add(k); vuelve(); }));
+    const bt = $("[data-todo]", el); if (bt) bt.addEventListener("click", () => { est.todo = !est.todo; est.abiertas.clear(); vuelve(); });
+    $$("[data-tog]", el).forEach(b => b.addEventListener("click", () => {
+      const id = b.dataset.tog;
+      if (est.todo) { est.todo = false; tareas.forEach(t => { if (t.id !== id) est.abiertas.add(t.id); }); }   // al contraer una con «desplegar todo» queda el resto desplegado
+      else est.abiertas.has(id) ? est.abiertas.delete(id) : est.abiertas.add(id);
+      vuelve();
+    }));
+    $$("[data-ir]", el).forEach(b => b.addEventListener("click", () => irSemana(b.dataset.ir)));
+    $$("[data-mas]", el).forEach(b => b.addEventListener("click", async () => { if (await editarSesion(p, null, b.dataset.mas)) recargar(); }));
+    $$("[data-fase]", el).forEach(b => b.addEventListener("click", async () => { const f = fases[+b.dataset.fase]; if (f) await editarSemanasDeFase(p, f, recargar); }));
+    $$("[data-abrir]", el).forEach(b => b.addEventListener("click", async () => { const t = tareas.find(x => x.id === b.dataset.abrir); if (t && await verSesion(t, edita, p)) recargar(); }));
+  }
+
   // ======================================================================= Sesión: ver / marcar / editar
   const marcableSesion = (t) => t.tipo !== "carrera" && t.tipo !== "descanso";
+  // v66 (C68): tabla de ejercicios con bloques (superserie / circuito), descanso y «versión más fácil»
+  const filaTabla = (e) => `<tr><td>${esc(e.nombre)}${e.nota ? `<small>${esc(e.nota)}</small>` : ""}${e.facil ? `<small class="ej-facil-txt">Más fácil: ${esc(e.facil)}</small>` : ""}</td><td>${e.series || ""}</td><td>${esc(e.reps || "")}</td><td>${esc([e.carga, e.tiempo].filter(Boolean).join(" · "))}</td><td>${e.descanso ? e.descanso + " s" : ""}</td></tr>`;
+  function tablaEj(ej) {
+    if (!ej || !ej.length) return "";
+    const filas = []; let i = 0;
+    while (i < ej.length) {
+      const b = ej[i].bloque;
+      if (b) {
+        let j = i; while (j < ej.length && ej[j].bloque === b) j++;
+        const g = ej.slice(i, j), rondas = g[0].series, desc = g.map(x => x.descanso).filter(Boolean).pop();
+        filas.push(`<tr class="ej-bloque"><td colspan="5"><b>${g.length >= 3 ? "Circuito" : "Superserie"} ${esc(b)}</b>${g.length < 2 ? "" : ` · ${g.length} ejercicios seguidos`}${rondas ? ` · ${rondas} ${rondas === 1 ? "ronda" : "rondas"}` : ""}${desc ? ` · descanso ${desc} s al terminar cada ronda` : ""}</td></tr>`);
+        g.forEach(e => filas.push(filaTabla(e))); i = j;
+      } else { filas.push(filaTabla(ej[i])); i++; }
+    }
+    return `<table class="tabla-ej"><thead><tr><th>Ejercicio</th><th>Series</th><th>Reps</th><th>Carga / tiempo</th><th>Descanso</th></tr></thead><tbody>${filas.join("")}</tbody></table>`;
+  }
   async function verSesion(t, edita, p) {
     if (edita) return editarSesion(p, t, t.fecha);
     const ej = t.ejercicios || [];
@@ -331,7 +461,7 @@
       <div class="ses-det-cab">${chipTipo(t.tipo)}<span>${DIAS[(deIso(t.fecha).getDay() + 6) % 7]} ${corta(t.fecha)}</span>${t.duracionMin ? `<span>${t.duracionMin} min</span>` : ""}${t.intensidad ? `<span>intensidad ${t.intensidad}/10</span>` : ""}${t.modalidad === "presencial" ? `<span class="chip-pres${porConfirmar(t) ? " por-confirmar" : ""}">Presencial${t.hora ? " · " + esc(t.hora) : ""}${porConfirmar(t) ? " · lugar a confirmar" : (t.lugar ? " · " + esc(t.lugar) : "")}</span>${t.lugarCambiado ? `<span class="chip-pres">Cambió el lugar</span>` : ""}` : ""}</div>
       ${t.validada && t.estado === "hecha" ? `<div class="ses-validada-txt">${PULGAR}${esCoach() ? "Validaste esta sesión." : "Tu entrenador vio esta sesión y la validó."}</div>` : ""}
       ${t.descripcion ? `<p class="prosa">${esc(t.descripcion)}</p>` : ""}
-      ${ej.length ? `<table class="tabla-ej"><thead><tr><th>Ejercicio</th><th>Series</th><th>Reps</th><th>Carga / tiempo</th></tr></thead><tbody>${ej.map(e => `<tr><td>${esc(e.nombre)}${e.nota ? `<small>${esc(e.nota)}</small>` : ""}</td><td>${e.series || ""}</td><td>${esc(e.reps || "")}</td><td>${esc([e.carga, e.tiempo].filter(Boolean).join(" · "))}</td></tr>`).join("")}</tbody></table>` : ""}
+      ${tablaEj(ej)}
       ${t.tipo === "carrera" || t.tipo === "descanso" ? "" : `<div class="marcar">
         <div class="titulo-seccion" style="margin:16px 0 8px">¿La hiciste?</div>
         <div class="tipo-tag marcar-estado" role="radiogroup">
@@ -364,12 +494,16 @@
     } }] : [{ texto: "Cerrar", clase: "fantasma", valor: false }] });
   }
 
-  async function editarSesion(p, t, dia) {
+  // opts = { local: true, dia: 0-6, existente: true }: formulario de una sesión de la SEMANA TIPO de una fase (v67). No toca el servidor:
+  // devuelve { local: sesión } al guardar, o "borrar" si se la quita.
+  async function editarSesion(p, t, dia, opts) {
+    const local = !!(opts && opts.local);
+    if (window.Biblioteca) await Biblioteca.precargar();   // v66: «Mis ejercicios» para el autocompletado
     t = t || { fecha: dia, tipo: "bici", titulo: "", descripcion: "", duracionMin: null, intensidad: null, ejercicios: [] };
     const cuerpo = html(`<div class="form-grilla ses-form">
       ${!t.id && window.Biblioteca ? `<div class="campo ancho ses-tipo-cab"><button type="button" class="btn chico primario" data-accion="sesion-tipo">Cargar una sesión tipo</button><small class="ayuda-chica">Título, duración y ejercicios ya armados. Ahí mismo podés crear las tuyas o modificar las que están.</small></div>` : ""}
       <div class="campo ancho"><label>Tipo</label><div class="tipos-ses" role="radiogroup">${Object.entries(TIPOS).map(([k, x]) => `<button type="button" class="tipo-ses ${k === t.tipo ? "sel" : ""}" data-tipo="${k}" style="--c:${x.c}">${x.t}</button>`).join("")}</div></div>
-      <div class="campo"><label>Fecha</label><input class="input" type="date" name="fecha" value="${esc(t.fecha)}"></div>
+      ${local ? `<div class="campo"><label>Día de la semana</label><select class="input" name="dia">${["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"].map((x, k) => `<option value="${k}" ${k === (t.dia != null ? t.dia : (opts.dia || 0)) ? "selected" : ""}>${x}</option>`).join("")}</select></div>` : `<div class="campo"><label>Fecha</label><input class="input" type="date" name="fecha" value="${esc(t.fecha)}"></div>`}
       <div class="campo"><label>Título</label><input class="input" name="titulo" maxlength="120" value="${esc(t.titulo)}" placeholder="Fuerza de piernas, fondo en bici…"></div>
       <div class="campo solo-ses"><label>Duración (min)</label><input class="input" type="number" min="0" max="1440" name="dur" value="${t.duracionMin || ""}"></div>
       <div class="campo solo-ses"><label>Intensidad <b class="int-v">${t.intensidad || "—"}</b>/10</label><input type="range" min="1" max="10" name="int" value="${t.intensidad || 5}"></div>
@@ -377,11 +511,16 @@
       <div class="campo solo-ses pres-sesion"><label>Horario</label><input class="input" type="time" name="hora" value="${esc(t.hora || "")}"></div>
       <div class="campo solo-ses pres-sesion"><label>Lugar</label><input class="input" name="lugar" maxlength="120" value="${esc(t.lugar || "")}" placeholder="Club, parque, dirección…"></div>
       <div class="campo ancho"><label>Descripción</label><textarea class="input" name="desc" maxlength="2000" placeholder="Qué tiene que hacer y cómo">${esc(t.descripcion || "")}</textarea></div>
-      <div class="campo ancho solo-ses"><label>Ejercicios</label><div class="ejercicios"></div>
+      <div class="campo ancho solo-ses"><label>Ejercicios <span class="opcional">(⋯ en cada uno: bloque, descanso y versión más fácil)</span></label><div class="ejercicios"></div>
         <div class="ej-acciones">${window.Biblioteca ? `<button type="button" class="btn chico primario" data-accion="ej-bib">${ICONOS.mas}Elegir de la biblioteca</button>` : ""}<button type="button" class="btn chico" data-accion="ej">${window.Biblioteca ? "Escribir uno" : ICONOS.mas + "Agregar ejercicio"}</button></div>
         ${window.Biblioteca ? `<datalist id="dlEj">${Biblioteca.nombresEjercicios().map(n => `<option value="${esc(n)}"></option>`).join("")}</datalist>` : ""}</div>
       ${t.id && t.estado !== "pendiente" ? `<div class="campo ancho"><div class="aviso-correccion">El piloto la marcó: <b>${t.estado === "hecha" ? "hecha" + (t.esfuerzo ? ", esfuerzo " + t.esfuerzo + "/10" : "") : "no la hizo"}</b>${t.notaPiloto ? ` — “${esc(t.notaPiloto)}”` : ""}</div></div>` : ""}
     </div>`);
+    if (local) {
+      const cm = $("[data-mod]", cuerpo); if (cm) cm.closest(".campo").remove();
+      $$(".pres-sesion", cuerpo).forEach(x => x.remove());
+      const bc = $("[data-tipo=carrera]", cuerpo); if (bc) bc.remove();
+    }
     let tipo = t.tipo, tocoInt = !!t.intensidad, mod = t.modalidad === "presencial" ? "presencial" : "online";
     const pintarMod = () => {
       $$("[data-mod]", cuerpo).forEach(b => b.classList.toggle("sel", b.dataset.mod === mod));
@@ -392,19 +531,21 @@
     const filaEj = (e) => {
       const f = html(`<div class="ej-fila"><input class="input" name="en" ${window.Biblioteca ? 'list="dlEj"' : ""} placeholder="Ejercicio" maxlength="120" value="${esc(e.nombre || "")}"><input class="input" name="es" type="number" min="0" max="999" placeholder="Series" value="${e.series || ""}"><input class="input" name="er" placeholder="Reps" maxlength="20" value="${esc(e.reps || "")}"><input class="input" name="ec" placeholder="Carga o tiempo" maxlength="40" value="${esc([e.carga, e.tiempo].filter(Boolean).join(" · "))}"><span class="ej-bt">${window.Biblioteca ? `<button type="button" class="btn icono chico fantasma" data-guardar title="Guardar en mis ejercicios" aria-label="Guardar en mis ejercicios">☆</button>` : ""}<button type="button" class="btn icono chico peligro" data-quitar aria-label="Quitar">${ICONOS.cerrar}</button></span></div>`);
       f.dataset.nota = e.nota || "";
+      if (window.Biblioteca) Biblioteca.masEjercicio(f, e);
       $("[data-quitar]", f).addEventListener("click", () => f.remove());
       const bg = $("[data-guardar]", f);
       if (bg) bg.addEventListener("click", async () => {
         const nombre = $("[name=en]", f).value.trim();
         if (!nombre) { aviso("Poné el nombre del ejercicio.", "oro"); return; }
-        try { await Biblioteca.propioGuardar({ nombre, categoria: "otro", series: $("[name=es]", f).value, reps: $("[name=er]", f).value.trim(), carga: $("[name=ec]", f).value.trim(), nota: f.dataset.nota || "" }); bg.textContent = "★"; aviso("Guardado en Mis ejercicios.", "oro"); }
+        try { const ya = Biblioteca.buscar(nombre); await Biblioteca.propioGuardar(Object.assign({ nombre, categoria: (ya && ya.cat) || "otro", series: $("[name=es]", f).value, reps: $("[name=er]", f).value.trim(), carga: $("[name=ec]", f).value.trim(), nota: f.dataset.nota || "" }, Biblioteca.leerMas(f), ya && ya.baseId ? { baseId: ya.baseId } : {})); await Biblioteca.precargar(); bg.textContent = "★"; aviso("Guardado en Mis ejercicios.", "oro"); }
         catch (err) { aviso(err.message, "error"); }
       });
       // Si el nombre es de la biblioteca, completa series, repeticiones y carga que estén vacías
       $("[name=en]", f).addEventListener("change", (ev) => {
         const b = window.Biblioteca && Biblioteca.buscar(ev.target.value); if (!b) return;
         const v = (n, x) => { const i = $(`[name=${n}]`, f); if (i && !i.value && x) i.value = x; };
-        v("es", b.series); v("er", b.reps); v("ec", [b.carga, b.tiempo].filter(Boolean).join(" · ")); if (!f.dataset.nota) f.dataset.nota = b.nota || "";
+        v("es", b.series); v("er", b.reps); v("ec", [b.carga, b.tiempo].filter(Boolean).join(" · ")); v("ed", b.descanso); v("ef", b.facil); if (!f.dataset.nota) f.dataset.nota = b.nota || "";
+        if ((b.descanso || b.facil)) { const m = $(".ej-mas", f); if (m) m.hidden = false; }
       });
       ejs.appendChild(f);
     };
@@ -420,7 +561,7 @@
       if (s.intensidad) { $("[name=int]", cuerpo).value = s.intensidad; $(".int-v", cuerpo).textContent = s.intensidad; tocoInt = true; }
       ejs.innerHTML = ""; s.ejercicios.forEach(filaEj);
     });
-    const leerEjercicios = (c) => $$(".ej-fila", c).map(f => ({ nombre: $("[name=en]", f).value.trim(), series: $("[name=es]", f).value, reps: $("[name=er]", f).value.trim(), carga: $("[name=ec]", f).value.trim(), nota: f.dataset.nota || "" })).filter(e => e.nombre);
+    const leerEjercicios = (c) => $$(".ej-fila", c).map(f => Object.assign({ nombre: $("[name=en]", f).value.trim(), series: $("[name=es]", f).value, reps: $("[name=er]", f).value.trim(), carga: $("[name=ec]", f).value.trim(), nota: f.dataset.nota || "" }, window.Biblioteca ? Biblioteca.leerMas(f) : {})).filter(e => e.nombre);
     const pintarTipo = () => {
       $$(".tipo-ses", cuerpo).forEach(b => b.classList.toggle("sel", b.dataset.tipo === tipo));
       $$(".solo-ses", cuerpo).forEach(x => x.classList.toggle("oculto", tipo === "carrera" || tipo === "descanso"));
@@ -430,29 +571,114 @@
     $$(".tipo-ses", cuerpo).forEach(b => b.addEventListener("click", () => { tipo = b.dataset.tipo; pintarTipo(); }));
     $("[name=int]", cuerpo).addEventListener("input", (e) => { tocoInt = true; $(".int-v", cuerpo).textContent = e.target.value; });
     pintarTipo();
-    if (window.CoachCalendario) CoachCalendario.avisoFecha(cuerpo, p);
+    if (window.CoachCalendario && !local) CoachCalendario.avisoFecha(cuerpo, p);
     const acciones = [{ texto: "Volver", clase: "fantasma", valor: false }];
+    if (local && opts.existente) acciones.push({ texto: "Quitar de la semana", clase: "peligro", valor: "borrar" });
     if (t.id) acciones.push({ texto: "Borrar", clase: "peligro", alHacer: async () => {
       if (!(await confirmar("¿Borrar esta sesión?", "Borrar"))) return false;
       try { await rpc("coach_tarea_borrar", { p_id: t.id }); aviso("Sesión borrada."); return true; } catch (e) { aviso(e.message, "error"); return false; }
     } });
     acciones.push({ texto: t.id ? "Guardar" : "Agregar", clase: "primario", alHacer: async (c) => {
-      const fecha = $("[name=fecha]", c).value;
-      if (!fecha) { aviso("Poné la fecha.", "error"); return false; }
+      const fecha = local ? null : $("[name=fecha]", c).value;
+      if (!local && !fecha) { aviso("Poné la fecha.", "error"); return false; }
       const ejercicios = leerEjercicios(c);
       const d = { fecha, tipo, titulo: $("[name=titulo]", c).value.trim() || (TIPOS[tipo] || TIPOS.otro).t, descripcion: $("[name=desc]", c).value.trim(),
         duracionMin: tipo === "carrera" || tipo === "descanso" ? null : ($("[name=dur]", c).value || null), intensidad: tipo === "carrera" || tipo === "descanso" || !tocoInt ? null : $("[name=int]", c).value,
         ejercicios: tipo === "carrera" || tipo === "descanso" ? [] : ejercicios };
+      if (local) { delete d.fecha; d.dia = +$("[name=dia]", c).value; if (window.Biblioteca) Biblioteca.autoGuardar(ejercicios); return { local: d }; }
       const pres = mod === "presencial" && tipo !== "carrera" && tipo !== "descanso";
       d.modalidad = pres ? "presencial" : "online"; d.hora = pres ? ($("[name=hora]", c).value || null) : null; d.lugar = pres ? ($("[name=lugar]", c).value.trim() || null) : null;
       try { await rpc("coach_tarea_guardar", { p_plan: p.id, p_id: t.id || null, d }); aviso(t.id ? "Sesión guardada." : "Sesión agregada."); if (window.Biblioteca) Biblioteca.autoGuardar(ejercicios); return true; }
       catch (e) { aviso(e.message, "error"); return false; }
     } });
-    return abrirModal({ titulo: t.id ? "Sesión" : "Nueva sesión", cuerpo, acciones });
+    return abrirModal({ titulo: local ? "Sesión de la semana tipo" : (t.id ? "Sesión" : "Nueva sesión"), cuerpo, acciones });
+  }
+
+  // v66: un plan armado pasa a la biblioteca como plan tipo (semanas y días relativos al lunes de inicio)
+  function planADatosDesdePlan(p) {
+    const tareas = (p.tareas || []).filter(t => t.fecha).slice().sort((a, b) => a.fecha < b.fecha ? -1 : 1);
+    const base = lunes(p.desde || (tareas[0] && tareas[0].fecha) || hoyIso());
+    const sem = (f) => Math.floor(Math.round((deIso(f) - deIso(base)) / 864e5) / 7) + 1;
+    const fin = [p.hasta, tareas.length ? tareas[tareas.length - 1].fecha : null].filter(Boolean).sort().pop() || base;
+    return { tipo: p.tipo || "entrenamiento", descripcion: p.descripcion || "", semanas: Math.max(1, sem(fin)),
+      fases: (p.fases || []).filter(f => f.desde && f.hasta).map(f => ({ nombre: f.nombre, tipo: f.tipo, sem: [Math.max(1, sem(f.desde)), Math.max(1, sem(f.hasta))], objetivo: f.objetivo || "" })),
+      sesiones: tareas.filter(t => sem(t.fecha) >= 1).map(t => ({ sem: sem(t.fecha), dia: (deIso(t.fecha).getDay() + 6) % 7, tipo: t.tipo, titulo: t.titulo, descripcion: t.descripcion || "", duracionMin: t.duracionMin || null, intensidad: t.intensidad || null, ejercicios: t.ejercicios || [] })) };
+  }
+  async function guardarComoPlanTipo(p) {
+    const cuerpo = html(`<div class="form-grilla"><div class="campo ancho"><label>Nombre del plan tipo</label><input class="input" name="nombre" maxlength="120" value="${esc(p.titulo)}"></div>
+      <div class="campo ancho"><div class="aviso-correccion">Se guardan las fases y las sesiones con sus ejercicios, sin fechas ni lo que marcó el piloto. Después lo usás al crear un plan nuevo («Empezar desde un plan armado»).</div></div></div>`);
+    return abrirModal({ titulo: "Guardar como plan tipo", cuerpo, acciones: [{ texto: "Volver", clase: "fantasma", valor: false }, { texto: "Guardar", clase: "primario", alHacer: async (c) => {
+      const nombre = $("[name=nombre]", c).value.trim(); if (!nombre) { aviso("Poné un nombre.", "oro"); return false; }
+      try { await Biblioteca.plantillaGuardar("plan", nombre, planADatosDesdePlan(p)); aviso("Guardado en tu biblioteca: Planes → Mi biblioteca → Planes tipo.", "oro"); return true; } catch (e) { aviso(e.message, "error"); return false; }
+    } }] });
+  }
+
+  // ======================================================================= Semana tipo de una fase (v67)
+  // Cada fase es un contenedor: tiene una «semana tipo» (lunes a domingo) que se repite en todas sus semanas. Editarla rearma las sesiones pendientes de esa fase.
+  const sesCons = (x) => ({ dia: x.dia, tipo: x.tipo, titulo: x.titulo, descripcion: x.descripcion || "", duracionMin: x.duracionMin || null, intensidad: x.intensidad || null, ejercicios: x.ejercicios || [] });
+  // La semana más completa de la fase (la primera puede estar cortada) pasa a ser la semana tipo
+  function patronDeSesiones(ts, desde, hasta) {
+    const lista = (ts || []).filter(t => t.fecha >= desde && t.fecha <= hasta && t.tipo !== "carrera" && t.modalidad !== "presencial");
+    const por = {}; lista.forEach(t => { (por[lunes(t.fecha)] = por[lunes(t.fecha)] || []).push(t); });
+    const sems = Object.keys(por).sort(); if (!sems.length) return [];
+    const mejor = sems.reduce((m, k) => por[k].length > por[m].length ? k : m, sems[0]);
+    return por[mejor].map(t => sesCons(Object.assign({}, t, { dia: (deIso(t.fecha).getDay() + 6) % 7 })));
+  }
+  function expandirPatron(patron, desde, hasta) {
+    const out = [];
+    for (let lun = lunes(desde); lun <= hasta; lun = sumar(lun, 7)) (patron || []).forEach(x => { const f = sumar(lun, x.dia); if (f >= desde && f <= hasta) { const y = Object.assign({}, x, { fecha: f }); delete y.dia; out.push(y); } });
+    return out;
+  }
+  const semanasDe = (desde, hasta) => Math.floor(Math.round((deIso(lunes(hasta)) - deIso(lunes(desde))) / 864e5) / 7) + 1;
+  const LARGOS = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"];
+  // Devuelve la semana tipo (lista de sesiones con `dia` 0 a 6) o null si se cancela
+  async function constructorSemana(op) {
+    let ses = (op.inicial || []).map(x => Object.assign({}, x));
+    const cuerpo = html(`<div class="constructor"><p class="ayuda-chica">${op.aviso || ""}</p><div class="cons-grilla"></div></div>`);
+    const grilla = $(".cons-grilla", cuerpo);
+    const pintar = () => {
+      grilla.innerHTML = "";
+      for (let k = 0; k < 7; k++) {
+        const col = html(`<div class="cons-dia"><div class="cons-cab">${LARGOS[k]}</div><div class="cons-ses"></div><button type="button" class="btn chico fantasma cons-mas" data-mas="${k}">${ICONOS.mas}Sesión</button></div>`);
+        const ls = $(".cons-ses", col);
+        ses.filter(x => x.dia === k).forEach(x => {
+          const ej = x.ejercicios || [];
+          const c = html(`<button type="button" class="cons-card" style="--c:${(TIPOS[x.tipo] || TIPOS.otro).c}">${chipTipo(x.tipo)}<b>${esc(x.titulo)}</b><span>${[x.duracionMin ? x.duracionMin + " min" : "", ej.length ? ej.length + " ejerc." : ""].filter(Boolean).join(" · ")}</span>${ej.length ? `<small>${esc(ej.slice(0, 3).map(e => e.nombre).join(" · "))}${ej.length > 3 ? " · +" + (ej.length - 3) : ""}</small>` : ""}</button>`);
+          c.addEventListener("click", async () => {
+            const r = await editarSesion(null, x, null, { local: true, existente: true, dia: k });
+            if (r === "borrar") ses.splice(ses.indexOf(x), 1); else if (r && r.local) ses[ses.indexOf(x)] = r.local; else return;
+            pintar();
+          });
+          ls.appendChild(c);
+        });
+        $("[data-mas]", col).addEventListener("click", async () => { const r = await editarSesion(null, null, null, { local: true, dia: k }); if (r && r.local) { ses.push(r.local); pintar(); } });
+        grilla.appendChild(col);
+      }
+    };
+    pintar();
+    return abrirModal({ titulo: op.titulo || "Semana tipo", cuerpo, acciones: [{ texto: "Volver", clase: "fantasma", valor: null }, { texto: op.boton || "Usar esta semana", clase: "primario", alHacer: async () => ses.map(x => Object.assign({}, x)) }] });
+  }
+  // Plan que ya existe: rearma las sesiones de una fase con una semana tipo nueva (solo las pendientes)
+  async function editarSemanasDeFase(p, fase, recargar) {
+    if (!fase.desde || !fase.hasta || fase.hasta < fase.desde) { aviso("Poné primero las fechas de la fase.", "oro"); return false; }
+    const patron = await constructorSemana({ titulo: `Semana tipo · ${fase.nombre || "fase"}`,
+      aviso: `Esta semana se repite en las <b>${semanasDe(fase.desde, fase.hasta)} semanas</b> de la fase (${corta(fase.desde)} → ${corta(fase.hasta)}). Se reemplazan las sesiones <b>pendientes</b>; no se tocan las que el piloto ya marcó, las clases presenciales ni las carreras.`,
+      inicial: patronDeSesiones(p.tareas, fase.desde, fase.hasta), boton: "Aplicar a la fase" });
+    if (!patron) return false;
+    const nuevas = expandirPatron(patron, fase.desde, fase.hasta);
+    const enRango = (p.tareas || []).filter(t => t.fecha >= fase.desde && t.fecha <= fase.hasta);
+    const reemplazables = enRango.filter(t => t.estado === "pendiente" && t.modalidad !== "presencial" && t.tipo !== "carrera").length, protegidas = enRango.length - reemplazables;
+    if (!(await confirmar(`Vas a reemplazar ${reemplazables} ${reemplazables === 1 ? "sesión pendiente" : "sesiones pendientes"} de «${fase.nombre || "la fase"}» por ${nuevas.length} nuevas.${protegidas ? ` Quedan sin tocar ${protegidas} (ya marcadas por el piloto, clases presenciales o carreras).` : ""}`, "Reemplazar"))) return false;
+    try {
+      const r = await rpc("coach_plan_reemplazar", { p_plan: p.id, p_desde: fase.desde, p_hasta: fase.hasta, d: nuevas });
+      aviso(`Fase actualizada: ${r.cargadas} sesiones nuevas${r.protegidas ? `, ${r.protegidas} sin tocar` : ""}.`, "oro");
+    } catch (e) { aviso(/coach_v13/.test(e.message) ? "Falta correr coach_v35.sql en Supabase." : e.message, "error"); return false; }
+    if (recargar) await recargar();
+    return true;
   }
 
   // ======================================================================= Plan: crear / editar (con fases)
-  async function editarPlan(p, fs) {
+  async function editarPlan(p, fs, opts) {
     const vinc = (fs || []).filter(x => x.usuarioId);
     if (!p && !vinc.length) { aviso("Para armar un plan, el alumno tiene que tener cuenta y haber aceptado tu invitación (Pilotos → invitar).", "oro"); return null; }
     p = p || { titulo: "", tipo: "pretemporada", desde: hoyIso(), hasta: sumar(hoyIso(), 83), descripcion: "", fases: [] };
@@ -484,13 +710,14 @@
       <div class="campo"><label>Hasta</label><input class="input" type="date" name="hasta" value="${esc(p.hasta || "")}"></div>
       <div class="campo ancho"><label>Objetivo / descripción</label><textarea class="input" name="desc" maxlength="2000" placeholder="Qué buscamos con este plan">${esc(p.descripcion || "")}</textarea></div>
       <div class="campo ancho"><label>Fases <span class="opcional">(opcional: base, específica, competencia, bajada de carga antes de una carrera…)</span></label><div class="fases-ed"></div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn chico" data-accion="fase">${ICONOS.mas}Agregar fase</button><button type="button" class="btn chico fantasma" data-accion="sugerir" title="Base, específica, precompetitiva y bajada de carga repartidas en las fechas del plan">Sugerir fases</button></div></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn chico" data-accion="fase">${ICONOS.mas}Agregar fase</button><button type="button" class="btn chico fantasma" data-accion="sugerir" title="Base, específica, precompetitiva y bajada de carga repartidas en las fechas del plan">Sugerir fases</button>${p.id ? "" : `<button type="button" class="btn chico fantasma" data-accion="previa" title="Ver todo el plan tal como va a quedar, antes de crearlo">Ver cómo queda</button>`}</div></div>
     </div>`);
     const lista = $(".fases-ed", cuerpo);
     const filaFase = (f) => {
-      const el = html(`<div class="fase-fila"><input class="input" name="fn" maxlength="80" placeholder="Nombre" value="${esc(f.nombre || "")}"><select class="input" name="ft">${Object.entries(FASES).map(([k, x]) => `<option value="${k}" ${k === (f.tipo || "base") ? "selected" : ""}>${x.t}</option>`).join("")}</select><input class="input" type="date" name="fd" value="${esc(f.desde || "")}"><input class="input" type="date" name="fh" value="${esc(f.hasta || "")}"><button type="button" class="btn icono chico peligro" aria-label="Quitar fase">${ICONOS.cerrar}</button></div>`);
+      const el = html(`<div class="fase-fila"><input class="input" name="fn" maxlength="80" placeholder="Nombre" value="${esc(f.nombre || "")}"><select class="input" name="ft">${Object.entries(FASES).map(([k, x]) => `<option value="${k}" ${k === (f.tipo || "base") ? "selected" : ""}>${x.t}</option>`).join("")}</select><input class="input" type="date" name="fd" value="${esc(f.desde || "")}"><input class="input" type="date" name="fh" value="${esc(f.hasta || "")}"><span class="ej-bt"><button type="button" class="btn chico" data-semana title="Qué sesiones y ejercicios lleva esta fase: la semana tipo se repite en todas sus semanas">Semanas</button><button type="button" class="btn icono chico peligro" aria-label="Quitar fase">${ICONOS.cerrar}</button></span></div>`);
       $("select", el).addEventListener("change", (e) => { const n = $("[name=fn]", el); if (!n.value) n.value = FASES[e.target.value].t; });
-      $("button", el).addEventListener("click", () => el.remove());
+      $("[aria-label=\"Quitar fase\"]", el).addEventListener("click", () => el.remove());
+      $("[data-semana]", el).addEventListener("click", () => abrirSemanas(el));
       lista.appendChild(el);
     };
     (p.fases || []).forEach(filaFase);
@@ -508,6 +735,38 @@
       lista.innerHTML = "";
       let d = a;
       [["Base", "base", base], ["Específica", "especifica", esp], ["Precompetitiva", "precompetitiva", pre], ["Bajada de carga", "bajada", bajada]].forEach(([n, k, len]) => { filaFase({ nombre: n, tipo: k, desde: d, hasta: sumar(d, len - 1) }); d = sumar(d, len); });
+    });
+    // v67: «Semanas» de cada fase = su semana tipo (qué sesiones y ejercicios lleva y se repite en todas sus semanas)
+    const abrirSemanas = async (fila) => {
+      const fase = { nombre: $("[name=fn]", fila).value.trim() || FASES[$("[name=ft]", fila).value].t, desde: $("[name=fd]", fila).value, hasta: $("[name=fh]", fila).value };
+      if (p.id) { await editarSemanasDeFase(p, fase, opts && opts.alCambiar); return; }   // plan que ya existe: se rearma esa fase
+      if (!fase.desde || !fase.hasta || fase.hasta < fase.desde) { aviso("Poné primero las fechas de la fase.", "oro"); return; }
+      if (esPres()) { aviso("Con clases presenciales las sesiones son las clases: la semana tipo no aplica.", "oro"); return; }
+      let inicial = fila._patron;
+      if (!inicial) { const sp = selPl ? selPl.value : ""; const pl = sp ? plantillaDe(sp, $("[name=desde]", cuerpo).value || hoyIso(), frecuencia()) : null; inicial = pl ? patronDeSesiones(pl.g.sesiones, fase.desde, fase.hasta) : []; }
+      const patron = await constructorSemana({ titulo: `Semana tipo · ${fase.nombre}`, inicial,
+        aviso: `Armá la semana (lunes a domingo): se repite en las <b>${semanasDe(fase.desde, fase.hasta)} semanas</b> de la fase (${corta(fase.desde)} → ${corta(fase.hasta)}). Las sesiones se cargan al crear el plan y después las podés cambiar una por una.` });
+      if (!patron) return;
+      fila._patron = patron;
+      const bt = $("[data-semana]", fila); bt.textContent = patron.length ? `Semanas (${patron.length})` : "Semanas"; bt.classList.toggle("primario", patron.length > 0);
+    };
+    // sesiones del plan con las semanas tipo ya armadas por el entrenador (reemplazan lo de la plantilla dentro de cada fase)
+    const fusionarPatrones = (sesiones) => {
+      let out = (sesiones || []).slice();
+      $$(".fase-fila", cuerpo).filter(f => f._patron).forEach(f => { const d = $("[name=fd]", f).value, h = $("[name=fh]", f).value; if (d && h && h >= d) out = out.filter(x => x.fecha < d || x.fecha > h).concat(expandirPatron(f._patron, d, h)); });
+      return out;
+    };
+    const bPrevia = $("[data-accion=previa]", cuerpo);
+    if (bPrevia) bPrevia.addEventListener("click", () => {
+      const desde = $("[name=desde]", cuerpo).value, hasta = $("[name=hasta]", cuerpo).value;
+      const fases = $$(".fase-fila", cuerpo).map(f => ({ nombre: $("[name=fn]", f).value.trim() || FASES[$("[name=ft]", f).value].t, tipo: $("[name=ft]", f).value, desde: $("[name=fd]", f).value, hasta: $("[name=fh]", f).value })).filter(f => f.desde && f.hasta);
+      let base = []; const sp = selPl ? selPl.value : "";
+      if (sp) { const pl = plantillaDe(sp, desde || hoyIso(), frecuencia()); if (pl) base = pl.g.sesiones; }
+      const tareas = fusionarPatrones(base).sort((a, b) => a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0).map((x, i) => Object.assign({ id: "v" + i, estado: "pendiente", orden: i }, x));
+      if (!tareas.length) { aviso("Todavía no hay sesiones: elegí un plan armado o armá la semana de cada fase con «Semanas».", "oro"); return; }
+      const cont = html(`<div class="resumen-plan"></div>`);
+      pintarResumen({ desde: desde || tareas[0].fecha, hasta: hasta || tareas[tareas.length - 1].fecha, fases, tareas }, cont, false, () => {}, () => {}, true);
+      abrirModal({ titulo: "Así queda el plan", cuerpo: cont, acciones: [{ texto: "Cerrar", clase: "fantasma", valor: null }] });
     });
     // Plan armado: completa título, tipo, fechas, objetivo y fases con lo de la plantilla elegida
     const selPl = $("[name=plantilla]", cuerpo);
@@ -535,6 +794,7 @@
       lista.innerHTML = ""; g.fases.forEach(filaFase);
       aviso(`${g.sesiones.length} sesiones listas: se cargan al crear el plan.`, "oro");
     });
+    if (selPl && opts && opts.plantilla && [...selPl.options].some(o => o.value === opts.plantilla)) { selPl.value = opts.plantilla; selPl.dispatchEvent(new CustomEvent("change")); }
     return abrirModal({ titulo: p.id ? "Plan y fases" : "Nuevo plan", cuerpo, acciones: [{ texto: "Volver", clase: "fantasma", valor: null }, { texto: p.id ? "Guardar" : "Crear plan", clase: "primario", alHacer: async (c) => {
       const d = { titulo: $("[name=titulo]", c).value.trim(), tipo: $("[name=tipo]", c).value, desde: $("[name=desde]", c).value || null, hasta: $("[name=hasta]", c).value || null,
         descripcion: $("[name=desc]", c).value.trim(),
@@ -552,6 +812,11 @@
       const sp = !p.id && window.Biblioteca && $("[name=plantilla]", c) ? $("[name=plantilla]", c).value : "";
       let gen = null;
       if (sp) { d.desde = d.desde || hoyIso(); const pl = plantillaDe(sp, d.desde, fr); if (pl) { gen = pl.g; d.hasta = gen.hasta; d.fases = gen.fases; } }
+      if (!p.id && $$(".fase-fila", c).some(f => f._patron)) {   // v67: semanas tipo armadas a mano
+        if (esPres()) { aviso("Con clases presenciales no se usa la semana tipo de las fases: sacala o elegí modalidad online.", "error"); return false; }
+        gen = Object.assign({ desde: d.desde, hasta: d.hasta, fases: d.fases, sesiones: [] }, gen || {});
+        gen = Object.assign({}, gen, { sesiones: fusionarPatrones(gen.sesiones) });
+      }
       if (!p.id && esPres()) {   // plan presencial: clases en los días, horario y lugar elegidos
         const dias = diasPres(), hora = $("[name=phora]", c).value || null, lugar = $("[name=plugar]", c).value.trim() || null, dur = +$("[name=pdur]", c).value || 90;
         if (!dias.length) { aviso("Elegí los días de clase.", "error"); return false; }
