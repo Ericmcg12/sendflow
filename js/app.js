@@ -392,7 +392,7 @@
     const nEtiq = analisis.reduce((s, a) => s + (a.nEtiquetas || 0), 0);
     const nSender = analisis.filter(a => a.conSender).length;
     v.appendChild(html(`<div>
-      ${cabInicio(`<button class="btn" data-accion="nuevo-piloto">${ICONOS.mas}Agregar piloto</button><button class="btn" data-accion="nuevo-analisis" title="Para un piloto sin cuenta">${ICONOS.video}Subir video propio</button>`)}
+      ${cabInicio(`<button class="btn primario" data-accion="nuevo-piloto">${ICONOS.mas}Agregar piloto</button><button class="btn primario" data-accion="nuevo-analisis" title="Para un piloto sin cuenta">${ICONOS.video}Subir video propio</button>`)}
       <div class="grilla g4" style="margin-top:16px">
         <div class="tarjeta kpi entra"><span class="etiqueta">Pilotos</span><span class="num cian" data-n="${pilotos.length}">0</span></div>
         <div class="tarjeta kpi entra"><span class="etiqueta">Análisis</span><span class="num oro" data-n="${analisis.length}">0</span></div>

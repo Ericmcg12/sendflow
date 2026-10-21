@@ -1888,3 +1888,16 @@ a.ap-fila:hover{background:rgba(255,255,255,.03);}
 .cons-mas{width:100%;justify-content:center;}
 .res-fase-bt{margin-left:auto;}
 @media (max-width:720px){ .constructor .cons-grilla{grid-template-columns:1fr;} }
+
+/* v68: ventanas anchas, títulos de columna de las fases, ajuste de intensidad */
+.modal.ancha{width:min(920px,100%);}
+.fase-fila,.fase-cab{grid-template-columns:minmax(120px,1.3fr) minmax(130px,1.1fr) minmax(170px,1fr) minmax(170px,1fr) 132px;}
+.fase-cab{display:grid;gap:6px;margin-bottom:4px;font:600 10px var(--mono,"Roboto Mono",monospace);letter-spacing:.08em;text-transform:uppercase;color:var(--ink-dim);}
+.fase-fila .fecha-dmy{min-width:0;}
+.fase-fila .fecha-dmy-txt{min-width:90px;}
+.ej-cambiar{margin-top:6px;justify-self:start;}
+.ajuste-op{display:grid;gap:10px;}
+.ajuste-op label.chk{display:flex;gap:8px;align-items:flex-start;}
+.ajuste-op small{display:block;color:var(--ink-dim);}
+.cab-borrador{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:10px;}
+@media (max-width:900px){.fase-cab{display:none;}}

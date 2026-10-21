@@ -218,7 +218,14 @@
     const cont = html(`<div class="ej-mas">
       <label>Bloque<select class="input" name="eb"><option value="">Solo</option>${LETRAS.map(l => `<option value="${l}" ${e.bloque === l ? "selected" : ""}>${l}</option>`).join("")}</select></label>
       <label>Descanso (s)<input class="input" name="ed" type="number" min="0" max="3600" step="5" value="${e.descanso || ""}" placeholder="60"></label>
-      <label class="ej-facil">Versión más fácil<input class="input" name="ef" maxlength="120" value="${esc(e.facil || "")}" placeholder="Sentadilla goblet"></label></div>`);
+      <label class="ej-facil">Versión más fácil<input class="input" name="ef" maxlength="120" value="${esc(e.facil || "")}" placeholder="Sentadilla goblet"></label>
+      <button type="button" class="btn chico ej-cambiar" title="Pone la versión más fácil como el ejercicio de la sesión; el de ahora queda como su versión más fácil, así se puede volver">⇄ Hacer este ejercicio más fácil</button></div>`);
+    $(".ej-cambiar", cont).addEventListener("click", () => {
+      const n = $("[name=en]", f), fa = $("[name=ef]", cont);
+      if (!fa.value.trim()) { fa.focus(); aviso("Escribí primero la versión más fácil (por ejemplo «Sentadilla goblet»).", "oro"); return; }
+      const nuevo = fa.value.trim(), viejo = n.value.trim(); n.value = nuevo; fa.value = viejo;
+      n.dispatchEvent(new Event("input", { bubbles: true })); aviso("Ejercicio cambiado por la versión más fácil.", "oro");
+    });
     const tiene = !!(e.bloque || e.descanso || e.facil);
     cont.hidden = !tiene;
     const bt = $(".ej-bt", f);
@@ -438,14 +445,14 @@
         ${sesDeSendflow().map(x => `<div class="bpan-fila"><div class="bpan-txt"><b>${esc(x.titulo)}</b>${tag("SendFlow")}${tag(esc(TIPOS_SES[x.tipo] || "Otro"))}<small>${x.duracionMin} min · intensidad ${x.intensidad}/10 · ${x.ej.length} ejercicio${x.ej.length > 1 ? "s" : ""}</small></div>
           <div class="bpan-acc"><button type="button" class="btn chico" data-ses-id="${esc(x.id)}">${ICONOS.editar}Modificar</button></div></div>`).join("")}</div>`;
     const planesDeSendflow = () => { const tapados = new Set(planesMios.map(m => m.datos.baseId).filter(Boolean)); return PLANES.filter(x => !tapados.has(x.id)); };
-    const cuerpoPlanes = () => `<div class="bpan-barra"><span class="ayuda-chica">Planes completos con sus fases y sesiones. «Crear plan» abre Nuevo plan con este ya elegido; «Duplicar» te deja una copia para cambiar sin tocar el original.</span></div>
+    const cuerpoPlanes = () => `<div class="bpan-barra"><span class="ayuda-chica">Planes completos con sus fases y sesiones. «Crear plan» abre Nuevo plan con este ya elegido; «Modificar» cambia fases, sesiones, ejercicios e intensidad (los de SendFlow quedan como tu copia); «Duplicar» te deja otra copia.</span><button type="button" class="btn primario chico" data-nuevo-plan>${ICONOS.mas}Nuevo plan tipo</button></div>
       ${err.pl ? vacio(esc(err.pl)) : ""}
       <div class="bpan-lista">${planesMios.map(m => { const d = m.datos || {}; return `<div class="bpan-fila"><div class="bpan-txt"><b>${esc(m.titulo)}</b>${tag(d.baseId ? "Modificado" : "Mío")}
           <small>${d.semanas || "?"} semana${d.semanas === 1 ? "" : "s"} · ${(d.sesiones || []).filter(x => x.tipo !== "descanso").length} sesiones · ${(d.fases || []).map(f => esc(f.nombre)).join(", ") || "sin fases"}</small></div>
-          <div class="bpan-acc"><button type="button" class="btn chico primario" data-usar="m:${esc(m.id)}">Crear plan</button><button type="button" class="btn chico" data-dup-mio="${esc(m.id)}">Duplicar</button><button type="button" class="btn chico peligro" data-plan-borrar="${esc(m.id)}">${d.baseId ? "Volver al original" : "Borrar"}</button></div></div>`; }).join("")}
+          <div class="bpan-acc"><button type="button" class="btn chico primario" data-usar="m:${esc(m.id)}">Crear plan</button><button type="button" class="btn chico" data-plan-mod="${esc(m.id)}">${ICONOS.editar}Modificar</button><button type="button" class="btn chico" data-dup-mio="${esc(m.id)}">Duplicar</button><button type="button" class="btn chico peligro" data-plan-borrar="${esc(m.id)}">${d.baseId ? "Volver al original" : "Borrar"}</button></div></div>`; }).join("")}
         ${planesDeSendflow().map(x => { const d = planADatos(x); return `<div class="bpan-fila"><div class="bpan-txt"><b>${esc(nombreCorto(x.titulo))}</b>${tag("SendFlow")}
           <small>${x.semanas} semana${x.semanas === 1 ? "" : "s"} · ${d.sesiones.filter(y => y.tipo !== "descanso").length} sesiones · ${x.fases.map(f => esc(f.nombre)).join(", ")}</small></div>
-          <div class="bpan-acc"><button type="button" class="btn chico primario" data-usar="a:${esc(x.id)}">Crear plan</button><button type="button" class="btn chico" data-dup-id="${esc(x.id)}">Duplicar</button></div></div>`; }).join("")}</div>`;
+          <div class="bpan-acc"><button type="button" class="btn chico primario" data-usar="a:${esc(x.id)}">Crear plan</button><button type="button" class="btn chico" data-plan-mod-id="${esc(x.id)}">${ICONOS.editar}Modificar</button><button type="button" class="btn chico" data-dup-id="${esc(x.id)}">Duplicar</button></div></div>`; }).join("")}</div>`;
     const pintar = () => {
       raiz.innerHTML = `<div class="vista-plan bpan-tabs" role="group" aria-label="Qué querés ver">${TABS.map(([k, t]) => `<button type="button" data-tab="${k}" class="${k === tab ? "sel" : ""}">${t}</button>`).join("")}</div>
         <div class="bpan-cuerpo">${tab === "ejercicios" ? cuerpoEjercicios() : tab === "sesiones" ? cuerpoSesiones() : cuerpoPlanes()}</div>`;
@@ -464,6 +471,10 @@
         try { await plantillaBorrar(m.id); await cargar(); pintar(); } catch (e) { aviso(e.message, "error"); }
       }));
       $$("[data-usar]", raiz).forEach(b => b.addEventListener("click", () => { if (ctx.alUsarPlan) ctx.alUsarPlan(b.dataset.usar); }));
+      const abrirPlanTipo = async (m) => { if (ctx.editarPlanTipo && await ctx.editarPlanTipo(m)) { await cargar(); pintar(); } };
+      const bnp = $("[data-nuevo-plan]", raiz); if (bnp) bnp.addEventListener("click", () => abrirPlanTipo({ datos: { semanas: 4, fases: [], sesiones: [] } }));
+      $$("[data-plan-mod]", raiz).forEach(b => b.addEventListener("click", () => { const m = planesMios.find(y => y.id === b.dataset.planMod); if (m) abrirPlanTipo({ id: m.id, titulo: m.titulo, datos: m.datos }); }));
+      $$("[data-plan-mod-id]", raiz).forEach(b => b.addEventListener("click", () => { const x = PLANES.find(y => y.id === b.dataset.planModId); if (x) abrirPlanTipo({ titulo: nombreCorto(x.titulo), datos: Object.assign(planADatos(x), { baseId: x.id }) }); }));
       const duplicar = async (titulo, datos) => { try { await plantillaGuardar("plan", titulo, datos); await cargar(); pintar(); aviso("Copia guardada en Planes tipo.", "oro"); } catch (e) { aviso(e.message, "error"); } };
       $$("[data-dup-id]", raiz).forEach(b => b.addEventListener("click", () => { const x = PLANES.find(y => y.id === b.dataset.dupId); if (x) duplicar(nombreCorto(x.titulo) + " (copia)", planADatos(x)); }));
       $$("[data-dup-mio]", raiz).forEach(b => b.addEventListener("click", () => { const m = planesMios.find(y => y.id === b.dataset.dupMio); if (m) { const d = Object.assign({}, m.datos); delete d.baseId; duplicar(m.titulo + " (copia)", d); } }));
