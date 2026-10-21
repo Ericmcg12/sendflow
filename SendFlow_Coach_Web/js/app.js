@@ -893,6 +893,7 @@
             <button type="button" class="btn primario chico" data-accion="responder">Enviar</button></div></div>`;
         $(".conv-volver", panel).addEventListener("click", () => { history.pushState(null, "", "/mensajes"); actual = null; raiz.classList.remove("con-sel"); pintarLista(); pintarPanelVacio(); });
         enterEnvia($("textarea", panel), $("[data-accion=responder]", panel));
+        if (c && c.soyCoach && window.RespuestasRapidas) RespuestasRapidas.montar($("textarea", panel), { nombre: String(c.pilotoNombre || "").split(" ")[0] });   // v60
         $("[data-accion=responder]", panel).addEventListener("click", async (ev) => {
           const ta = $("textarea", panel), texto = ta.value.trim(); if (!texto) { ta.focus(); return; }
           const b = ev.currentTarget; b.disabled = true; b.textContent = "Enviando…";

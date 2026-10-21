@@ -1776,3 +1776,10 @@ a.ap-fila:hover{background:rgba(255,255,255,.03);}
 .cc-info small{opacity:.7;}
 .cc-acc{display:flex;gap:8px;flex-wrap:wrap;}
 .chip-pres.por-confirmar{border-color:var(--oro);color:var(--oro);}
+
+/* v60: respuestas rápidas del entrenador */
+.rr-fila-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px;}
+.rr-chip{cursor:pointer;max-width:100%;text-align:left;}
+.rr-editar{cursor:pointer;opacity:.75;}
+.rr-edit{display:grid;gap:8px;margin-top:10px;}
+.rr-fila{display:grid;grid-template-columns:1fr auto;gap:6px;align-items:start;}

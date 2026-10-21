@@ -263,3 +263,6 @@ Solo web; requiere `nube/coach_v29_asistencia.sql` (aplicado) y `aviso-diario` v
 
 ## 2d-septdecies) Ventana única «Subir archivos» y etiquetas (Coach v59, 21/10/2026)
 Solo Coach (la app no se toca). Detalle de producto en el doc 01 (C61, C62); SQL `nube/coach_v30_etiquetas_archivo.sql` (corrido en producción el 21/10). Una sola ventana para subir video, foto, documento o (piloto) una bajada sola, con Motivo (uno) y Situación (varias), todo opcional; sin «Analizarlo ahora» (el análisis se abre desde Archivos → Analizar sobre el mismo archivo). Archivos: filtro por situación. **Probado por Eric en producción el 21/10: funciona.** Pendiente de decisión: los botones «Nuevo análisis» de otras pantallas todavía suben directo, sin pasar por la biblioteca.
+
+## 2d-octodecies) Respuestas rápidas del entrenador (Coach v60, 21/10/2026)
+Solo Coach (la app no se toca). Archivos: `SendFlow_Coach_Web/js/respuestas-rapidas.js` (nuevo), `estudio.js` (pestaña Mensajes), `app.js` (página Mensajes), `index.html`, `css/coach.css`. Botones con frases guardadas arriba de la caja de escribir; tocar uno escribe la frase (no envía); «{nombre}» = nombre del piloto; editor propio (máx. 12 frases, 7 de fábrica). Se guardan en el navegador (localStorage por usuario): cambian de un dispositivo a otro. Sin SQL. No probado en producción.

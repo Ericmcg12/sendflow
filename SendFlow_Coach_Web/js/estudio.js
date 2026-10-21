@@ -1867,6 +1867,7 @@
     const ir = (s) => { E.vid.pause(); irA(+s); };
     $$(".marca-piloto", caja).forEach(b => b.addEventListener("click", () => ir(b.dataset.t)));
     const lista = $(".msj-lista", caja), ta = $("textarea", caja), chk = $(".msj-momento input", caja), st = $(".msj-t", caja);
+    if (coach && window.RespuestasRapidas) RespuestasRapidas.montar(ta, { nombre: nombreP === "el piloto" ? "" : nombreP });   // v60
     const actT = () => { st.textContent = chk.checked ? "(" + tiempo(E.vid.currentTime || 0, false) + ")" : ""; };
     chk.addEventListener("change", actT);
     if (window.matchMedia && matchMedia("(pointer: fine)").matches) ta.addEventListener("keydown", (e) => {

@@ -39,4 +39,4 @@
 - [Arquitectura general (viva, antigua)](architecture.md) · [Cámaras de pista (FASE 8, etapa posterior)](CAMARAS_PISTA.md) · [Programa integral de pretemporada DH](plan_integral_dh.md) (material de entrenamiento, base de la biblioteca de Coach).
 
 ## Qué sigue
-[Plan de implementación §1 y FASE 4](06_IMPLEMENTATION_PLAN.md) y [pendientes del PRD §6.4](01_PRD.md): respuestas rápidas, clip de video, resumen semanal por mail, selector principiante/profesional, probar el push real en iPhone/Android decidir si «Nuevo análisis» pasa por la biblioteca, y el plan de la biblioteca de referencia (PRD C40 i).
+[Plan de implementación §1 y FASE 4](06_IMPLEMENTATION_PLAN.md) y [pendientes del PRD §6.4](01_PRD.md): clip de video, resumen semanal por mail, selector principiante/profesional, probar el push real en iPhone/Android decidir si «Nuevo análisis» pasa por la biblioteca, y el plan de la biblioteca de referencia (PRD C40 i).
