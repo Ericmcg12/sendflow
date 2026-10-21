@@ -1,6 +1,8 @@
 // @ts-nocheck
-// Edge Function "aviso-diario" (20/10/2026): push con la sesión del día y recordatorio de clases presenciales. SOLO push, nunca mail,
+// Edge Function "aviso-diario" (20/10/2026): push con la sesión del día y recordatorio de clases presenciales. Los avisos a pilotos son SOLO push
 // y SOLO a quien lo prendió en su Perfil (notif_prefs.push_sesion / push_clase, coach_v26.sql y coach_v27.sql).
+// v5 (21/10/2026): resumen semanal por MAIL al entrenador (lunes desde las 8:00 de su zona; coach_v32.sql, notif_prefs.mail_resumen_semanal, prendido por defecto).
+//   Usa los secrets RESEND_API_KEY y MAIL_FROM (los mismos de avisos-coach).
 // v4 (21/10/2026): asistencia a clases. El cron pregunta al piloto «¿Vas a la clase de hoy?» 6 h antes (nunca antes de las 8:00 locales; solo a quien prendió «Preguntarme si voy»)
 //   y 2 h antes envía al entrenador un resumen único (van / no van / sin responder). Respuesta en Coach (tarjeta del Inicio del piloto).
 // v3 (20/10/2026): el aviso de una clase presencial sale RECIÉN cuando el entrenador confirma el lugar (coach_v28.sql). Dos entradas nuevas:
@@ -68,6 +70,27 @@ async function avisarConfirmadas(coachId) {
   return { clases: (lista || []).length, enviados: n };
 }
 
+const esc = (t) => String(t == null ? "" : t).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmtF = (f) => { const [y, m, d] = String(f).slice(0, 10).split("-"); return `${d}/${m}`; };
+function mailResumen(c) {
+  const ps = c.pilotos || [];
+  const atencion = ps.filter((p) => p.sinMarcarDias >= 3 || p.altoEsfuerzo);
+  const fila = (p) => {
+    const avisos = [p.sinMarcarDias >= 3 ? `lleva ${p.sinMarcarDias} días sin responder` : "", p.altoEsfuerzo ? "esfuerzo por encima de lo planificado" : ""].filter(Boolean);
+    return `<tr><td style="padding:6px 10px;border-bottom:1px solid #e5e7eb">${esc(p.nombre || "Piloto")}</td><td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;text-align:center">${p.venc ? `${p.hechas}/${p.venc}` : "—"}</td><td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;text-align:center">${p.cumpl == null ? "—" : p.cumpl + " %"}</td><td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;text-align:center">${p.esfuerzo == null ? "—" : p.esfuerzo}</td><td style="padding:6px 10px;border-bottom:1px solid #e5e7eb;color:#b45309">${esc(avisos.join(" · "))}</td></tr>`;
+  };
+  const cab = atencion.length
+    ? `<p style="margin:0 0 12px"><b>A quién mirar esta semana:</b> ${atencion.map((p) => esc(p.nombre || "Piloto")).join(", ")}.</p>`
+    : `<p style="margin:0 0 12px">Nadie necesita atención especial esta semana.</p>`;
+  const html = `<div style="font-family:Arial,Helvetica,sans-serif;color:#111827;max-width:620px;margin:0 auto;padding:16px">
+    <h2 style="margin:0 0 4px">Tu semana con tus pilotos</h2>
+    <p style="margin:0 0 16px;color:#6b7280">Del ${fmtF(c.desde)} al ${fmtF(c.hasta)}</p>${cab}
+    <table style="border-collapse:collapse;width:100%;font-size:14px"><tr style="background:#f3f4f6"><th style="padding:6px 10px;text-align:left">Piloto</th><th style="padding:6px 10px">Sesiones</th><th style="padding:6px 10px">Cumplimiento</th><th style="padding:6px 10px">Esfuerzo</th><th style="padding:6px 10px;text-align:left">Atención</th></tr>${ps.map(fila).join("")}</table>
+    <p style="margin:18px 0 0"><a href="${COACH}/inicio" style="background:#0e7490;color:#fff;padding:10px 16px;border-radius:8px;text-decoration:none">Abrir SendFlow Coach</a></p>
+    <p style="margin:18px 0 0;color:#6b7280;font-size:12px">Para dejar de recibir este resumen: Perfil → Avisos → «Resumen semanal por mail».</p></div>`;
+  return { subject: atencion.length ? `Tu semana: ${atencion.length} piloto${atencion.length > 1 ? "s" : ""} para mirar` : "Tu semana con tus pilotos", html };
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") return new Response(null, { status: 204, headers: CORS });
   if (req.method !== "POST") return j({ error: "método" }, 405);
@@ -128,7 +151,22 @@ Deno.serve(async (req) => {
         resumenes++;
       }
     } catch (e) { console.error("aviso_asistencia_resumen_tomar", e.message); }
-    return j({ ok: true, usuarios: (lista || []).length, clases: (clases || []).length, pedidos, preguntas, resumenes, enviados });
+    // resumen semanal por mail al entrenador (lunes desde las 8:00 locales; una vez por semana)
+    let mails = 0;
+    try {
+      if (Deno.env.get("RESEND_API_KEY")) {
+        for (const c of (await rpc("aviso_resumen_semanal_tomar", {}) || [])) {
+          if (!c.email || !(c.pilotos || []).length) continue;
+          const m = mailResumen(c);
+          const r = await fetch("https://api.resend.com/emails", {
+            method: "POST", headers: { Authorization: `Bearer ${Deno.env.get("RESEND_API_KEY")}`, "Content-Type": "application/json" },
+            body: JSON.stringify({ from: Deno.env.get("MAIL_FROM") || "SendFlow <onboarding@resend.dev>", to: [c.email], subject: m.subject, html: m.html }),
+          });
+          if (r.ok) mails++; else console.error("resend", r.status, (await r.text()).slice(0, 300));
+        }
+      }
+    } catch (e) { console.error("aviso_resumen_semanal_tomar", e.message); }
+    return j({ ok: true, usuarios: (lista || []).length, clases: (clases || []).length, pedidos, preguntas, resumenes, mails, enviados });
   } catch (e) {
     console.error("aviso-diario", e && e.stack || e);
     return j({ error: "Error del servidor." }, 500);

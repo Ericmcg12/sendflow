@@ -146,7 +146,7 @@ Etapa 2d — Validación con datos reales
 - [x] Planificación (C14) — adelantada el 11/10 (Coach v26 + `coach_v13.sql`). Falta: validarla con un entrenador real una semana.
 - [x] Agenda del entrenador, planes con días de entrenamiento, historial de entrenamiento del piloto, «Atención con tus pilotos», grupos, aviso push de la sesión del día, planes presenciales, confirmación del lugar y asistencia a clases (20–21/10, doc 01 C51–C59). Falta probarlas con un entrenador y un grupo reales y con push real.
 - [x] Respuestas rápidas del entrenador (Coach v60, 21/10; frases en el navegador, sin SQL).
-- [ ] Clip de video corto en la devolución y resumen semanal por mail al entrenador (aprobados el 20/10, sin construir).
+- [x] Clip de video corto en el mensaje (Coach v61, `coach_v31`) y resumen semanal por mail al entrenador (`coach_v32`, `aviso-diario` v5). Falta ver el primer mail real (lunes 26/10).
 - [ ] Evolución del piloto (`registros_evolucion`): definir qué métricas se grafican.
 - [ ] Copia local en la app del plan del día y las devoluciones (C16).
 - [ ] Mensajes por análisis y exportar un análisis (C17). Pantalla dividida / fantasma (C18).

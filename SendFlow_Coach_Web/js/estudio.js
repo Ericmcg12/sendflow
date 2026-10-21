@@ -707,6 +707,8 @@
     }
     s.desfase = s.desfase || 0;
     const tUrl = parseFloat(new URLSearchParams(location.search).get("t")); if (Number.isFinite(tUrl)) E.vid.currentTime = tUrl;
+    const finUrl = parseFloat(new URLSearchParams(location.search).get("fin"));   // v61: viene de un clip del chat
+    if (Number.isFinite(tUrl) && Number.isFinite(finUrl) && finUrl > tUrl) E.vid.addEventListener("play", () => { if (E.vid.currentTime >= tUrl - 0.3 && E.vid.currentTime < finUrl) pararAl(finUrl); }, { once: true });
     dibujarLinea();
     prepararMapa();
     if (E.pestana === "datos") refrescarPestana();
@@ -870,6 +872,14 @@
     E.vid.currentTime = Math.max(0, Math.min(a.duracion, t));
     mostrarEscenario();
   }
+  // v61: reproduce un tramo (clip) y se detiene solo al llegar al final
+  function pararAl(fin) {
+    const v = E.vid; if (!v) return;
+    const parar = () => { if (v.currentTime >= fin - 0.03) { v.pause(); v.removeEventListener("timeupdate", parar); } };
+    v.addEventListener("timeupdate", parar);
+    v.addEventListener("pause", () => v.removeEventListener("timeupdate", parar), { once: true });
+  }
+  function reproducirTramo(t, fin) { irA(t); pararAl(fin); E.vid.play().catch(() => {}); }
   // Mide los cuadros por segundo reales mientras se reproduce
   function medirFps(v) {
     if (!v.requestVideoFrameCallback) return;
@@ -1860,6 +1870,7 @@
     h += `<div class="etiqueta" style="margin-top:14px">Conversación</div><div class="msj-lista"><p class="ayuda">Cargando…</p></div>
       <div class="msj-nuevo">
         <textarea class="input" maxlength="2000" placeholder="${coach ? "Escribile a " + esc(nombreP) + "…" : "¿Algo para aclararle a tu entrenador? Escribilo acá."}"></textarea><small class="ayuda-enter">Enter envía · Shift+Enter, otra línea</small>
+        ${coach ? `<div class="msj-clip"><span class="etiqueta">Clip</span><button type="button" class="btn chico fantasma" data-clip="ini">Inicio aquí</button><button type="button" class="btn chico fantasma" data-clip="fin">Fin aquí</button><span class="msj-clip-t ayuda-chica"></span><button type="button" class="btn icono fantasma oculto" data-clip="quitar" aria-label="Quitar el clip" title="Quitar">×</button></div>` : ""}
         <div class="msj-pie"><label class="msj-momento"><input type="checkbox"> En este momento del video <span class="msj-t"></span></label>
           <button type="button" class="btn primario chico" data-accion="enviar-msj">Enviar</button></div></div>`;
     const caja = html(`<div class="msj">${h}</div>`);
@@ -1870,6 +1881,18 @@
     if (coach && window.RespuestasRapidas) RespuestasRapidas.montar(ta, { nombre: nombreP === "el piloto" ? "" : nombreP });   // v60
     const actT = () => { st.textContent = chk.checked ? "(" + tiempo(E.vid.currentTime || 0, false) + ")" : ""; };
     chk.addEventListener("change", actT);
+    const clip = { ini: null, fin: null };   // v61
+    const actClip = () => {
+      const t = $(".msj-clip-t", caja), q = $("[data-clip=quitar]", caja); if (!t) return;
+      t.textContent = clip.ini == null && clip.fin == null ? "Marcá el inicio y el fin en el video (hasta 30 s)." : "Clip " + (clip.ini == null ? "—" : tiempo(clip.ini, false)) + " → " + (clip.fin == null ? "—" : tiempo(clip.fin, false));
+      q.classList.toggle("oculto", clip.ini == null && clip.fin == null);
+    };
+    $$("[data-clip]", caja).forEach(b => b.addEventListener("click", () => {
+      const k = b.dataset.clip, ahora = Math.round((E.vid.currentTime || 0) * 100) / 100;
+      if (k === "quitar") { clip.ini = clip.fin = null; } else if (k === "ini") { clip.ini = ahora; if (clip.fin != null && clip.fin <= ahora) clip.fin = null; } else { clip.fin = ahora; }
+      actClip();
+    }));
+    actClip();
     if (window.matchMedia && matchMedia("(pointer: fine)").matches) ta.addEventListener("keydown", (e) => {
       if (e.key === "Enter" && !e.shiftKey && !e.isComposing) { e.preventDefault(); const b = $("[data-accion=enviar-msj]", caja); if (b && !b.disabled) b.click(); }
     });
@@ -1879,10 +1902,10 @@
       l.forEach(k => {
         const el = html(`<div class="burbuja ${k.esMio ? "mia" : ""} ${k.deCoach ? "de-coach" : "de-piloto"}">
           <div class="cab"><b>${esc(k.esMio ? "Vos" : (k.autorNombre || (k.deCoach ? "Entrenador" : "Piloto")))}</b><span>${fechaHora(k.creado)}</span>
-            ${k.t != null ? `<button type="button" class="ir" title="Ir a este momento">${tiempo(k.t, false)}</button>` : ""}
+            ${k.t != null ? `<button type="button" class="ir ${k.tFin != null ? "clip" : ""}" title="${k.tFin != null ? "Ver el clip" : "Ir a este momento"}">${k.tFin != null ? "▶ " + tiempo(k.t, false) + " – " + tiempo(k.tFin, false) : tiempo(k.t, false)}</button>` : ""}
             ${k.esMio ? `<button type="button" class="borrar" aria-label="Borrar mensaje" title="Borrar">×</button>` : ""}</div>
           ${k.archivoId ? (k.archivoClase === "documento" ? `<a class="doc-msj" data-doc="${esc(k.archivoId)}" href="#" target="_blank" rel="noopener" title="Abrir el documento"><b>${esc((k.archivoNombre || "documento").split(".").pop().toUpperCase().slice(0, 4))}</b><span>${esc(k.archivoNombre || "Documento")}</span></a>` : `<img class="snap-msj" data-arch="${esc(k.archivoId)}" alt="Captura" title="Tocá para verla grande">`) : ""}<div class="txt">${k.archivoId && (k.texto === "📷 Captura" || String(k.texto).startsWith("📎 ")) ? "" : esc(k.texto)}</div>${k.esMio && k.leido ? `<div class="leido">Leído ✓</div>` : ""}</div>`);
-        const bi = $(".ir", el); if (bi) bi.addEventListener("click", () => ir(k.t));
+        const bi = $(".ir", el); if (bi) bi.addEventListener("click", () => { if (k.tFin != null) reproducirTramo(k.t, k.tFin); else ir(k.t); });
         const bb = $(".borrar", el); if (bb) bb.addEventListener("click", async () => {
           if (!(await UI.confirmar("¿Borrar este mensaje?", "Borrar"))) return;
           try { await API.borrar("comentarios/" + k.id); E.comentarios = E.comentarios.filter(x => x.id !== k.id); pintar(); dibujarLinea(); } catch (e) { aviso(e.message, "error"); }
@@ -1904,12 +1927,15 @@
       lista.innerHTML = `<p class="ayuda">No se pudo cargar la conversación: ${esc(e.message || "")}</p>`;
     }
     $("[data-accion=enviar-msj]", caja).addEventListener("click", async (ev) => {
-      const texto = ta.value.trim(); if (!texto) { ta.focus(); return; }
+      const conClip = clip.ini != null || clip.fin != null;
+      if (conClip && !(clip.ini != null && clip.fin != null && clip.fin > clip.ini)) { aviso("Marcá un inicio y un fin (el fin después del inicio).", "error"); return; }
+      if (conClip && clip.fin - clip.ini > 30) { aviso("El clip puede durar hasta 30 segundos.", "error"); return; }
+      const texto = ta.value.trim(); if (!texto && !conClip) { ta.focus(); return; }
       const b = ev.currentTarget; b.disabled = true; b.textContent = "Enviando…";
       try {
-        const r = await API.post("analisis/" + a.id + "/comentarios", { texto, t: chk.checked ? Math.round((E.vid.currentTime || 0) * 100) / 100 : null });
+        const r = await API.post("analisis/" + a.id + "/comentarios", conClip ? { texto, t: clip.ini, tFin: clip.fin } : { texto, t: chk.checked ? Math.round((E.vid.currentTime || 0) * 100) / 100 : null });
         (E.comentarios = E.comentarios || []).push(r.comentario);
-        ta.value = ""; chk.checked = false; actT(); pintar(); dibujarLinea();
+        ta.value = ""; chk.checked = false; clip.ini = clip.fin = null; actClip(); actT(); pintar(); dibujarLinea();
         API.avisar(coach ? "comentario" : "respuesta", a.id);
       } catch (e) { aviso("No se pudo enviar: " + e.message, "error"); }
       b.disabled = false; b.textContent = "Enviar";

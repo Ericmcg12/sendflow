@@ -245,3 +245,7 @@ Columnas nuevas de `tareas_plan`: `modalidad`, `hora`, `lugar`, `lugar_confirmad
 **Arreglo de permisos (20/10, `seguridad_arreglo_archivos_20261020.sql`):** la revisión del 19/10 había quitado `execute` a `authenticated` en `coach_uid()`, `coach_puede_ver_archivo(uuid)` y `coach_es_entrenador(uuid)`; `archivos-coach` las llama con la sesión del usuario, así que «Enviar al profe» fallaba con `permission denied for function coach_uid`. Se devolvió el permiso solo a esas tres.
 
 **Orden de aplicación en una base nueva:** `coach_v24` → `coach_v25_resumen_pilotos` → `coach_v26_uso_grupos_aviso` → `coach_v27_presencial` → `coach_v28_confirmar_lugar` → `coach_v29_asistencia` → `seguridad_arreglo_archivos_20261020` → `coach_v30_etiquetas_archivo`. Todos se pueden volver a correr (el trigger de v29 falla con «ya existe» si se repite: ignorar ese error).
+
+### coach_v31 y coach_v32 (21/10/2026)
+- **coach_v31_clip_comentario.sql:** `coach_comentarios.t_fin numeric` (fin del clip; `t` es el inicio); `coach_comentario_json` devuelve `tFin`; función nueva `coach_comentario_clip(p_id, p_texto, p_t, p_t_fin)` (authenticated; fin > inicio, máx. 30 s, mismo tope de 500 comentarios). `coach_comentario_crear` no cambia.
+- **coach_v32_resumen_semanal.sql:** `notif_prefs.mail_resumen_semanal` (default true) y `ultimo_resumen_semanal`; `notif_prefs_resumen_semanal(p_activo)` (entrenador, lee/guarda); `aviso_resumen_semanal_tomar(p_ignorar_dia, p_coach)` (solo service_role: marca la semana y devuelve los datos por entrenador).

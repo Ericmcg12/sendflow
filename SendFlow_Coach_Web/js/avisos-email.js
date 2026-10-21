@@ -131,6 +131,21 @@
       });
       lista.appendChild(l);
     })();
+    /* v61 (coach_v32.sql): el entrenador recibe cada lunes (desde las 8:00) un resumen por MAIL de la semana anterior. Prendido por defecto. */
+    if (prefs.entrenador === true) (function () {
+      var l = el("label", "sf-mail-op"), fila = el("span", "sf-mail-fila"), c = el("input");
+      c.type = "checkbox"; c.checked = true; c.disabled = true;
+      fila.appendChild(c); fila.appendChild(document.createTextNode(" Resumen semanal por mail"));
+      l.appendChild(fila); l.appendChild(el("small", "ayuda", "Cada lunes un mail con la semana de tus pilotos: a quién mirar, cumplimiento y esfuerzo."));
+      sb.rpc("notif_prefs_resumen_semanal").then(function (r) { if (r.error) throw r.error; c.checked = r.data && r.data.mail_resumen_semanal !== false; c.disabled = false; })
+        .catch(function () { l.hidden = true; });   // sin coach_v32.sql: no se muestra
+      c.addEventListener("change", function () {
+        var v = c.checked; c.disabled = true;
+        sb.rpc("notif_prefs_resumen_semanal", { p_activo: v }).then(function (r) { if (r.error) throw r.error; c.disabled = false; decir(v ? "Listo: te mandamos el resumen cada lunes." : "Listo: no te mandamos más el resumen semanal.", "ok"); })
+          .catch(function (err) { c.disabled = false; c.checked = !v; decir(errTxt(err), "error"); });
+      });
+      lista.appendChild(l);
+    })();
     cont.appendChild(lista);
     cont.appendChild(el("p", "ayuda sf-mail-nota", "Los avisos en pantalla y las notificaciones siguen igual. Los mails de tu cuenta (contraseña, invitaciones) llegan siempre."));
     cont.appendChild(msg);

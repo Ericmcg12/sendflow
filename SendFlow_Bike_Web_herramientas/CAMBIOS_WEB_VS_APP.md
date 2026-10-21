@@ -270,3 +270,8 @@ Solo Coach (la app no se toca). Archivos: `SendFlow_Coach_Web/js/respuestas-rapi
 ## 2d-novodecies) Ajustes del 21/10 (Coach v61, Bike)
 - **Coach:** se quitó «Nuevo análisis» de la ficha del piloto (no hay página de análisis en el menú; los análisis se abren desde Archivos → Analizar). El botón de la lista Análisis queda solo en esa pantalla, que no tiene entrada de menú.
 - **Calculadora de presión (Bike y /analisis, `calculos-bici.js`):** la presión ahora crece con el peso elevado a 0,65 (referencia 94 kg) en vez de linealmente. Caso real de Eric (120 kg + 27 kg bici + 4 kg equipo, DHF, seco suelto, DH): antes 29/35 psi, ahora 24/30; la que usa Eric es 23/29. Una sola medición real; falta contrastar con otros pesos.
+
+## 2d-vicies) Clip en el mensaje y resumen semanal por mail (Coach v61, 21/10/2026)
+Solo web; la app no se toca. SQL aplicado en producción: `nube/coach_v31_clip_comentario.sql`, `nube/coach_v32_resumen_semanal.sql`; edge function `aviso-diario` v5.
+- **Clip:** Estudio → Mensajes (entrenador): «Inicio aquí» / «Fin aquí» sobre el video, hasta 30 s; la burbuja reproduce solo ese tramo. En la página Mensajes el enlace abre el Estudio con `?t=&fin=`. Archivos: `estudio.js`, `app.js`, `api.js`, `css/coach.css`.
+- **Resumen semanal:** lunes desde las 8:00 de la zona del entrenador, una vez por semana; mail por Resend. Toggle en Perfil (`avisos-email.js`, idéntico en Bike y Coach). **No probado el envío real** del mail.
