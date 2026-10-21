@@ -260,3 +260,6 @@ Solo web; requiere `nube/coach_v29_asistencia.sql` (aplicado) y `aviso-diario` v
 - iPhone: el push solo funciona con el sitio agregado a la pantalla de inicio (Compartir → Agregar a inicio), sea Coach o Bike. Los avisos de planes/clases abren Coach; para pilotos conviene instalar Coach. Sin push, el piloto igual ve y responde la tarjeta al entrar.
 - Archivos: `SendFlow_Coach_Web/js/asistencia-clase.js` (nuevo), `app.js`, `index.html`, `avisos-email.js` (idéntico en ambos sitios).
 - Probado en la base con transacción revertida (pregunta única, responder, resumen único). **No probado:** push real ni la tarjeta con datos reales.
+
+## 2d-septdecies) Ventana única «Subir archivos» y etiquetas (Coach v59, 21/10/2026)
+Solo Coach (la app no se toca). Detalle de producto en el doc 01 (C61, C62); SQL `nube/coach_v30_etiquetas_archivo.sql` (corrido en producción el 21/10). Una sola ventana para subir video, foto, documento o (piloto) una bajada sola, con Motivo (uno) y Situación (varias), todo opcional; sin «Analizarlo ahora» (el análisis se abre desde Archivos → Analizar sobre el mismo archivo). Archivos: filtro por situación. **Sin probar:** la base real, un video real de GoPro y el celular (Android / iPhone). Pendiente de decisión: los botones «Nuevo análisis» de otras pantallas todavía suben directo, sin pasar por la biblioteca.
