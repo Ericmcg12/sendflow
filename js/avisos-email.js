@@ -114,6 +114,23 @@
       });
       lista.appendChild(l);
     })();
+    /* v58 (coach_v29.sql): asistencia a clases presenciales. Piloto: la pregunta «¿Vas a la clase?» 6 h antes (nunca antes de las 8:00), apagada por defecto.
+       Entrenador: un resumen único 2 h antes (van / no van / sin responder), prendido por defecto. Solo push. */
+    (function () {
+      var ent = prefs.entrenador === true, campo = ent ? "push_resumen_asist" : "push_asistencia";
+      var l = el("label", "sf-mail-op"), fila = el("span", "sf-mail-fila"), c = el("input");
+      c.type = "checkbox"; c.checked = ent ? prefs.push_resumen_asist !== false : prefs.push_asistencia === true;
+      fila.appendChild(c); fila.appendChild(document.createTextNode(ent ? " Avisarme quién va a cada clase" : " Preguntarme si voy a la clase"));
+      l.appendChild(fila); l.appendChild(el("small", "ayuda", ent ? "Un solo aviso 2 horas antes de cada clase con quién va, quién no y quién no respondió. Nunca por mail." : "Unas 6 horas antes de la clase (nunca antes de las 8:00) te preguntamos si vas y tu entrenador ve tu respuesta. Nunca por mail."));
+      c.addEventListener("change", function () {
+        var v = c.checked; c.disabled = true;
+        (v && window.SFAvisos ? SFAvisos.estado().then(function (est) { if (est !== "activo") return SFAvisos.activar(); }) : Promise.resolve())
+          .then(function () { return sb.rpc("notif_prefs_asistencia_guardar", ent ? { p_resumen: v } : { p_pregunta: v }); })
+          .then(function (r) { if (r.error) throw r.error; c.disabled = false; decir(v ? "Listo: el aviso de asistencia está prendido." : "Listo: no te avisamos más de la asistencia.", "ok"); })
+          .catch(function (err) { c.disabled = false; c.checked = !v; decir(/notif_prefs_asistencia_guardar/.test((err && err.message) || "") && /(does not exist|Could not find)/i.test((err && err.message) || "") ? "Falta aplicar coach_v29.sql en Supabase." : errTxt(err), "error"); });
+      });
+      lista.appendChild(l);
+    })();
     cont.appendChild(lista);
     cont.appendChild(el("p", "ayuda sf-mail-nota", "Los avisos en pantalla y las notificaciones siguen igual. Los mails de tu cuenta (contraseña, invitaciones) llegan siempre."));
     cont.appendChild(msg);
