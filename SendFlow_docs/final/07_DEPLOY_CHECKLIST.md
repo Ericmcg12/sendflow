@@ -186,7 +186,7 @@ Cada subida **reemplaza el sitio entero**: siempre la carpeta completa del zip, 
 
 ### Coach v52–v58 + Bike (20–21/10/2026): agenda, grupos, clases presenciales, avisos
 Orden recomendado (la base y las funciones de borde **ya están aplicadas en producción**; esto sirve para repetirlo en otra base y para verificar):
-- [ ] SQL, en este orden, una sentencia a la vez si el editor se cuelga (no hay `DROP` ni `FOR … LOOP` a propósito): `coach_v24.sql` → `coach_v25_resumen_pilotos.sql` → `coach_v26_uso_grupos_aviso.sql` → `coach_v27_presencial.sql` → `coach_v28_confirmar_lugar.sql` → `coach_v29_asistencia.sql` → `seguridad_arreglo_archivos_20261020.sql`. (Si el trigger de v29 ya existe, ignorar «already exists».)
+- [ ] SQL, en este orden, una sentencia a la vez si el editor se cuelga (no hay `DROP` ni `FOR … LOOP` a propósito): `coach_v24.sql` → `coach_v25_resumen_pilotos.sql` → `coach_v26_uso_grupos_aviso.sql` → `coach_v27_presencial.sql` → `coach_v28_confirmar_lugar.sql` → `coach_v29_asistencia.sql` → `seguridad_arreglo_archivos_20261020.sql` → `coach_v30_etiquetas_archivo.sql` (21/10, ya corrido en producción). (Si el trigger de v29 ya existe, ignorar «already exists».)
 - [ ] Supabase → Vault: secreto `aviso_diario_secreto` (lo crea `coach_v26`). Extensiones `pg_cron` y `pg_net` activas. Cron `aviso-sesion-diaria` (`0 * * * *`) presente y activo.
 - [ ] Edge Functions: `aviso-diario` **v4** (código de `nube/funcion_aviso_diario/index.ts`, **Verify JWT desactivado**; usa `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`), `avisos-coach` v9 (Verify JWT sí), `calendario-ics` v2, `archivos-coach` v9 (Verify JWT sí).
 - [ ] Prueba de la función de borde: llamar con el secreto y ver `{"ok":true,"usuarios":…,"clases":…,"pedidos":…,"preguntas":…,"resumenes":…,"enviados":…}`; sin la cabecera `x-cron-secret` y sin `Authorization` devuelve 401.
@@ -198,3 +198,11 @@ Orden recomendado (la base y las funciones de borde **ya están aplicadas en pro
 - [ ] **iPhone:** el push solo funciona con el sitio agregado a la pantalla de inicio (Compartir → Agregar a inicio); probar con Coach instalado.
 - [ ] Antes de usarlo con pilotos reales: dejar el usuario de prueba `prueba1@gmail.com` hasta que Eric diga que se borra.
 - Volver atrás: redesplegar la versión anterior de `aviso-diario` (v3 o v2) y subir el ZIP anterior; las columnas y funciones nuevas no estorban a las versiones viejas de los sitios.
+
+### Coach v59 (21/10/2026): ventana única «Subir archivos»
+- [ ] SQL `coach_v30_etiquetas_archivo.sql` corrido **antes** de subir el sitio (si no, la ventana funciona pero avisa que no pudo guardar motivo y situación).
+- [ ] Sitio: ZIP de `deploy-coach-web` a Cloudflare Pages. La fuente es `SendFlow_Coach_Web/`; verificar que `js/app.js`, `js/api.js` y `js/archivos.js` coinciden en las dos ramas antes de volver a correr `publicar_rama.sh coach`.
+- [ ] Como entrenador: **Subir archivos** abre una sola ventana con «¿A dónde va este archivo?», Motivo, Situación, Fecha, Título y Pista; no existe «Analizarlo ahora». Subir una foto, un documento y un video con etiquetas: quedan en la biblioteca con sus etiquetas y el filtro por situación los separa.
+- [ ] Como entrenador: Archivos → tocar el video → **Analizar** abre el Estudio sobre el mismo archivo (sin copia) y hereda el motivo.
+- [ ] Como piloto: subir un video con motivo y situación, una bajada sola, una foto y un documento: llegan al entrenador (Archivos); sin ninguna etiqueta también sube.
+- [ ] Un video real de GoPro (recorte y compresión) y el celular (Android e iPhone): sin probar todavía.
