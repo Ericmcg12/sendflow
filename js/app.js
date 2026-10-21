@@ -494,7 +494,6 @@
             <div class="dato"><div class="etiqueta">Peso</div><div class="v">${p.peso ? esc(p.peso) + " kg" : "—"}</div></div>
           </div></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <button class="btn primario" data-accion="nuevo">${ICONOS.video}Nuevo análisis</button>
           <button class="btn icono" data-accion="editar" aria-label="Editar piloto" title="Editar piloto">${ICONOS.editar}</button>
           ${p.vinculado && p.usuarioId && window.SFCuenta ? `<button class="btn peligro cp-dejar" data-accion="dejar">Dejar de entrenar a este piloto</button>` : `<button class="btn icono peligro" data-accion="borrar" aria-label="Borrar piloto" title="Borrar piloto">${ICONOS.basura}</button>`}
         </div></div>
@@ -513,7 +512,6 @@
       <div id="perfilesPiloto"></div></div>`));
     $$("[data-n]", v).forEach(el => contar(el, +el.dataset.n));
     $$(".nivel-barra i", v).forEach((b, i) => UI.animar(b, [{ width: "0%" }, { width: b.style.width }], { duration: 800, delay: 300 + i * 90, easing: "cubic-bezier(.2,.8,.2,1)" }));
-    $("[data-accion=nuevo]", v).addEventListener("click", () => nuevoAnalisis(id));
     $("[data-accion=editar]", v).addEventListener("click", () => editarPiloto(p));
     const bDejar = $("[data-accion=dejar]", v);   // v50
     if (bDejar) bDejar.addEventListener("click", async () => {
