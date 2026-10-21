@@ -216,6 +216,7 @@ Con fecha de nacimiento, teléfono, foto, peso y telemetría con GPS, SendFlow g
 4. **Menores**: pilotos de DH menores de edad → consentimiento de madre/padre/tutor.
 5. **Borrar mi cuenta** en Perfil (hoy solo lo hace el admin).
 6. Argentina (Ley 25.326): inscribir la base en el Registro Nacional de Bases de Datos (AAIP). Si se vende afuera, revisar GDPR (UE) y equivalentes.
+**Descargo de lesiones (decidido 21/10, PRD W14):** se acepta al abrir la cuenta por primera vez, lo gestiona Bike, y se guarda la versión y la fecha. Es independiente del cuestionario del piloto de Coach (C72).
 Los textos legales los tiene que revisar un abogado; se puede armar un borrador para llevarle.
 
 ## 12. Listas de modelos compartidas (15/10, `catalogo_v1.sql`, Bike v37)

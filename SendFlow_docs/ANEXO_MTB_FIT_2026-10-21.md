@@ -38,13 +38,14 @@ Solo para la **biblioteca de gimnasio** y la mecánica de las sesiones; nada de 
 4. **Nota por ejercicio visible para el coach**, con aviso de dolor.
 5. **Los planes los arma solo el coach.** Es la diferencia con MTB Fit y con las apps de seguimiento: Sendflow no entrega un plan enlatado al piloto; le da al coach una herramienta de planificación que **sugiere** planes según edad, peso, nivel y objetivo, y el coach los usa, modifica, agrega o quita.
 6. **Más fáciles:** sesiones por objetivo (brazos y antebrazo, descenso, curvas) para que el coach elija más rápido; calentamiento previo a la bajada y recuperación como sesiones que se agregan al plan; fase de fundamentos opcional, que elige el coach; mensaje de bienvenida del coach con su tiempo de respuesta.
-7. **Cuestionario del piloto** (condiciones, necesidades y objetivo: no es lo mismo entrenar por entrenar que para correr). Es una herramienta **para el coach**, no un requisito para usar Sendflow. La sección de privacidad sigue pendiente de mejora por separado (PRD §11).
+7. **Cuestionario del piloto** (condiciones, necesidades y objetivo: no es lo mismo entrenar por entrenar que para correr). Es una herramienta **de Coach, para el coach**, no un requisito para usar Sendflow, y puede llevar su propio descargo. **Descargo de lesiones de Sendflow:** se acepta al abrir la cuenta por primera vez (lo gestiona Bike, PRD W14), aparte del cuestionario. La sección de privacidad sigue pendiente de mejora por separado (PRD §11).
 
 ## 4. Lo que no se usa
 
 - Comidas, recetas, sueño, presión arterial, medidas corporales, insignias y créditos de sesión (módulos genéricos de Trainerize).
 - Planes enlatados que el piloto se sigue solo, con o sin entrenador.
-- Un cuestionario o un descargo como condición para usar Sendflow.
+- Un cuestionario como condición para usar Sendflow (el descargo de lesiones sí se acepta al abrir la cuenta, W14).
+- Un plan generado para el piloto, aunque lo personalice una IA: anularía el trato humano del coach, que es la diferencia del producto (PRD C67).
 - El peso corporal como objetivo; sí sirve el **peso del piloto** como dato (el SAG y el resorte dependen de él).
 
 ## 5. Qué no se vio

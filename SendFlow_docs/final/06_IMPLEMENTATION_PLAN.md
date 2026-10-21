@@ -169,7 +169,7 @@ Etapa 2d — Validación con datos reales
 ### FASE 6 — Lanzamiento público
 **Entrega:** registro abierto a otros pilotos y entrenadores.
 
-- [ ] Términos, privacidad y consentimiento (W9), revisión de un abogado (ley argentina + GDPR). Región de la base para producción.
+- [ ] Términos, privacidad y consentimiento (W9) y **descargo de lesiones al abrir la cuenta (W14)**, revisión de un abogado (ley argentina + GDPR). Región de la base para producción.
 - [ ] Supabase Pro y revisión de términos comerciales de Cloudflare/Supabase.
 - [ ] Definir qué es gratis y qué se cobra en Coach, y el medio de cobro.
 - [ ] Marca: Instagram, búsqueda de marca, nombre en tiendas; publicar en Google Play (.aab, USD 25, prueba cerrada con testers) / App Store.
