@@ -220,6 +220,12 @@
     if (es(/^biblioteca\/([^/]+)$/) && metodo === "DELETE") return limpiarArchivos(await rpc("coach_biblioteca_borrar", { p_archivo: m[1] }));
     if (ruta === "compartidos" && metodo === "POST") return rpc("coach_compartido_crear", { p_archivo: cuerpo.archivoId, p_para: cuerpo.paraId, d: { titulo: cuerpo.titulo || "", nota: cuerpo.nota || "" } });
     if (es(/^compartidos\/([^/]+)$/) && metodo === "DELETE") return limpiarArchivos(await rpc("coach_compartido_borrar", { p_archivo: m[1] }));
+    // v59 (coach_v30.sql): motivo y situación de cada archivo o bajada
+    if (ruta === "etiquetas") {
+      if (metodo === "POST") return rpc("coach_etiquetas_guardar", { p_tipo: cuerpo.tipo, p_ref: cuerpo.ref, d: cuerpo.datos || {} });
+      return rpc("coach_etiquetas_listar");
+    }
+    if (es(/^etiquetas\/info\/([^/]+)$/)) return rpc("coach_etiquetas_info", { p_archivo: m[1] });
     if (ruta === "avisos") return rpc("coach_avisos_resumen");
     if (ruta === "conversaciones") return rpc("coach_conversaciones");   // v6: bandeja de mensajes
     // v7: hilo de entrenamiento

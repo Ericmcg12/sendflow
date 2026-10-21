@@ -5,7 +5,7 @@
 //   · Archivos.ver(...)       foto en grande
 //   · Archivos.tarjeta(it)    tarjeta de una foto o un documento de la biblioteca
 //   · Archivos.detalle(x)     abrir, mandar por mensaje, ver la conversación, quitar
-//   · Archivos.subir(ctx)     subir una foto o un documento y pasárselo a una persona o mandarlo en una conversación
+//   · Archivos.clasificar(f)  qué clase de archivo es (video, foto o documento); subir es la ventana única de app.js (subirArchivos)
 // ============================================================================
 (function () {
   "use strict";
@@ -88,6 +88,7 @@
     if (url && !esVid) acc.push({ texto: esDoc ? "Abrir documento" : "Abrir en otra pestaña", alHacer: () => { window.open(url, "_blank", "noopener"); return false; } });
     if (!esVid) acc.push({ texto: "Enviar por mensaje", clase: "primario", alHacer: async () => { const r = await enviarPorMensaje(x); return r ? true : false; } });
     if (x.analisisId) acc.push({ texto: "Ver la conversación", alHacer: () => { window.irA("/mensajes/" + x.analisisId); } });
+    if (ctx.coach && x.esMia && x.biblioteca && esVid && x.archivoId && window.CoachApp && CoachApp.analizarDeBiblioteca) acc.push({ texto: "Analizar", clase: "primario", alHacer: async () => { await CoachApp.analizarDeBiblioteca(x); } });
     if (ctx.coach && x.esMia && ctx.fichas) acc.push({ texto: "Compartir con un piloto", alHacer: async () => { const r = await compartirVideo({ archivoId: x.archivoId, titulo: x.titulo || "", fichas: ctx.fichas }); return r ? true : false; } });
     if (x.esMia && !x.analisisId) acc.push({ texto: "Quitar", clase: "peligro", alHacer: async () => {
       if (!(await confirmar(x.biblioteca ? "¿Quitar este archivo de tu biblioteca? Los pilotos con quienes lo compartiste dejan de verlo." : "¿Quitar este archivo de Archivos? La otra persona deja de verlo.", "Quitar"))) return false;
@@ -117,70 +118,14 @@
     } }] });
   }
 
-  // ---------- subir archivos: fotos, documentos y videos ----------
-  // Foto o documento: se sube acá. Video: se abre el formulario de análisis (entrenador) o de envío (piloto) con el archivo ya elegido.
-  // Devuelve true si se subió algo, { video: File } si eligió un video o { bajada: true } si el piloto quiere mandar solo una bajada del Sender.
-  async function subir(ctx) {
-    ctx = ctx || {};
-    const coach = ctx.coach != null ? ctx.coach : esCoachYo();
-    const personas = coach ? (ctx.fichas || []).filter(p => p.usuarioId).map(p => ({ id: p.usuarioId, nombre: p.nombre })) : (ctx.entrenadores || []).map(e => ({ id: e.id, nombre: e.nombre }));
-    let convs = []; try { convs = await conversaciones(); } catch (e) { /* sin conversaciones: solo pasarlo a una persona */ }
-    if (!coach && !personas.length && !convs.length) { aviso(coach ? "Para pasar archivos, el piloto tiene que haber aceptado tu invitación." : "Para pasar archivos tenés que tener un entrenador vinculado.", "oro"); return false; }
-    let archivo = null;
-    const cuerpo = html(`<div class="form-grilla">
-      <div class="campo ancho"><div class="soltar" tabindex="0">${ICONOS.subir}<div><b style="color:var(--ink)">Elegí un archivo</b> o arrastralo acá</div><div style="font-size:12px;margin-top:4px">Videos MP4, MOV o WebM (de cualquier largo, se abre el formulario de ${coach ? "análisis" : "envío"}). Fotos JPG, PNG o WebP (hasta 15 MB). Documentos PDF, Word, Excel o texto (hasta 25 MB).</div><div class="archivo"></div></div>
-        ${!coach && ctx.bajada ? `<button type="button" class="btn chico fantasma" data-a="bajada" style="margin-top:10px">¿Solo una bajada del Sender, sin video? Enviarla</button>` : ""}</div>
-      <div class="campo ancho"><label>¿Qué hacés con el archivo?</label><select class="input" name="destino">
-        ${coach ? `<option value="b:">Guardarlo en mi biblioteca (queda a mi nombre para usarlo después con cualquier piloto)</option><option value="a:">Analizarlo ahora con un piloto (solo videos)</option>` : ""}
-        ${personas.length ? `<optgroup label="Pasárselo a (queda en Archivos de los dos)">${personas.map(p => `<option value="p:${esc(p.id)}">${esc(p.nombre)}</option>`).join("")}</optgroup>` : ""}
-        ${convs.length ? `<optgroup label="Mandarlo por mensaje en la conversación de…">${convs.map(c => `<option value="c:${esc(c.id)}">${esc(c.texto)}</option>`).join("")}</optgroup>` : ""}</select></div>
-      <div class="campo"><label>Título <span class="opcional">(opcional)</span></label><input class="input" name="titulo" maxlength="160" placeholder="Análisis clínico, plan anterior…"></div>
-      <div class="campo"><label>Mensaje <span class="opcional">(opcional)</span></label><input class="input" name="nota" maxlength="1000"></div>
-      <div class="campo ancho progreso-subida oculto"><label>Subiendo</label><div class="barra-progreso"><i></i></div><small class="txt-progreso"></small></div></div>`);
-    const zona = $(".soltar", cuerpo);
-    let cerrarModal = null;
-    const bBaj = $("[data-a=bajada]", cuerpo); if (bBaj) bBaj.addEventListener("click", () => { if (cerrarModal) cerrarModal({ bajada: true }); });
-    const tomar = (f) => {
-      if (!f) return;
-      if (/^video\//.test(tipoDe(f)) || /^video\//.test(f.type)) {
-        if (!coach) { if (cerrarModal) cerrarModal({ video: f }); return; }   // el piloto manda el video a su entrenador (formulario de envío)
-        if (f.size > 1024 * 1048576) { aviso("El video supera el máximo de 1024 MB.", "error"); return; }
-        archivo = { f, t: tipoDe(f) || "video/mp4", clase: "video" };
-        $(".archivo", zona).textContent = f.name + " · " + tam(f.size);
-        const tv = $("[name=titulo]", cuerpo); if (!tv.value) tv.value = f.name.replace(/\.[^.]+$/, "");
-        return;
-      }
-      const t = tipoDe(f), esImg = /^image\/(jpeg|png|webp)$/.test(t), esDoc = /^(application\/pdf|application\/msword|application\/vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet)|application\/vnd\.ms-excel|text\/plain)$/.test(t);
-      if (!esImg && !esDoc) { aviso("Ese archivo no se puede subir. Usá un video MP4, MOV o WebM, una foto JPG, PNG o WebP, o un documento PDF, Word, Excel o texto.", "error"); return; }
-      if (f.size > (esImg ? 15 : 25) * 1048576) { aviso(`El archivo supera el máximo de ${esImg ? 15 : 25} MB.`, "error"); return; }
-      archivo = { f, t, clase: esImg ? "imagen" : "documento" };
-      $(".archivo", zona).textContent = f.name + " · " + tam(f.size);
-      const ti = $("[name=titulo]", cuerpo); if (!ti.value) ti.value = f.name.replace(/\.[^.]+$/, "");
-    };
-    zona.addEventListener("click", async () => tomar(await UI.elegirArchivo(ACEPTA)));
-    zona.addEventListener("keydown", async (e) => { if (e.key === "Enter") tomar(await UI.elegirArchivo(ACEPTA)); });
-    zona.addEventListener("dragover", (e) => { e.preventDefault(); zona.classList.add("encima"); });
-    zona.addEventListener("dragleave", () => zona.classList.remove("encima"));
-    zona.addEventListener("drop", (e) => { e.preventDefault(); zona.classList.remove("encima"); tomar(e.dataTransfer.files[0]); });
-    return abrirModal({ titulo: "Subir archivos", alAbrir: (c, cerrar) => { cerrarModal = cerrar; }, cuerpo, acciones: [{ texto: "Volver", clase: "fantasma", valor: null }, { texto: "Subir", clase: "primario", alHacer: async (c) => {
-      if (!archivo) { aviso("Elegí el archivo.", "error"); return false; }
-      const destino = $("[name=destino]", c).value, titulo = $("[name=titulo]", c).value.trim(), nota = $("[name=nota]", c).value.trim();
-      if (!destino && !coach) { aviso("Elegí a quién o dónde.", "error"); return false; }
-      const esVideo = archivo.clase === "video";
-      if (destino === "a:") { if (!esVideo) { aviso("Solo los videos se pueden analizar. Elegí otra opción.", "error"); return false; } return { video: archivo.f }; }
-      if (esVideo && destino.startsWith("c:")) { aviso("Los videos no se mandan por mensaje: guardalo en tu biblioteca, pasáselo a un piloto o analizalo.", "error"); return false; }
-      const prog = $(".progreso-subida", c), barra = $(".barra-progreso i", c), txt = $(".txt-progreso", c);
-      prog.classList.remove("oculto");
-      try {
-        const id = await API.subirArchivo(archivo.f.slice(0, archivo.f.size, archivo.t), archivo.clase, archivo.f.name, (p) => { barra.style.width = (p * 100).toFixed(0) + "%"; txt.textContent = Math.round(p * 100) + " %"; });
-        // el entrenador: los videos siempre quedan en su biblioteca; lo demás, si elige guardarlo o pasárselo a un piloto
-        if (coach && (esVideo || destino === "b:")) await API.post("biblioteca", { archivoId: id, titulo, nota });
-        if (destino.startsWith("p:")) await API.post("compartidos", { archivoId: id, paraId: destino.slice(2), titulo, nota });
-        else if (destino.startsWith("c:")) await API.post("analisis/" + destino.slice(2) + "/comentarios", { texto: nota || titulo, t: null, archivoId: id });
-        aviso(destino === "b:" ? "Guardado en tu biblioteca." : destino.startsWith("p:") ? "Archivo enviado: lo ve en su sección Archivos." : "Enviado por mensaje.", "oro");
-        return true;
-      } catch (e) { aviso(e.message, "error"); prog.classList.add("oculto"); return false; }
-    } }] });
+  // ---------- qué clase de archivo es (la ventana única de subir está en app.js: subirArchivos) ----------
+  // Devuelve { t: tipo MIME, clase: "video" | "imagen" | "documento" } o null si no se puede subir.
+  function clasificar(f) {
+    const t = tipoDe(f);
+    if (/^video\//.test(t) || /^video\//.test(f.type)) return { t: t || "video/mp4", clase: "video" };
+    if (/^image\/(jpeg|png|webp)$/.test(t)) return { t, clase: "imagen" };
+    if (/^(application\/pdf|application\/msword|application\/vnd\.openxmlformats-officedocument\.(wordprocessingml\.document|spreadsheetml\.sheet)|application\/vnd\.ms-excel|text\/plain)$/.test(t)) return { t, clase: "documento" };
+    return null;
   }
 
   // ---------- el entrenador usa un video (de un piloto o suyo) como ejemplo para otro piloto ----------
@@ -199,5 +144,5 @@
     } }] });
   }
 
-  window.Archivos = { pintar, ver, tarjeta, detalle, subir, enviarPorMensaje, compartirVideo };
+  window.Archivos = { pintar, ver, tarjeta, detalle, clasificar, tam, ACEPTA, conversaciones, enviarPorMensaje, compartirVideo };
 })();
