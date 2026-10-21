@@ -266,3 +266,7 @@ Solo Coach (la app no se toca). Detalle de producto en el doc 01 (C61, C62); SQL
 
 ## 2d-octodecies) Respuestas rápidas del entrenador (Coach v60, 21/10/2026)
 Solo Coach (la app no se toca). Archivos: `SendFlow_Coach_Web/js/respuestas-rapidas.js` (nuevo), `estudio.js` (pestaña Mensajes), `app.js` (página Mensajes), `index.html`, `css/coach.css`. Botones con frases guardadas arriba de la caja de escribir; tocar uno escribe la frase (no envía); «{nombre}» = nombre del piloto; editor propio (máx. 12 frases, 7 de fábrica). Se guardan en el navegador (localStorage por usuario): cambian de un dispositivo a otro. Sin SQL. No probado en producción.
+
+## 2d-novodecies) Ajustes del 21/10 (Coach v61, Bike)
+- **Coach:** se quitó «Nuevo análisis» de la ficha del piloto (no hay página de análisis en el menú; los análisis se abren desde Archivos → Analizar). El botón de la lista Análisis queda solo en esa pantalla, que no tiene entrada de menú.
+- **Calculadora de presión (Bike y /analisis, `calculos-bici.js`):** la presión ahora crece con el peso elevado a 0,65 (referencia 94 kg) en vez de linealmente. Caso real de Eric (120 kg + 27 kg bici + 4 kg equipo, DHF, seco suelto, DH): antes 29/35 psi, ahora 24/30; la que usa Eric es 23/29. Una sola medición real; falta contrastar con otros pesos.
