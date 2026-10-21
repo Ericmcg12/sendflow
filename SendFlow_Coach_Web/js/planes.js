@@ -68,7 +68,7 @@
         $$("[data-ptab]", v).forEach(b => b.classList.toggle("sel", b.dataset.ptab === tab));
         $("#panelPlanes", v).hidden = bib; $("#bibPantalla", v).hidden = !bib; $("[data-accion=nuevo]", v).hidden = bib;
         const url = new URL(location.href); if (bib) url.searchParams.set("tab", "biblioteca"); else url.searchParams.delete("tab"); history.replaceState(history.state, "", url);
-        if (bib) Biblioteca.pantalla($("#bibPantalla", v), { alUsarPlan: usar });
+        if (bib) Biblioteca.pantalla($("#bibPantalla", v), { alUsarPlan: usar, editarPlanTipo });
       };
       $$("[data-ptab]", v).forEach(b => b.addEventListener("click", () => mostrar(b.dataset.ptab)));
       mostrar(new URLSearchParams(location.search).get("tab") === "biblioteca" ? "biblioteca" : "planes");
@@ -378,7 +378,7 @@
         ${t.descripcion ? `<p class="prosa">${esc(t.descripcion)}</p>` : ""}
         ${ej.length ? tablaEj(ej) : (t.descripcion ? "" : `<p class="ayuda-chica">Esta sesión no tiene ejercicios cargados.</p>`)}
         ${t.notaPiloto ? `<p class="ses-nota">Nota del piloto: “${esc(t.notaPiloto)}”</p>` : ""}
-        ${previa ? "" : `<div class="res-acc"><button type="button" class="btn chico ${edita ? "primario" : ""}" data-abrir="${esc(t.id)}">${edita ? ICONOS.editar + "Editar sesión" : "Abrir y marcar"}</button></div>`}
+        ${previa === true ? "" : `<div class="res-acc"><button type="button" class="btn chico ${edita ? "primario" : ""}" data-abrir="${esc(t.id)}">${edita ? ICONOS.editar + "Editar sesión" : "Abrir y marcar"}</button></div>`}
       </div>`;
     };
     const fila = (t) => {
@@ -405,7 +405,7 @@
       const empiezan = fs.filter(f => f.desde >= lun || i === 0);
       const cont = ts.filter(t => t.tipo !== "descanso" && t.tipo !== "carrera");
       const min = cont.reduce((n, t) => n + (Number(t.duracionMin) || 0), 0), hh = cont.filter(t => t.estado === "hecha").length;
-      return `${empiezan.map(f => `<div class="res-fase" style="--c:${(FASES[f.tipo] || FASES.base).c}"><b>${esc(f.nombre)}</b><span>${corta(f.desde)} → ${corta(f.hasta)}</span>${f.objetivo ? `<em>${esc(f.objetivo)}</em>` : ""}${edita ? `<button type="button" class="btn chico res-fase-bt" data-fase="${fases.indexOf(f)}" title="Armar la semana tipo de esta fase y repetirla en todas sus semanas">${ICONOS.editar}Semana tipo de la fase</button>` : ""}</div>`).join("")}
+      return `${empiezan.map(f => `<div class="res-fase" style="--c:${(FASES[f.tipo] || FASES.base).c}"><b>${esc(f.nombre)}</b><span>${corta(f.desde)} → ${corta(f.hasta)}</span>${f.objetivo ? `<em>${esc(f.objetivo)}</em>` : ""}${edita && !previa ? `<button type="button" class="btn chico res-fase-bt" data-fase="${fases.indexOf(f)}" title="Armar la semana tipo de esta fase y repetirla en todas sus semanas">${ICONOS.editar}Semana tipo de la fase</button>` : ""}</div>`).join("")}
       <section class="res-sem ${lun <= hoy && hoy <= dom ? "actual" : ""}" data-sem="${lun}">
         <header><b>Semana ${i + 1}</b><span>${dm(lun)} – ${dm(dom)}</span>${fs.map(f => `<span class="fase-chip" style="--c:${(FASES[f.tipo] || FASES.base).c}">${esc(f.nombre)}</span>`).join("")}
           <span class="res-tot">${cont.length ? `${cont.length} ${cont.length === 1 ? "sesión" : "sesiones"}${min ? " · " + minTxt(min) : ""}${hh ? ` · hechas ${hh}/${cont.length}` : ""}` : "Sin sesiones"}</span>
@@ -431,9 +431,9 @@
       vuelve();
     }));
     $$("[data-ir]", el).forEach(b => b.addEventListener("click", () => irSemana(b.dataset.ir)));
-    $$("[data-mas]", el).forEach(b => b.addEventListener("click", async () => { if (await editarSesion(p, null, b.dataset.mas)) recargar(); }));
+    $$("[data-mas]", el).forEach(b => b.addEventListener("click", async () => { if (previa && previa.agregar) { if (await previa.agregar(b.dataset.mas)) recargar(); return; } if (await editarSesion(p, null, b.dataset.mas)) recargar(); }));
     $$("[data-fase]", el).forEach(b => b.addEventListener("click", async () => { const f = fases[+b.dataset.fase]; if (f) await editarSemanasDeFase(p, f, recargar); }));
-    $$("[data-abrir]", el).forEach(b => b.addEventListener("click", async () => { const t = tareas.find(x => x.id === b.dataset.abrir); if (t && await verSesion(t, edita, p)) recargar(); }));
+    $$("[data-abrir]", el).forEach(b => b.addEventListener("click", async () => { const t = tareas.find(x => x.id === b.dataset.abrir); if (!t) return; if (previa && previa.editar) { if (await previa.editar(t)) recargar(); return; } if (await verSesion(t, edita, p)) recargar(); }));
   }
 
   // ======================================================================= Sesión: ver / marcar / editar
@@ -573,7 +573,7 @@
     pintarTipo();
     if (window.CoachCalendario && !local) CoachCalendario.avisoFecha(cuerpo, p);
     const acciones = [{ texto: "Volver", clase: "fantasma", valor: false }];
-    if (local && opts.existente) acciones.push({ texto: "Quitar de la semana", clase: "peligro", valor: "borrar" });
+    if (local && opts.existente) acciones.push({ texto: opts.quitar || "Quitar de la semana", clase: "peligro", valor: "borrar" });
     if (t.id) acciones.push({ texto: "Borrar", clase: "peligro", alHacer: async () => {
       if (!(await confirmar("¿Borrar esta sesión?", "Borrar"))) return false;
       try { await rpc("coach_tarea_borrar", { p_id: t.id }); aviso("Sesión borrada."); return true; } catch (e) { aviso(e.message, "error"); return false; }
@@ -656,7 +656,7 @@
       }
     };
     pintar();
-    return abrirModal({ titulo: op.titulo || "Semana tipo", cuerpo, acciones: [{ texto: "Volver", clase: "fantasma", valor: null }, { texto: op.boton || "Usar esta semana", clase: "primario", alHacer: async () => ses.map(x => Object.assign({}, x)) }] });
+    return abrirModal({ titulo: op.titulo || "Semana tipo", cuerpo, alAbrir: (c) => { const mm = c.closest(".modal"); if (mm) mm.classList.add("ancha"); }, acciones: [{ texto: "Volver", clase: "fantasma", valor: null }, { texto: op.boton || "Usar esta semana", clase: "primario", alHacer: async () => ses.map(x => Object.assign({}, x)) }] });
   }
   // Plan que ya existe: rearma las sesiones de una fase con una semana tipo nueva (solo las pendientes)
   async function editarSemanasDeFase(p, fase, recargar) {
@@ -675,6 +675,114 @@
     } catch (e) { aviso(/coach_v13/.test(e.message) ? "Falta correr coach_v35.sql en Supabase." : e.message, "error"); return false; }
     if (recargar) await recargar();
     return true;
+  }
+
+
+  // ======================================================================= Ajustar la intensidad de varias sesiones (v68)
+  // Para un piloto que vuelve de una lesión, una semana de descarga, un principiante: baja series, repeticiones e intensidad y cambia por la versión más fácil.
+  const escalarReps = (r, f) => String(r || "").replace(/\d+/g, n => String(Math.max(1, Math.round(+n * f))));
+  function aplicarAjuste(ses, o) {
+    return (ses || []).map(s => {
+      if (s.tipo === "carrera" || s.tipo === "descanso") return s;
+      const y = Object.assign({}, s);
+      if (o.intens && y.intensidad) y.intensidad = Math.max(1, Number(y.intensidad) - o.intens);
+      y.ejercicios = (s.ejercicios || []).map(e => {
+        const x = Object.assign({}, e);
+        if (o.facil && x.facil) { const v = x.nombre; x.nombre = x.facil; x.facil = v; x.carga = ""; }
+        if (o.series && x.series) x.series = Math.max(1, Number(x.series) - o.series);
+        if (o.reps) x.reps = escalarReps(x.reps, 1 - o.reps / 100);
+        return x;
+      });
+      return y;
+    });
+  }
+  // Devuelve { facil, series, reps, intens } o null
+  function ajustarModal(cuantas) {
+    const cuerpo = html(`<div class="ajuste-op"><p class="ayuda-chica">Se aplica a las <b>${cuantas}</b> ${cuantas === 1 ? "sesión" : "sesiones"} (no toca carreras ni descansos). Después podés cambiar cualquiera a mano.</p>
+      <label class="chk"><input type="checkbox" name="af" checked><span>Cambiar cada ejercicio por su versión más fácil<small>Solo los que la tienen cargada. El ejercicio de ahora queda como su versión más fácil y se borra la carga, para que la pongas vos.</small></span></label>
+      <label class="chk"><input type="checkbox" name="as" checked><span>Una serie menos en cada ejercicio</span></label>
+      <div class="campo"><label>Menos repeticiones: <b class="av-r">20</b> %</label><input type="range" name="ar" min="0" max="50" step="5" value="20"></div>
+      <div class="campo"><label>Bajar la intensidad de cada sesión: <b class="av-i">2</b> puntos</label><input type="range" name="ai" min="0" max="6" value="2"></div></div>`);
+    $("[name=ar]", cuerpo).addEventListener("input", (e) => { $(".av-r", cuerpo).textContent = e.target.value; });
+    $("[name=ai]", cuerpo).addEventListener("input", (e) => { $(".av-i", cuerpo).textContent = e.target.value; });
+    return abrirModal({ titulo: "Ajustar intensidad", cuerpo, acciones: [{ texto: "Volver", clase: "fantasma", valor: null }, { texto: "Aplicar", clase: "primario",
+      alHacer: async (c) => ({ facil: $("[name=af]", c).checked, series: $("[name=as]", c).checked ? 1 : 0, reps: +$("[name=ar]", c).value, intens: +$("[name=ai]", c).value }) }] });
+  }
+
+  // ======================================================================= Plan tipo a gusto (v68): nombre, fases, semana tipo de cada fase, ajuste de intensidad
+  const LUN0 = "2001-01-01";   // un lunes cualquiera: semanas y días del plan tipo se cuentan desde acá
+  const semDia = (f) => { const n = Math.round((deIso(f) - deIso(LUN0)) / 864e5); return { sem: Math.floor(n / 7) + 1, dia: n % 7 }; };
+  const aFecha = (x) => Object.assign({}, x, { fecha: sumar(LUN0, (x.sem - 1) * 7 + x.dia) });
+  // m: { id?, titulo, datos } (datos.baseId si es copia de uno de SendFlow). Devuelve true si se guardó.
+  async function editarPlanTipo(m) {
+    m = m || {}; const d0 = m.datos || {};
+    let sesiones = (d0.sesiones || []).map(x => Object.assign({}, x));
+    const cuerpo = html(`<div class="form-grilla plan-form">
+      ${d0.baseId ? `<div class="campo ancho"><div class="aviso-correccion">Es tu copia de un plan de SendFlow: el original no cambia y vuelve si la borrás.</div></div>` : ""}
+      <div class="campo ancho"><label>Nombre del plan tipo</label><input class="input" name="titulo" maxlength="120" value="${esc(m.titulo || "")}" placeholder="Vuelta tras lesión de rodilla, Pretemporada XC…"></div>
+      <div class="campo"><label>Tipo</label><select class="input" name="tipo">${Object.entries(TIPOS_PLAN).map(([k, x]) => `<option value="${k}" ${k === (d0.tipo || "entrenamiento") ? "selected" : ""}>${x}</option>`).join("")}</select></div>
+      <div class="campo"><label>Semanas en total</label><input class="input" type="number" name="semanas" min="1" max="52" value="${d0.semanas || 4}"></div>
+      <div class="campo ancho"><label>Objetivo / descripción</label><textarea class="input" name="desc" maxlength="2000" placeholder="Para qué sirve este plan y a quién">${esc(d0.descripcion || "")}</textarea></div>
+      <div class="campo ancho"><label>Fases <span class="opcional">(cada una se arma con su semana tipo: qué sesiones y ejercicios lleva)</span></label>
+        <div class="fase-cab"><span>Nombre</span><span>Fase</span><span>Desde semana</span><span>Hasta semana</span><span></span></div><div class="fases-ed"></div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn chico" data-accion="fase">${ICONOS.mas}Agregar fase</button><button type="button" class="btn chico" data-accion="ajustar" title="Bajar series, repeticiones e intensidad de todo el plan">Ajustar intensidad…</button></div></div>
+      <div class="campo ancho"><p class="ayuda-chica pt-resumen"></p></div>
+    </div>`);
+    const lista = $(".fases-ed", cuerpo);
+    const semanas = () => Math.max(1, Math.min(52, +$("[name=semanas]", cuerpo).value || 1));
+    const resumen = () => {
+      const n = sesiones.filter(x => x.tipo !== "descanso").length;
+      $(".pt-resumen", cuerpo).textContent = `${semanas()} ${semanas() === 1 ? "semana" : "semanas"} · ${n} ${n === 1 ? "sesión" : "sesiones"} en total.`;
+      $$(".fase-fila", cuerpo).forEach(f => {
+        const a = +$("[name=fa]", f).value, b = +$("[name=fb]", f).value, k = sesiones.filter(x => x.sem >= a && x.sem <= b && x.tipo !== "descanso").length;
+        $("[data-semana]", f).textContent = k ? `Semana tipo (${k})` : "Semana tipo"; $("[data-semana]", f).classList.toggle("primario", k > 0);
+      });
+    };
+    const filaFase = (f) => {
+      const el = html(`<div class="fase-fila"><input class="input" name="fn" maxlength="80" placeholder="Nombre" value="${esc(f.nombre || "")}"><select class="input" name="ft">${Object.entries(FASES).map(([k, x]) => `<option value="${k}" ${k === (f.tipo || "base") ? "selected" : ""}>${x.t}</option>`).join("")}</select><input class="input" type="number" name="fa" min="1" max="52" value="${f.sem ? f.sem[0] : 1}"><input class="input" type="number" name="fb" min="1" max="52" value="${f.sem ? f.sem[1] : 1}"><span class="ej-bt"><button type="button" class="btn chico" data-semana title="Qué sesiones y ejercicios lleva esta fase: la semana tipo se repite en todas sus semanas">Semana tipo</button><button type="button" class="btn icono chico peligro" aria-label="Quitar fase">${ICONOS.cerrar}</button></span></div>`);
+      el._objetivo = f.objetivo || "";
+      $("select", el).addEventListener("change", (e) => { const n = $("[name=fn]", el); if (!n.value) n.value = FASES[e.target.value].t; });
+      $("[aria-label=\"Quitar fase\"]", el).addEventListener("click", () => { el.remove(); resumen(); });
+      $$("[name=fa],[name=fb]", el).forEach(i => i.addEventListener("input", resumen));
+      $("[data-semana]", el).addEventListener("click", async () => {
+        const a = +$("[name=fa]", el).value, b = +$("[name=fb]", el).value, nombre = $("[name=fn]", el).value.trim() || FASES[$("[name=ft]", el).value].t;
+        if (!(a >= 1 && b >= a && b <= semanas())) { aviso(`Poné semanas válidas para la fase (de 1 a ${semanas()}).`, "oro"); return; }
+        const desde = sumar(LUN0, (a - 1) * 7), hasta = sumar(LUN0, b * 7 - 1);
+        const inicial = patronDeSesiones(sesiones.map(aFecha), desde, hasta);
+        const patron = await constructorSemana({ titulo: `Semana tipo · ${nombre}`, inicial,
+          aviso: `Armá la semana (lunes a domingo): se repite en las <b>${b - a + 1} ${b - a === 0 ? "semana" : "semanas"}</b> de la fase (semanas ${a} a ${b}). Las carreras de esas semanas se conservan.` });
+        if (!patron) return;
+        const nuevos = expandirPatron(patron, desde, hasta).map(x => { const y = Object.assign({}, x, semDia(x.fecha)); delete y.fecha; return y; });
+        sesiones = sesiones.filter(x => x.sem < a || x.sem > b || x.tipo === "carrera").concat(nuevos);
+        resumen();
+      });
+      lista.appendChild(el);
+    };
+    (d0.fases || []).forEach(filaFase);
+    $("[data-accion=fase]", cuerpo).addEventListener("click", () => { const u = $$(".fase-fila", lista).pop(); const a = u ? Math.min(52, (+$("[name=fb]", u).value || 0) + 1) : 1; filaFase({ nombre: "", tipo: "base", sem: [a, Math.min(52, a + 3)] }); resumen(); });
+    $("[name=semanas]", cuerpo).addEventListener("input", resumen);
+    $("[data-accion=ajustar]", cuerpo).addEventListener("click", async () => {
+      const cont = sesiones.filter(x => x.tipo !== "carrera" && x.tipo !== "descanso").length;
+      if (!cont) { aviso("Todavía no hay sesiones para ajustar.", "oro"); return; }
+      const o = await ajustarModal(cont); if (!o) return;
+      sesiones = aplicarAjuste(sesiones, o); aviso("Intensidad ajustada: revisá las sesiones con «Semana tipo».", "oro");
+    });
+    resumen();
+    return abrirModal({ titulo: m.titulo ? "Modificar plan tipo" : "Nuevo plan tipo", cuerpo, alAbrir: (c) => { const mm = c.closest(".modal"); if (mm) mm.classList.add("ancha"); },
+      acciones: [{ texto: "Volver", clase: "fantasma", valor: false }, { texto: "Guardar", clase: "primario", alHacer: async (c) => {
+        const titulo = $("[name=titulo]", c).value.trim();
+        if (!titulo) { aviso("Ponele un nombre al plan tipo.", "oro"); return false; }
+        const n = semanas();
+        const fases = $$(".fase-fila", c).map(f => ({ nombre: $("[name=fn]", f).value.trim() || FASES[$("[name=ft]", f).value].t, tipo: $("[name=ft]", f).value, sem: [+$("[name=fa]", f).value, +$("[name=fb]", f).value], objetivo: f._objetivo || "" }));
+        if (fases.some(f => !(f.sem[0] >= 1 && f.sem[1] >= f.sem[0] && f.sem[1] <= n))) { aviso(`Las semanas de cada fase tienen que estar entre 1 y ${n}.`, "error"); return false; }
+        const datos = { tipo: $("[name=tipo]", c).value, descripcion: $("[name=desc]", c).value.trim(), semanas: n, fases, sesiones: sesiones.filter(x => x.sem <= n) };
+        if (d0.baseId) datos.baseId = d0.baseId;
+        try {
+          await Biblioteca.plantillaGuardar("plan", titulo, datos);
+          if (m.id && m.titulo && m.titulo.toLowerCase() !== titulo.toLowerCase()) await Biblioteca.plantillaBorrar(m.id);
+          aviso("Plan tipo guardado.", "oro"); return true;
+        } catch (e) { aviso(e.message, "error"); return false; }
+      } }] });
   }
 
   // ======================================================================= Plan: crear / editar (con fases)
@@ -709,21 +817,25 @@
       <div class="campo"><label>Desde</label><input class="input" type="date" name="desde" value="${esc(p.desde || "")}"></div>
       <div class="campo"><label>Hasta</label><input class="input" type="date" name="hasta" value="${esc(p.hasta || "")}"></div>
       <div class="campo ancho"><label>Objetivo / descripción</label><textarea class="input" name="desc" maxlength="2000" placeholder="Qué buscamos con este plan">${esc(p.descripcion || "")}</textarea></div>
-      <div class="campo ancho"><label>Fases <span class="opcional">(opcional: base, específica, competencia, bajada de carga antes de una carrera…)</span></label><div class="fases-ed"></div>
+      <div class="campo ancho"><label>Fases <span class="opcional">(opcional: base, específica, competencia, bajada de carga antes de una carrera…)</span></label><div class="fase-cab"><span>Nombre</span><span>Fase</span><span>Desde</span><span>Hasta</span><span></span></div><div class="fases-ed"></div>
         <div style="display:flex;gap:8px;flex-wrap:wrap"><button type="button" class="btn chico" data-accion="fase">${ICONOS.mas}Agregar fase</button><button type="button" class="btn chico fantasma" data-accion="sugerir" title="Base, específica, precompetitiva y bajada de carga repartidas en las fechas del plan">Sugerir fases</button>${p.id ? "" : `<button type="button" class="btn chico fantasma" data-accion="previa" title="Ver todo el plan tal como va a quedar, antes de crearlo">Ver cómo queda</button>`}</div></div>
     </div>`);
     const lista = $(".fases-ed", cuerpo);
+    // v68: las sesiones se pueden editar en «Ver cómo queda»; si después cambia algo que las genera, se arman de nuevo
+    const soltarBorrador = () => { if (cuerpo._borrador) { cuerpo._borrador = null; aviso("Cambiaste algo del plan: las sesiones se armaron de nuevo.", "oro"); } };
+    lista.addEventListener("change", soltarBorrador);
+    ["desde", "hasta"].forEach(n => $(`[name=${n}]`, cuerpo).addEventListener("change", soltarBorrador));
     const filaFase = (f) => {
       const el = html(`<div class="fase-fila"><input class="input" name="fn" maxlength="80" placeholder="Nombre" value="${esc(f.nombre || "")}"><select class="input" name="ft">${Object.entries(FASES).map(([k, x]) => `<option value="${k}" ${k === (f.tipo || "base") ? "selected" : ""}>${x.t}</option>`).join("")}</select><input class="input" type="date" name="fd" value="${esc(f.desde || "")}"><input class="input" type="date" name="fh" value="${esc(f.hasta || "")}"><span class="ej-bt"><button type="button" class="btn chico" data-semana title="Qué sesiones y ejercicios lleva esta fase: la semana tipo se repite en todas sus semanas">Semanas</button><button type="button" class="btn icono chico peligro" aria-label="Quitar fase">${ICONOS.cerrar}</button></span></div>`);
       $("select", el).addEventListener("change", (e) => { const n = $("[name=fn]", el); if (!n.value) n.value = FASES[e.target.value].t; });
-      $("[aria-label=\"Quitar fase\"]", el).addEventListener("click", () => el.remove());
+      $("[aria-label=\"Quitar fase\"]", el).addEventListener("click", () => { soltarBorrador(); el.remove(); });
       $("[data-semana]", el).addEventListener("click", () => abrirSemanas(el));
       lista.appendChild(el);
     };
     (p.fases || []).forEach(filaFase);
     $("[data-accion=fase]", cuerpo).addEventListener("click", () => {
       const ult = $$(".fase-fila", lista).pop(); const desde = ult && $("[name=fh]", ult).value ? sumar($("[name=fh]", ult).value, 1) : ($("[name=desde]", cuerpo).value || hoyIso());
-      filaFase({ nombre: "", tipo: "base", desde, hasta: sumar(desde, 27) });
+      soltarBorrador(); filaFase({ nombre: "", tipo: "base", desde, hasta: sumar(desde, 27) });
     });
     $("[data-accion=sugerir]", cuerpo).addEventListener("click", () => {
       const a = $("[name=desde]", cuerpo).value, b = $("[name=hasta]", cuerpo).value;
@@ -732,7 +844,7 @@
       if (dias < 21) { aviso("El plan es muy corto para repartir fases.", "oro"); return; }
       const bajada = Math.min(10, Math.max(5, Math.round(dias * 0.08)));
       const resto = dias - bajada, base = Math.round(resto * 0.45), esp = Math.round(resto * 0.35), pre = resto - base - esp;
-      lista.innerHTML = "";
+      soltarBorrador(); lista.innerHTML = "";
       let d = a;
       [["Base", "base", base], ["Específica", "especifica", esp], ["Precompetitiva", "precompetitiva", pre], ["Bajada de carga", "bajada", bajada]].forEach(([n, k, len]) => { filaFase({ nombre: n, tipo: k, desde: d, hasta: sumar(d, len - 1) }); d = sumar(d, len); });
     });
@@ -747,7 +859,7 @@
       const patron = await constructorSemana({ titulo: `Semana tipo · ${fase.nombre}`, inicial,
         aviso: `Armá la semana (lunes a domingo): se repite en las <b>${semanasDe(fase.desde, fase.hasta)} semanas</b> de la fase (${corta(fase.desde)} → ${corta(fase.hasta)}). Las sesiones se cargan al crear el plan y después las podés cambiar una por una.` });
       if (!patron) return;
-      fila._patron = patron;
+      soltarBorrador(); fila._patron = patron;
       const bt = $("[data-semana]", fila); bt.textContent = patron.length ? `Semanas (${patron.length})` : "Semanas"; bt.classList.toggle("primario", patron.length > 0);
     };
     // sesiones del plan con las semanas tipo ya armadas por el entrenador (reemplazan lo de la plantilla dentro de cada fase)
@@ -757,16 +869,39 @@
       return out;
     };
     const bPrevia = $("[data-accion=previa]", cuerpo);
-    if (bPrevia) bPrevia.addEventListener("click", () => {
+    const sinId = (x) => { const y = Object.assign({}, x); delete y.id; delete y.estado; delete y.orden; return y; };
+    if (bPrevia) bPrevia.addEventListener("click", async () => {
       const desde = $("[name=desde]", cuerpo).value, hasta = $("[name=hasta]", cuerpo).value;
       const fases = $$(".fase-fila", cuerpo).map(f => ({ nombre: $("[name=fn]", f).value.trim() || FASES[$("[name=ft]", f).value].t, tipo: $("[name=ft]", f).value, desde: $("[name=fd]", f).value, hasta: $("[name=fh]", f).value })).filter(f => f.desde && f.hasta);
-      let base = []; const sp = selPl ? selPl.value : "";
-      if (sp) { const pl = plantillaDe(sp, desde || hoyIso(), frecuencia()); if (pl) base = pl.g.sesiones; }
-      const tareas = fusionarPatrones(base).sort((a, b) => a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0).map((x, i) => Object.assign({ id: "v" + i, estado: "pendiente", orden: i }, x));
-      if (!tareas.length) { aviso("Todavía no hay sesiones: elegí un plan armado o armá la semana de cada fase con «Semanas».", "oro"); return; }
-      const cont = html(`<div class="resumen-plan"></div>`);
-      pintarResumen({ desde: desde || tareas[0].fecha, hasta: hasta || tareas[tareas.length - 1].fecha, fases, tareas }, cont, false, () => {}, () => {}, true);
-      abrirModal({ titulo: "Así queda el plan", cuerpo: cont, acciones: [{ texto: "Cerrar", clase: "fantasma", valor: null }] });
+      let base = cuerpo._borrador;
+      if (!base) { base = []; const sp = selPl ? selPl.value : ""; if (sp) { const pl = plantillaDe(sp, desde || hoyIso(), frecuencia()); if (pl) base = pl.g.sesiones; } base = fusionarPatrones(base); }
+      let n = 0; let draft = base.slice().sort((a, b) => a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : 0).map(x => Object.assign({ estado: "pendiente", orden: 0 }, x, { id: "v" + (++n) }));
+      if (!draft.length) { aviso("Todavía no hay sesiones: elegí un plan armado o armá la semana de cada fase con «Semanas».", "oro"); return; }
+      const guardar = () => { cuerpo._borrador = draft.map(sinId); };
+      const cont = html(`<div><div class="cab-borrador"><button type="button" class="btn chico primario" data-ajustar>Ajustar intensidad…</button><span class="ayuda-chica">Tocá una sesión para cambiarla (ejercicios, series, repeticiones, versión más fácil) o usá «+ Sesión» para agregar. Lo que cambies se carga al crear el plan.</span></div><div class="resumen-plan"></div></div>`);
+      const rp = $(".resumen-plan", cont);
+      const ctl = {
+        editar: async (t) => {
+          const dia = (deIso(t.fecha).getDay() + 6) % 7, copia = Object.assign({}, t, { dia }); delete copia.id;
+          const r = await editarSesion(null, copia, null, { local: true, existente: true, dia, quitar: "Quitar del plan" });
+          const k = draft.findIndex(x => x.id === t.id); if (k < 0) return false;
+          if (r === "borrar") draft.splice(k, 1);
+          else if (r && r.local) { const y = Object.assign({}, t, r.local, { fecha: sumar(lunes(t.fecha), r.local.dia) }); delete y.dia; draft[k] = y; }
+          else return false;
+          guardar(); return true;
+        },
+        agregar: async (lun) => {
+          const r = await editarSesion(null, null, null, { local: true, dia: 0 }); if (!r || !r.local) return false;
+          const y = Object.assign({ id: "v" + (++n), estado: "pendiente", orden: 0 }, r.local, { fecha: sumar(lun, r.local.dia) }); delete y.dia; draft.push(y); guardar(); return true;
+        }
+      };
+      const repintar = () => pintarResumen({ desde: desde || draft[0].fecha, hasta: hasta || draft[draft.length - 1].fecha, fases, tareas: draft }, rp, true, repintar, () => {}, ctl);
+      $("[data-ajustar]", cont).addEventListener("click", async () => {
+        const o = await ajustarModal(draft.filter(x => x.tipo !== "carrera" && x.tipo !== "descanso").length); if (!o) return;
+        draft = aplicarAjuste(draft, o); guardar(); repintar(); aviso("Intensidad ajustada.", "oro");
+      });
+      repintar();
+      abrirModal({ titulo: "Así queda el plan", cuerpo: cont, alAbrir: (c) => { const mm = c.closest(".modal"); if (mm) mm.classList.add("ancha"); }, acciones: [{ texto: "Cerrar", clase: "fantasma", valor: null }] });
     });
     // Plan armado: completa título, tipo, fechas, objetivo y fases con lo de la plantilla elegida
     const selPl = $("[name=plantilla]", cuerpo);
@@ -785,6 +920,7 @@
     }
     if (selMod) selMod.addEventListener("change", () => { $$(".pres-plan", cuerpo).forEach(x => { x.hidden = !esPres(); }); });
     if (selPl) selPl.addEventListener("change", (ev) => {
+      soltarBorrador();
       const solo = !!(ev.detail && ev.detail.soloFrec);   // cambió la frecuencia: no se pisa lo que el entrenador ya escribió
       const desde = $("[name=desde]", cuerpo).value || hoyIso();
       const pl = plantillaDe(selPl.value, desde, frecuencia()); if (!pl) return;
@@ -795,7 +931,7 @@
       aviso(`${g.sesiones.length} sesiones listas: se cargan al crear el plan.`, "oro");
     });
     if (selPl && opts && opts.plantilla && [...selPl.options].some(o => o.value === opts.plantilla)) { selPl.value = opts.plantilla; selPl.dispatchEvent(new CustomEvent("change")); }
-    return abrirModal({ titulo: p.id ? "Plan y fases" : "Nuevo plan", cuerpo, acciones: [{ texto: "Volver", clase: "fantasma", valor: null }, { texto: p.id ? "Guardar" : "Crear plan", clase: "primario", alHacer: async (c) => {
+    return abrirModal({ titulo: p.id ? "Plan y fases" : "Nuevo plan", cuerpo, alAbrir: (c) => { const mm = c.closest(".modal"); if (mm) mm.classList.add("ancha"); }, acciones: [{ texto: "Volver", clase: "fantasma", valor: null }, { texto: p.id ? "Guardar" : "Crear plan", clase: "primario", alHacer: async (c) => {
       const d = { titulo: $("[name=titulo]", c).value.trim(), tipo: $("[name=tipo]", c).value, desde: $("[name=desde]", c).value || null, hasta: $("[name=hasta]", c).value || null,
         descripcion: $("[name=desc]", c).value.trim(),
         fases: $$(".fase-fila", c).map(f => ({ nombre: $("[name=fn]", f).value.trim() || FASES[$("[name=ft]", f).value].t, tipo: $("[name=ft]", f).value, desde: $("[name=fd]", f).value, hasta: $("[name=fh]", f).value })).filter(f => f.desde && f.hasta) };
@@ -817,6 +953,7 @@
         gen = Object.assign({ desde: d.desde, hasta: d.hasta, fases: d.fases, sesiones: [] }, gen || {});
         gen = Object.assign({}, gen, { sesiones: fusionarPatrones(gen.sesiones) });
       }
+      if (!p.id && cuerpo._borrador) gen = Object.assign({ desde: d.desde, hasta: d.hasta, fases: d.fases }, gen || {}, { sesiones: cuerpo._borrador.map(sinId) });   // v68: lo que se editó en «Ver cómo queda»
       if (!p.id && esPres()) {   // plan presencial: clases en los días, horario y lugar elegidos
         const dias = diasPres(), hora = $("[name=phora]", c).value || null, lugar = $("[name=plugar]", c).value.trim() || null, dur = +$("[name=pdur]", c).value || 90;
         if (!dias.length) { aviso("Elegí los días de clase.", "error"); return false; }
@@ -847,5 +984,5 @@
     } }] });
   }
 
-  window.Planes = { lista, ver, tarjetaHoy, seguimiento, actividad, editarPlan, TIPOS, FASES };
+  window.Planes = { lista, ver, tarjetaHoy, seguimiento, actividad, editarPlan, editarPlanTipo, TIPOS, FASES };
 })();
