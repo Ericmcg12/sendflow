@@ -762,6 +762,12 @@
     otro: { t: "Otro", d: "Cualquier otra cosa", ph: "No me sale la curva, frené tarde…" }
   };
   window.TIPOS_VIDEO = TIPOS_VIDEO;
+  // v59: situación de un video o bajada (qué muestra). Va aparte del motivo (para qué se grabó) y se puede marcar más de una.
+  const SITUACIONES = {
+    curva: "Curva", salto: "Salto", aterrizaje: "Aterrizaje", frenada: "Frenada", tecnico: "Terreno técnico",
+    rapido: "Tramo rápido", pedaleo: "Pedaleo", largada: "Largada", posicion: "Posición en la bici", otra: "Otra"
+  };
+  window.SITUACIONES = SITUACIONES;
   const chipTipo = (k) => TIPOS_VIDEO[k] ? `<span class="chip tipo-${k}">${TIPOS_VIDEO[k].t.toUpperCase()}</span>` : "";
   // v19: filtro por tipo de video (Recibidos y Análisis)
   function barraTipos(lista, clave, alCambiar) {
@@ -778,6 +784,22 @@
       $$("button", el).forEach(x => x.classList.toggle("sel", x === b)); alCambiar();
     }));
     el.pasa = (x) => !valor || (valor === "_sin" ? !x.tipo : x.tipo === valor);
+    return el;
+  }
+  // v59: filtro por situación (curva, salto, frenada…); un archivo puede tener varias
+  function barraSituaciones(lista, clave, alCambiar) {
+    const cuenta = { "": lista.length };
+    lista.forEach(x => (x.sit || []).forEach(k => { cuenta[k] = (cuenta[k] || 0) + 1; }));
+    let valor = ""; try { valor = sessionStorage.getItem("sf-sit-" + clave) || ""; } catch (e) {}
+    if (valor && !cuenta[valor]) valor = "";
+    const opciones = [["", "Todas las situaciones"]].concat(Object.entries(SITUACIONES).map(([k, t]) => [k, t])).filter(([k]) => k === "" || cuenta[k]);
+    const el = html(`<div class="filtro-tipos entra ${opciones.length > 1 ? "" : "oculto"}" role="group" aria-label="Filtrar por situación">
+      ${opciones.map(([k, t]) => `<button type="button" data-f="${k}" class="${k === valor ? "sel" : ""}">${esc(t)}<span>${cuenta[k]}</span></button>`).join("")}</div>`);
+    $$("button", el).forEach(b => b.addEventListener("click", () => {
+      valor = b.dataset.f; try { sessionStorage.setItem("sf-sit-" + clave, valor); } catch (e) {}
+      $$("button", el).forEach(x => x.classList.toggle("sel", x === b)); alCambiar();
+    }));
+    el.pasa = (x) => !valor || (x.sit || []).includes(valor);
     return el;
   }
   // v24: cada piloto con su color e iniciales
@@ -1193,11 +1215,12 @@
   // un envío nuevo, una devolución, un mensaje, una foto o un documento nuevos suben arriba aunque el video sea viejo.
   async function pantallaBiblioteca(v) {
     const coach = esCoach();
-    const [renv, ra, rarch, rconv, rpil, rent] = await Promise.all([
+    const [renv, ra, rarch, rconv, rpil, rent, rtags] = await Promise.all([
       API.get("envios"), coach ? cargarCoach() : API.get("analisis").then(r => ({ analisis: r.analisis, porId: {}, pilotos: [] })),
       API.get("archivos-lista").catch(() => ({ archivos: [] })), API.get("conversaciones").catch(() => ({ conversaciones: [] })),
       coach ? API.get("pilotos").catch(() => ({ pilotos: [] })) : Promise.resolve({ pilotos: [] }),
-      coach ? Promise.resolve({ entrenadores: [] }) : API.get("entrenadores").catch(() => ({ entrenadores: [] }))]);
+      coach ? Promise.resolve({ entrenadores: [] }) : API.get("entrenadores").catch(() => ({ entrenadores: [] })),
+      API.get("etiquetas").catch(() => ({ etiquetas: [] }))]);   // v59: sin coach_v30.sql queda vacío y todo sigue funcionando
     const { analisis, porId } = ra, fichas = rpil.pilotos || [], entrenadores = rent.entrenadores || [];
     const ultimoMsj = {}; (rconv.conversaciones || []).forEach(c => { ultimoMsj[c.analisisId] = c.ultimo; });
     const colorDe = (nombre, uid) => { const f = fichas.find(p => (uid && p.usuarioId === uid) || (nombre && p.nombre === nombre)); return (f && f.color) || colorFijo(uid || nombre); };
@@ -1209,6 +1232,16 @@
       nombre: coach ? (e.pilotoNombre || "Sin piloto") : (e.coachNombre || "Entrenador"), uid: e.pilotoUsuarioId, texto: (e.titulo || "") + " " + (e.pista || ""), e }));
     (rarch.archivos || []).forEach(x => items.push({ clase: x.clase === "documento" ? "documento" : (x.clase === "envio" || x.clase === "video") ? "video" : "foto", tipo: null, fecha: x.creado,
       nombre: x.conNombre || x.pilotoNombre || (coach ? "Sin piloto" : "Entrenador"), uid: null, texto: (x.titulo || "") + " " + (x.nombre || "") + " " + (x.conNombre || ""), x }));
+    // v59: motivo y situación de cada archivo (por archivo o, en una bajada sin video, por bajada)
+    const etiq = {}; ((rtags && rtags.etiquetas) || []).forEach(t => { etiq[t.tipo + ":" + t.ref] = t; });
+    const etiquetaDe = (archivoId, bajadaId) => (archivoId && etiq["archivo:" + archivoId]) || (bajadaId && etiq["bajada:" + bajadaId]) || null;
+    items.forEach(it => {
+      const t = it.a ? etiquetaDe(it.a.videoId, it.a.bajadaId) : it.e ? etiquetaDe(it.e.archivoId, it.e.bajadaId) : etiquetaDe(it.x.archivoId, null);
+      if (!t) return;
+      it.sit = t.situaciones || [];
+      if (it.x) it.tipo = t.motivo || null;   // en la biblioteca el motivo sale de la etiqueta; en envíos y análisis ya viene en su ficha
+      it.texto += " " + (t.pista || "") + " " + it.sit.map(k => SITUACIONES[k] || k).join(" ");
+    });
     // pide ya los enlaces de las fotos (mientras se arma la pantalla) para que aparezcan al instante
     API.urls((rarch.archivos || []).filter(x => x.clase === "imagen").map(x => x.archivoId)).catch(() => {});
     items.forEach(it => { it._pil = { k: String(it.nombre).toLowerCase(), nombre: it.nombre, color: colorDe(it.nombre, it.uid) }; });
@@ -1223,14 +1256,10 @@
       <div class="filtro-tipos entra" id="filtroClase" role="group" aria-label="Filtrar por clase de archivo"></div>
       ${items.length ? `<div class="form-grilla entra" style="margin-bottom:18px"><div class="campo ancho"><label>Buscar</label><input class="input" id="filtroTexto" placeholder="Título, pista, nombre o archivo"></div></div>` : ""}
       <div class="grilla g3" id="listaArchivos"></div></div>`));
-    // un solo botón: fotos y documentos se suben ahí; un video abre el formulario de análisis (entrenador) o de envío (piloto)
+    // v59: una sola ventana para subir cualquier cosa (video, foto, documento, o la bajada del Sender sola)
     const subirArch = async () => {
       if (!coach && !entrenadores.length) { aviso("Todavía no tenés un entrenador vinculado. Buscá uno en Perfil → Mis entrenadores, o pedile que te invite.", "oro"); return; }
-      const r = await Archivos.subir({ coach, fichas, entrenadores, bajada: !coach });
-      if (!r) return;
-      if (r.video) { if (coach) await nuevoAnalisis(undefined, r.video); else await enviarVideo(entrenadores, null, r.video); navegar(); }
-      else if (r.bajada) { await enviarVideo(entrenadores); navegar(); }
-      else navegar();
+      if (await subirArchivos({ coach, fichas, entrenadores })) navegar();
     };
     $("[data-accion=subir]", v).addEventListener("click", subirArch);
     const enviar = { click: () => subirArch() };   // /enviar abre directo el selector
@@ -1248,14 +1277,21 @@
       b.addEventListener("click", (ev) => { ev.stopPropagation(); ev.preventDefault(); Archivos.compartirVideo({ archivoId, titulo, deNombre, excluirUsuarioId: usuarioId, fichas }); });
       el.style.position = "relative"; el.appendChild(b);
     };
+    // v59: motivo (solo biblioteca) y situaciones en la tarjeta
+    const chipsEtiqueta = (el, it) => {
+      const ch = [];
+      if (it.x && it.tipo) ch.push(chipTipo(it.tipo));
+      (it.sit || []).forEach(k => ch.push(`<span class="chip">${esc(SITUACIONES[k] || k).toUpperCase()}</span>`));
+      if (ch.length) (el.querySelector(".cuerpo") || el.querySelector("figcaption") || el).appendChild(html(`<div class="chips-conv">${ch.join("")}</div>`));
+    };
     const pintarA = () => {
       const ft = ($("#filtroTexto", v) ? $("#filtroTexto", v).value : "").trim().toLowerCase();
       g.innerHTML = "";
-      const vis = items.filter(it => (!clase || it.clase === clase) && filtroT.pasa(it) && (!filtroP || filtroP.pasa(it)) && (!ft || (it.texto + " " + it.nombre).toLowerCase().includes(ft)));
+      const vis = items.filter(it => (!clase || it.clase === clase) && filtroT.pasa(it) && filtroS.pasa(it) && (!filtroP || filtroP.pasa(it)) && (!ft || (it.texto + " " + it.nombre).toLowerCase().includes(ft)));
       vis.forEach(it => {
-        if (it.a) { const el = tarjetaAnalisis(it.a, porId[it.a.pilotoId]); g.appendChild(el); if (coach && it.a.videoId) botonCompartir(el, it.a.videoId, it.a.titulo, it._pil.nombre, (porId[it.a.pilotoId] || {}).usuarioId); }
+        if (it.a) { const el = tarjetaAnalisis(it.a, porId[it.a.pilotoId]); chipsEtiqueta(el, it); g.appendChild(el); if (coach && it.a.videoId) botonCompartir(el, it.a.videoId, it.a.titulo, it._pil.nombre, (porId[it.a.pilotoId] || {}).usuarioId); }
         else if (it.e) {
-          it.e._pil = it._pil; const el = tarjetaEnvio(it.e, coach); g.appendChild(el);
+          it.e._pil = it._pil; const el = tarjetaEnvio(it.e, coach); chipsEtiqueta(el, it); g.appendChild(el);
           if (coach && it.e.archivoId && !it.e.soloDatos) botonCompartir(el, it.e.archivoId, it.e.titulo, it._pil.nombre, it.e.pilotoUsuarioId);
           if (!coach) {
             const b = html(`<button class="btn icono chico peligro" title="Retirar envío" aria-label="Retirar envío" style="position:absolute;top:10px;right:10px;z-index:2">${ICONOS.basura}</button>`);
@@ -1266,13 +1302,14 @@
             });
             el.style.position = "relative"; el.appendChild(b);
           }
-        } else g.appendChild(Archivos.tarjeta(it, { coach, fichas, entrenadores, alCambiar: () => navegar() }));
+        } else { const el = Archivos.tarjeta(it, { coach, fichas, entrenadores, alCambiar: () => navegar() }); chipsEtiqueta(el, it); g.appendChild(el); }
       });
       if (!vis.length) g.innerHTML = `<div class="vacio" style="grid-column:1/-1">No hay archivos con ese filtro.</div>`;
       else if (window.Archivos) Archivos.pintar(g);
       entradaEscalonada(g, 40);
     };
     const filtroT = barraTipos(items, "archivos", pintarA);
+    const filtroS = barraSituaciones(items, "archivos", pintarA);
     const filtroP = coach ? barraPilotos(items, "archivos", it => it._pil, pintarA) : null;
     $$("button", fClase).forEach(b => b.addEventListener("click", () => {
       clase = b.dataset.f; try { sessionStorage.setItem("sf-filtro-clase", clase); } catch (e) {}
@@ -1281,6 +1318,7 @@
     if ($("#filtroTexto", v)) $("#filtroTexto", v).addEventListener("input", pintarA);
     if (filtroP) g.before(filtroP);
     g.before(filtroT);
+    g.before(filtroS);
     pintarA();
     actualizarInsignia(sinVer);
     if (window.__abrirEnviar) { window.__abrirEnviar = false; if (enviar) enviar.click(); }
@@ -1379,7 +1417,7 @@
       g.appendChild(el);
     });
     const be = $("[data-accion=enviar]", v);
-    if (be) be.addEventListener("click", () => enviarVideo(entrenadores));
+    if (be) be.addEventListener("click", async () => { if (await subirArchivos({ coach: false, fichas: [], entrenadores })) navegar(); });
   }
   async function enviarVideo(entrenadores, corr, archivoInicial) {
     // v17: corrección de una devolución → va al mismo entrenador y queda colgada de ella
@@ -1513,6 +1551,257 @@
     });
   }
 
+  // ======================================================================= v59: UNA SOLA ventana para subir (coach_v30.sql)
+  // Cualquier archivo (video, foto, documento o, el piloto, una bajada del Sender sola) con motivo, situación, fecha, título y pista.
+  // No hay "analizarlo ahora": todo lo que sube el entrenador queda primero en su biblioteca y se analiza desde Archivos → Analizar.
+  // Devuelve true si se subió algo.
+
+  // Recorta, achica y sube un video. Devuelve { blob, info, archivoId } (blob = lo que se subió, info = duración, tamaño y miniatura).
+  async function prepararYSubirVideo(archivo, panel, c, boton, clase) {
+    if (panel.problema()) throw new Error(panel.problema());
+    const prog = $(".progreso-subida", c), barra = $(".barra-progreso i", c), txt = $(".txt-progreso", c);
+    prog.classList.remove("oculto"); $("label", prog).textContent = "Preparando el video"; boton.textContent = "Preparando…";
+    let frenar = null, salteado = false;
+    const bSaltar = html(`<button type="button" class="btn chico fantasma saltar-compresion">Subir sin achicar</button>`);
+    prog.append(bSaltar);
+    try { prog.scrollIntoView({ block: "nearest", behavior: "smooth" }); } catch (e) {}
+    bSaltar.addEventListener("click", () => { salteado = true; bSaltar.disabled = true; bSaltar.textContent = "Frenando…"; if (frenar) frenar(); });
+    const t0c = performance.now();
+    const resta = (f) => { if (f < 0.02) return "calculando el tiempo…"; const s = (performance.now() - t0c) / 1000 * (1 - f) / f; return s < 60 ? "falta menos de 1 min" : `faltan unos ${Math.round(s / 60)} min`; };
+    let r;
+    try {
+      r = await prepararVideo(archivo, panel.recorte(), (f) => { barra.style.width = (f * 100).toFixed(1) + "%"; txt.textContent = `Achicando el video · ${(f * 100).toFixed(0)} % · ${resta(f)} · no cierres la página`; }, (fn) => { frenar = fn; if (salteado) fn(); });
+    } catch (e) {
+      if (!(e && e.cancelado)) throw e;
+      r = archivo; aviso("Se sube el video original, sin achicar" + (panel.recorte() ? " ni recortar" : "") + ".", "oro");
+    } finally { bSaltar.remove(); }
+    if (r !== archivo) aviso(`Video listo: ${(archivo.size / 1048576).toFixed(0)} MB → ${(r.size / 1048576).toFixed(0)} MB.`, "oro");
+    $("label", prog).textContent = "Subiendo el video"; barra.style.width = "0%";
+    const info = await leerVideo(r);
+    boton.textContent = "Subiendo…";
+    const t0 = performance.now();
+    const archivoId = await API.subirArchivo(r, clase, r.name, (f) => {
+      barra.style.width = (f * 100).toFixed(1) + "%";
+      const seg = (performance.now() - t0) / 1000, falta = f > 0.02 ? seg / f * (1 - f) : 0;
+      txt.textContent = `${(f * 100).toFixed(0)} % · ${(r.size * f / 1048576).toFixed(0)} de ${(r.size / 1048576).toFixed(0)} MB${falta > 2 ? ` · faltan ~${Math.ceil(falta)} s` : ""}`;
+    });
+    return { blob: r, info, archivoId };
+  }
+
+  async function subirArchivos(ctx) {
+    ctx = ctx || {};
+    const coach = !!ctx.coach, fichas = ctx.fichas || [], entrenadores = ctx.entrenadores || [];
+    const personas = coach ? fichas.filter(p => p.usuarioId).map(p => ({ id: p.usuarioId, nombre: p.nombre })) : entrenadores.map(e => ({ id: e.id, nombre: e.nombre }));
+    let convs = []; try { convs = await Archivos.conversaciones(); } catch (e) { /* sin conversaciones: solo biblioteca o persona */ }
+    if (!coach && !personas.length) { aviso("Para subir archivos tenés que tener un entrenador vinculado.", "oro"); return false; }
+    const hoy = new Date().toISOString().slice(0, 10);
+    let archivo = null;   // { f, t, clase }
+    let motivo = null; const situ = new Set();
+    const opcionesDestino = (coach
+      ? [`<option value="b:">Guardarlo en mi biblioteca (queda a mi nombre; lo analizás o lo usás con cualquier piloto)</option>`,
+         personas.length ? `<optgroup label="Pasárselo a un piloto (queda en Archivos de los dos)">${personas.map(p => `<option value="p:${esc(p.id)}">${esc(p.nombre)}</option>`).join("")}</optgroup>` : ""]
+      : [personas.length ? `<optgroup label="Enviárselo a mi entrenador">${personas.map(p => `<option value="e:${esc(p.id)}">${esc(p.nombre)}</option>`).join("")}</optgroup>` : ""])
+      .concat(convs.length ? [`<optgroup label="Mandarlo por mensaje en la conversación de… (solo fotos y documentos)">${convs.map(x => `<option value="c:${esc(x.id)}">${esc(x.texto)}</option>`).join("")}</optgroup>`] : []).join("");
+    const cuerpo = html(`<div class="form-grilla">
+      <div class="campo ancho"><div class="soltar" tabindex="0">${ICONOS.subir}<div><b style="color:var(--ink)">Elegí un archivo</b> o arrastralo acá</div>
+        <div style="font-size:12px;margin-top:4px">Videos MP4, MOV o WebM (de cualquier largo; se pueden recortar y se achican solos). Fotos JPG, PNG o WebP (hasta 15 MB). Documentos PDF, Word, Excel o texto (hasta 25 MB).</div><div class="archivo"></div></div></div>
+      ${coach ? "" : `<div class="campo ancho" data-bajada><label>Bajada del Sender <span class="opcional">(opcional con un video; sola, tu entrenador analiza solo los datos)</span></label>
+        <div class="bajada-adjunta"><select class="input" name="bajada"><option value="">Sin bajada</option></select>
+          <button type="button" class="btn chico" data-b="subir">${ICONOS.subir}Subir .sfb</button></div>
+        <small class="ayuda-chica">Con video, tu entrenador ve suspensión, velocidad y golpes sincronizados.</small></div>`}
+      <div class="campo ancho"><label>¿A dónde va este archivo?</label><select class="input" name="destino">${opcionesDestino}</select></div>
+      <div class="campo ancho"><label>Motivo <span class="opcional">(opcional: para qué es)</span></label>
+        <div class="filtro-tipos" data-g="motivo" role="group" aria-label="Motivo">${Object.entries(TIPOS_VIDEO).map(([k, v]) => `<button type="button" data-v="${k}" class="tipo-${k}" aria-pressed="false" title="${esc(v.d)}">${esc(v.t)}</button>`).join("")}</div></div>
+      <div class="campo ancho"><label>Situación <span class="opcional">(opcional: qué muestra; podés marcar más de una)</span></label>
+        <div class="filtro-tipos" data-g="situacion" role="group" aria-label="Situación">${Object.entries(SITUACIONES).map(([k, t]) => `<button type="button" data-v="${k}" aria-pressed="false">${esc(t)}</button>`).join("")}</div></div>
+      <div class="campo"><label>Título <span class="opcional">(opcional)</span></label><input class="input" name="titulo" maxlength="160" placeholder="Curva del bosque, salto final…"></div>
+      <div class="campo"><label>Fecha</label><input class="input" type="date" name="fecha" value="${hoy}"></div>
+      <div class="campo ancho"><label>Pista <span class="opcional">(opcional)</span></label><input class="input" name="pista" maxlength="120"></div>
+      <div class="campo ancho"><label data-r="nota">Mensaje <span class="opcional">(opcional)</span></label><textarea class="input" name="nota" maxlength="2000"></textarea></div>
+      <div class="campo ancho progreso-subida oculto"><label>Subiendo</label><div class="barra-progreso"><i></i></div><small class="txt-progreso"></small></div></div>`);
+    const zona = $(".soltar", cuerpo);
+    const panel = panelRecorte(cuerpo);
+    const marcasPiloto = coach ? null : panelMarcas(cuerpo);
+    const cajaRecorte = $(".recorte-video", cuerpo);
+    const selDest = $("[name=destino]", cuerpo), selB = $("[name=bajada]", cuerpo), nota = $("[name=nota]", cuerpo);
+    // motivo: uno solo (tocar otra vez lo quita); situación: varias
+    $$("[data-g=motivo] button", cuerpo).forEach(b => b.addEventListener("click", () => {
+      motivo = motivo === b.dataset.v ? null : b.dataset.v;
+      $$("[data-g=motivo] button", cuerpo).forEach(x => { x.classList.toggle("sel", x.dataset.v === motivo); x.setAttribute("aria-pressed", x.dataset.v === motivo ? "true" : "false"); });
+      refrescar();
+    }));
+    $$("[data-g=situacion] button", cuerpo).forEach(b => b.addEventListener("click", () => {
+      if (situ.has(b.dataset.v)) situ.delete(b.dataset.v); else situ.add(b.dataset.v);
+      b.classList.toggle("sel", situ.has(b.dataset.v)); b.setAttribute("aria-pressed", situ.has(b.dataset.v) ? "true" : "false");
+    }));
+    // bajada del Sender (piloto): una de las suyas o un .sfb que se sube al enviar
+    let bajadaNueva = null; const misBajadas = {};
+    if (selB) {
+      API.get("bajadas").then(r => (r.bajadas || []).filter(b => b.propia !== false).forEach(b => {
+        misBajadas[b.id] = b;
+        const o = document.createElement("option"); o.value = b.id;
+        o.textContent = b.nombre + (b.fecha ? " · " + fecha(b.fecha) : "") + (b.resumen && b.resumen.duracion ? " · " + tiempo(b.resumen.duracion, false) : "");
+        selB.appendChild(o);
+      })).catch(() => {});
+      selB.addEventListener("change", () => refrescar());
+      $("[data-b=subir]", cuerpo).addEventListener("click", async () => {
+        const f = await UI.elegirArchivo(".sfb,.sfpb,application/octet-stream"); if (!f) return;
+        try {
+          const d = await SenderDatos.leerArchivo(f);
+          bajadaNueva = { f, resumen: SenderDatos.resumen(d) };
+          let o = $("option[data-nueva]", selB); if (!o) { o = document.createElement("option"); o.dataset.nueva = "1"; o.value = "__nueva"; selB.appendChild(o); }
+          o.textContent = f.name + " (se sube al enviar)"; selB.value = "__nueva"; refrescar();
+        } catch (e) { aviso("Ese archivo no es una bajada válida del Sender: " + (e.message || e), "error"); }
+      });
+    }
+    // lo que cambia según lo elegido: los mensajes solo aceptan fotos y documentos; la bajada solo va con un video o sola
+    function refrescar() {
+      const esVid = !!archivo && archivo.clase === "video", soloBajada = !archivo && !!(selB && selB.value);
+      const wrap = $("[data-bajada]", cuerpo); if (wrap) wrap.classList.toggle("oculto", !!archivo && !esVid);
+      $$("option[value^='c:']", selDest).forEach(o => { o.disabled = esVid || soloBajada; });
+      if (selDest.selectedOptions[0] && selDest.selectedOptions[0].disabled) selDest.value = (coach ? "b:" : "e:" + personas[0].id);
+      const aEntrenador = !coach && selDest.value.startsWith("e:");
+      $("[data-r=nota]", cuerpo).innerHTML = (aEntrenador ? "Qué querés que mire tu entrenador" : coach && selDest.value.startsWith("p:") ? "Mensaje para el piloto" : "Mensaje") + ` <span class="opcional">(opcional)</span>`;
+      nota.placeholder = aEntrenador ? (motivo && TIPOS_VIDEO[motivo] ? TIPOS_VIDEO[motivo].ph : "No me sale la curva, frené tarde…") : "";
+    }
+    selDest.addEventListener("change", refrescar);
+    const tomar = (f) => {
+      if (!f) return;
+      const k = Archivos.clasificar(f);
+      if (!k) { aviso("Ese archivo no se puede subir. Usá un video MP4, MOV o WebM, una foto JPG, PNG o WebP, o un documento PDF, Word, Excel o texto.", "error"); return; }
+      const max = k.clase === "video" ? 1024 : k.clase === "imagen" ? 15 : 25;
+      if (f.size > max * 1048576) { aviso(`El archivo supera el máximo de ${max} MB.`, "error"); return; }
+      archivo = { f, t: k.t, clase: k.clase };
+      $(".archivo", zona).textContent = f.name + " · " + Archivos.tam(f.size);
+      const ti = $("[name=titulo]", cuerpo); if (!ti.value) ti.value = f.name.replace(/\.[^.]+$/, "");
+      if (k.clase === "video") panel.poner(f); else cajaRecorte.classList.add("oculto");
+      refrescar();
+    };
+    zona.addEventListener("click", async () => tomar(await UI.elegirArchivo(Archivos.ACEPTA)));
+    zona.addEventListener("keydown", async (e) => { if (e.key === "Enter") tomar(await UI.elegirArchivo(Archivos.ACEPTA)); });
+    zona.addEventListener("dragover", (e) => { e.preventDefault(); zona.classList.add("encima"); });
+    zona.addEventListener("dragleave", () => zona.classList.remove("encima"));
+    zona.addEventListener("drop", (e) => { e.preventDefault(); zona.classList.remove("encima"); tomar(e.dataTransfer.files[0]); });
+    refrescar();
+    return abrirModal({ titulo: "Subir archivos", cuerpo, acciones: [{ texto: "Volver", clase: "fantasma", valor: null }, { texto: "Subir", clase: "primario", alHacer: async (c) => {
+      const destino = selDest.value, esVideo = !!archivo && archivo.clase === "video", soloBajada = !archivo;
+      if (!archivo && !(selB && selB.value)) { aviso(coach ? "Elegí el archivo." : "Elegí un archivo o una bajada del Sender.", "error"); return false; }
+      if (!destino) { aviso("Elegí a dónde va.", "error"); return false; }
+      if ((esVideo || soloBajada) && destino.startsWith("c:")) { aviso("Los videos y las bajadas no se mandan por mensaje: " + (coach ? "guardalo en tu biblioteca o pasáselo a un piloto." : "mandalos a tu entrenador."), "error"); return false; }
+      if (esVideo && panel.problema()) { aviso(panel.problema(), "error"); return false; }
+      const titulo = $("[name=titulo]", c).value.trim(), pista = $("[name=pista]", c).value.trim(), fechaSel = $("[name=fecha]", c).value || hoy, texto = nota.value.trim();
+      const datos = { motivo, situaciones: [...situ], pista, fecha: fechaSel };
+      const boton = $(".modal-pie .primario", c.parentElement);
+      boton.disabled = true; boton.textContent = "Preparando…";
+      const prog = $(".progreso-subida", c), barra = $(".barra-progreso i", c), txt = $(".txt-progreso", c);
+      const etiquetar = async (tipo, ref, extra) => {
+        try { await API.post("etiquetas", { tipo, ref, datos: Object.assign({}, datos, extra || {}) }); return true; }
+        catch (e) { aviso("Se subió, pero no se pudieron guardar el motivo y la situación (¿corriste coach_v30.sql en Supabase?).", "oro"); return false; }
+      };
+      try {
+        let mensaje = "Archivo subido.";
+        if (coach) {
+          // ---- entrenador: todo pasa por su biblioteca ----
+          let id, info = null;
+          if (esVideo) { const r = await prepararYSubirVideo(archivo.f, panel, c, boton, "video"); id = r.archivoId; info = { duracion: r.info.duracion, ancho: r.info.ancho, alto: r.info.alto, miniatura: r.info.miniatura }; }
+          else {
+            prog.classList.remove("oculto"); boton.textContent = "Subiendo…";
+            id = await API.subirArchivo(archivo.f.slice(0, archivo.f.size, archivo.t), archivo.clase, archivo.f.name, (p) => { barra.style.width = (p * 100).toFixed(0) + "%"; txt.textContent = Math.round(p * 100) + " %"; });
+          }
+          if (esVideo || destino === "b:") await API.post("biblioteca", { archivoId: id, titulo, nota: texto });
+          if (destino.startsWith("p:")) await API.post("compartidos", { archivoId: id, paraId: destino.slice(2), titulo, nota: texto });
+          else if (destino.startsWith("c:")) await API.post("analisis/" + destino.slice(2) + "/comentarios", { texto: texto || titulo, t: null, archivoId: id });
+          await etiquetar("archivo", id, info ? { info } : null);
+          mensaje = destino.startsWith("p:") ? "Archivo enviado: lo ve en su sección Archivos." : destino.startsWith("c:") ? "Enviado por mensaje." : esVideo ? "Guardado en tu biblioteca. Para analizarlo, abrilo desde Archivos." : "Guardado en tu biblioteca.";
+        } else if (destino.startsWith("e:") && (esVideo || soloBajada)) {
+          // ---- piloto: video y/o bajada → envío a su entrenador ----
+          let archivoId = null, info = {}, blob = null;
+          if (esVideo) { const r = await prepararYSubirVideo(archivo.f, panel, c, boton, "envio"); archivoId = r.archivoId; info = r.info; blob = r.blob; }
+          prog.classList.remove("oculto"); boton.textContent = "Subiendo…";
+          let bajadaId = selB.value && selB.value !== "__nueva" ? selB.value : null;
+          if (selB.value === "__nueva" && bajadaNueva) {
+            $("label", prog).textContent = "Subiendo la bajada";
+            const bArch = await API.subirArchivo(bajadaNueva.f, "bajada", bajadaNueva.f.name);
+            const rb = await API.post("bajadas", { archivoId: bArch, nombre: bajadaNueva.f.name.replace(/\.[^.]+$/, ""), fecha: new Date(bajadaNueva.f.lastModified || Date.now()).toISOString(), resumen: bajadaNueva.resumen, origen: "archivo" });
+            bajadaId = (rb && (rb.bajada && rb.bajada.id || rb.id)) || null;
+          }
+          let tituloEnv = titulo;
+          if (!esVideo) {   // sin video: el envío lleva solo los datos
+            const bInfo = misBajadas[bajadaId] || {};
+            info.duracion = (bInfo.resumen && bInfo.resumen.duracion) || (bajadaNueva && bajadaNueva.resumen && bajadaNueva.resumen.duracion) || 0;
+            if (!tituloEnv) tituloEnv = bInfo.nombre || (bajadaNueva ? bajadaNueva.f.name.replace(/\.[^.]+$/, "") : "Bajada");
+          }
+          const rEnv = await API.post("envios", { coachId: destino.slice(2), archivoId, respondeA: null, tipo: motivo, bajadaId,
+            titulo: tituloEnv || (archivo ? archivo.f.name : "Bajada"), pista, fecha: fechaSel, nota: texto,
+            marcas: blob ? marcasPiloto.lista(blob !== archivo.f ? panel.recorte() : null) : [], duracion: info.duracion, ancho: info.ancho, alto: info.alto, miniatura: info.miniatura });
+          if (rEnv && rEnv.envio && rEnv.envio.id) API.avisar("envio", rEnv.envio.id);   // push al entrenador
+          if (situ.size) { if (archivoId) await etiquetar("archivo", archivoId); else if (bajadaId) await etiquetar("bajada", bajadaId); }
+          mensaje = esVideo ? "Video enviado a tu entrenador." : "Bajada enviada a tu entrenador.";
+        } else {
+          // ---- piloto: foto o documento, a su entrenador o por mensaje ----
+          if (esVideo || soloBajada) { aviso("Los videos y las bajadas se mandan a tu entrenador.", "error"); boton.disabled = false; boton.textContent = "Subir"; return false; }
+          prog.classList.remove("oculto"); boton.textContent = "Subiendo…";
+          const id = await API.subirArchivo(archivo.f.slice(0, archivo.f.size, archivo.t), archivo.clase, archivo.f.name, (p) => { barra.style.width = (p * 100).toFixed(0) + "%"; txt.textContent = Math.round(p * 100) + " %"; });
+          if (destino.startsWith("e:")) await API.post("compartidos", { archivoId: id, paraId: destino.slice(2), titulo, nota: texto });
+          else if (destino.startsWith("c:")) await API.post("analisis/" + destino.slice(2) + "/comentarios", { texto: texto || titulo, t: null, archivoId: id });
+          if (motivo || situ.size || pista) await etiquetar("archivo", id);
+          mensaje = destino.startsWith("c:") ? "Enviado por mensaje." : "Archivo enviado a tu entrenador: lo ve en su sección Archivos.";
+        }
+        aviso(mensaje, "oro");
+        return true;
+      } catch (e) {
+        aviso(e.message || "No se pudo subir el archivo.", "error");
+        prog.classList.add("oculto"); boton.disabled = false; boton.textContent = "Subir";
+        return false;
+      }
+    } }] });
+  }
+
+  // Duración y tamaño de un video guardado, leídos del propio archivo (para videos subidos antes de coach_v30.sql)
+  function metaDeUrl(url) {
+    return new Promise((ok) => {
+      const v = document.createElement("video"); let listo = false;
+      const fin = (r) => { if (listo) return; listo = true; clearTimeout(lim); v.removeAttribute("src"); v.load(); ok(r); };
+      const cero = { duracion: 0, ancho: 0, alto: 0, miniatura: "" };
+      const lim = setTimeout(() => fin(cero), 15000);
+      v.preload = "metadata"; v.muted = true;
+      v.addEventListener("loadedmetadata", () => fin({ duracion: v.duration || 0, ancho: v.videoWidth || 0, alto: v.videoHeight || 0, miniatura: "" }));
+      v.addEventListener("error", () => fin(cero));
+      v.src = url;
+    });
+  }
+
+  // Analizar un video de la biblioteca: crea el análisis sobre el MISMO archivo (sin copias) y abre el Estudio
+  async function analizarDeBiblioteca(x) {
+    let pilotos = (await API.get("pilotos")).pilotos;
+    if (!pilotos.length) {
+      aviso("Primero agregá un piloto.", "oro");
+      const p = await editarPiloto(); if (!p) return null;
+      pilotos = [p];
+    }
+    let et = null; try { et = ((await API.get("etiquetas")).etiquetas || []).find(t => t.tipo === "archivo" && t.ref === x.archivoId) || null; } catch (e) { /* sin etiquetas */ }
+    const hoy = new Date().toISOString().slice(0, 10);
+    const cuerpo = html(`<div class="form-grilla">
+      <div class="campo"><label>Piloto</label><select class="input" name="piloto">${pilotos.map(p => `<option value="${p.id}">${esc(p.nombre)}</option>`).join("")}</select></div>
+      <div class="campo"><label>Fecha</label><input class="input" type="date" name="fecha" value="${esc((et && et.fecha) || hoy)}"></div>
+      <div class="campo"><label>Título</label><input class="input" name="titulo" maxlength="160" value="${esc(x.titulo || String(x.nombre || "").replace(/\.[^.]+$/, ""))}"></div>
+      <div class="campo"><label>Pista</label><input class="input" name="pista" maxlength="120" value="${esc((et && et.pista) || "")}"></div></div>`);
+    return abrirModal({ titulo: "Analizar este video", cuerpo, acciones: [{ texto: "Volver", clase: "fantasma", valor: null }, { texto: "Analizar", clase: "primario", alHacer: async (c) => {
+      try {
+        let info = null; try { info = (await API.get("etiquetas/info/" + x.archivoId)).info || null; } catch (e) { /* video anterior a coach_v30.sql */ }
+        if (!info) { const u = await API.urls([x.archivoId]); info = u[x.archivoId] ? await metaDeUrl(u[x.archivoId]) : { duracion: 0, ancho: 0, alto: 0, miniatura: "" }; }
+        const r = await API.post("analisis", {
+          pilotoId: $("[name=piloto]", c).value, titulo: $("[name=titulo]", c).value.trim() || x.nombre || "Sin título",
+          pista: $("[name=pista]", c).value.trim(), fecha: $("[name=fecha]", c).value || hoy, videoId: x.archivoId,
+          duracion: info.duracion, ancho: info.ancho, alto: info.alto, miniatura: info.miniatura || "",
+          recorte: { ini: 0, fin: info.duracion }, anotaciones: [], etiquetas: [], notas: { fortalezas: "", mejorar: "", observaciones: "" }, sender: null });
+        if (et && et.motivo) { try { await API.put("analisis/" + r.analisis.id + "/tipo", { tipo: et.motivo }); } catch (e) { /* el motivo se puede cambiar en el Estudio */ } }
+        irA("#/analisis/" + r.analisis.id);
+        return r.analisis;
+      } catch (e) { aviso(e.message || "No se pudo crear el análisis.", "error"); return false; }
+    } }] });
+  }
+
   const OJO_A = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>';
   const OJO_C = '<svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 3l18 18"/><path d="M10.6 6.1A10.7 10.7 0 0 1 12 6c6.4 0 10 6 10 6a17 17 0 0 1-3.2 3.9M6.6 7.6A16.6 16.6 0 0 0 2 12s3.6 7 10 7a10 10 0 0 0 4.2-.9"/><path d="M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>';
   function ponerOjos(raiz) {
@@ -1529,6 +1818,6 @@
   }
   new MutationObserver(() => ponerOjos(document)).observe(document.body, { childList: true, subtree: true });
 
-  window.CoachApp = { enviarCorreccion: async (a) => enviarVideo((await API.get("entrenadores")).entrenadores, a), actualizarAvisos, navegar, nuevoAnalisis, editarPiloto, leerVideo, get usuario() { return USUARIO; } };
+  window.CoachApp = { analizarDeBiblioteca, enviarCorreccion: async (a) => enviarVideo((await API.get("entrenadores")).entrenadores, a), actualizarAvisos, navegar, nuevoAnalisis, editarPiloto, leerVideo, get usuario() { return USUARIO; } };
   arrancar();
 })();
