@@ -275,3 +275,6 @@ Solo Coach (la app no se toca). Archivos: `SendFlow_Coach_Web/js/respuestas-rapi
 Solo web; la app no se toca. SQL aplicado en producción: `nube/coach_v31_clip_comentario.sql`, `nube/coach_v32_resumen_semanal.sql`; edge function `aviso-diario` v5.
 - **Clip:** Estudio → Mensajes (entrenador): «Inicio aquí» / «Fin aquí» sobre el video, hasta 30 s; la burbuja reproduce solo ese tramo. En la página Mensajes el enlace abre el Estudio con `?t=&fin=`. Archivos: `estudio.js`, `app.js`, `api.js`, `css/coach.css`.
 - **Resumen semanal:** lunes desde las 8:00 de la zona del entrenador, una vez por semana; mail por Resend. Toggle en Perfil (`avisos-email.js`, idéntico en Bike y Coach). **No probado el envío real** del mail.
+
+## 2d-unvicies) Pilotos: secciones y tarjetas de grupo (Coach v62, 21/10/2026)
+Solo Coach. Pilotos → título de sección «Pilotos» (cian, como «Grupos») y tarjeta «+ Agregar piloto» al final de la lista (se quitó el botón de arriba). Las tarjetas de grupo muestran el nombre más grande y los avatares de sus pilotos (hasta 5 y «+N»). Sin foto propia del grupo (haría falta una columna nueva). Archivos: `app.js`, `grupos.js`, `css/coach.css`.

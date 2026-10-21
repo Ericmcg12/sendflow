@@ -464,14 +464,16 @@
   async function pantallaPilotos(v) {
     const { pilotos, analisis } = await cargarCoach();
     v.appendChild(html(`<div>
-      <div class="cab-pagina entra"><div><h1 class="titulo-pagina">Pilotos</h1><div class="sub-pagina">${pilotos.length ? pilotos.length + (pilotos.length === 1 ? " piloto" : " pilotos") : "Todavía no cargaste pilotos."}</div></div>
-        <button class="btn primario" data-accion="nuevo">${ICONOS.mas}Agregar piloto</button></div>
+      <div class="cab-pagina entra"><div><h1 class="titulo-pagina">Pilotos</h1><div class="sub-pagina">${pilotos.length ? pilotos.length + (pilotos.length === 1 ? " piloto" : " pilotos") : "Todavía no cargaste pilotos."}</div></div></div>
       <div class="grilla g3" id="listaPilotos"></div></div>`));
-    $("[data-accion=nuevo]", v).addEventListener("click", () => editarPiloto());
     const g = $("#listaPilotos", v);
-    if (window.Grupos) Grupos.seccion($("#listaPilotos", v).parentNode).catch(() => {});   // v55: grupos de pilotos
-    if (!pilotos.length) g.replaceWith(html(`<div class="vacio entra">Agregá el primer piloto para empezar a cargar sus análisis.<br>Si ponés su email, cuando cree su cuenta en SendFlow Coach va a ver sus análisis.</div>`));
+    if (window.Grupos) Grupos.seccion(g.parentNode).catch(() => {});   // v55: grupos de pilotos (se inserta antes de la lista)
+    g.parentNode.insertBefore(html(`<div class="titulo-seccion entra">Pilotos</div>`), g);   // v62: título de sección, como «Grupos»
+    if (!pilotos.length) g.parentNode.insertBefore(html(`<div class="vacio entra" style="margin-bottom:14px">Agregá el primer piloto para empezar a cargar sus análisis.<br>Si ponés su email, cuando cree su cuenta en SendFlow Coach va a ver sus análisis.</div>`), g);
     pilotos.forEach(p => g.appendChild(tarjetaPiloto(p, analisis.filter(a => a.pilotoId === p.id).length)));
+    const nuevo = html(`<button type="button" class="tarjeta gr-nuevo" data-accion="nuevo">${ICONOS.mas}<span>Agregar piloto</span></button>`);   // v62: el «+» como el de grupos
+    nuevo.addEventListener("click", () => editarPiloto());
+    g.appendChild(nuevo);
   }
 
   async function pantallaPiloto(v, id) {
