@@ -8,7 +8,7 @@
 // ============================================================================
 (function () {
   "use strict";
-  const { $, $$, html, esc, ICONOS, aviso, abrirModal, confirmar } = UI;
+  const { $, $$, html, esc, ICONOS, iniciales, aviso, abrirModal, confirmar } = UI;
   const rpc = async (n, a) => {
     const { data, error } = await API.sb.rpc(n, a || {});
     if (error) {
@@ -54,10 +54,14 @@
     cont.insertBefore(caja, cont.querySelector("#listaPilotos"));
     const grilla = $(".gr-grilla", caja);
     const pintar = async () => {
-      const gs = await listar();
+      const [gs, fs] = await Promise.all([listar(), fichas()]);
+      const porUsuario = {}; fs.forEach(f => { porUsuario[f.usuarioId] = f; });
       grilla.innerHTML = "";
       gs.forEach(g => {
+        const ver = g.miembros.slice(0, 5), mas = g.miembros.length - ver.length;
+        const avs = ver.map(m => { const f = porUsuario[m.usuarioId] || {}; return `<span class="avatar chica" title="${esc(m.nombre)}" style="--c:${esc(f.color || "#4fe3c2")}">${esc(iniciales(m.nombre))}</span>`; }).join("") + (mas > 0 ? `<span class="avatar chica gr-mas">+${mas}</span>` : "");
         const t = html(`<button type="button" class="tarjeta gr-tarjeta"><div class="gr-cab"><b>${esc(g.nombre)}</b><span class="chip">${esc(MODALIDAD[g.modalidad] || g.modalidad)}</span></div>
+          <div class="gr-avs">${avs || `<small>Sin pilotos todavía</small>`}</div>
           <small>${g.miembros.length} ${g.miembros.length === 1 ? "piloto" : "pilotos"}${g.miembros.length ? ": " + esc(g.miembros.slice(0, 4).map(m => m.nombre.split(" ")[0]).join(", ")) + (g.miembros.length > 4 ? "…" : "") : ""}</small></button>`);
         t.addEventListener("click", async () => { if (await editar(g)) pintar(); });
         grilla.appendChild(t);

@@ -1788,3 +1788,9 @@ a.ap-fila:hover{background:rgba(255,255,255,.03);}
 .msj-clip{display:flex;gap:6px;flex-wrap:wrap;align-items:center;}
 .msj-clip .etiqueta{margin-right:2px;}
 .burbuja .cab .ir.clip{font-weight:600;}
+
+/* v62: grupos más marcados (nombre grande + avatares) */
+.gr-tarjeta .gr-cab b{font:700 20px/1.2 var(--display);letter-spacing:-.01em;}
+.gr-avs{display:flex;align-items:center;margin:6px 0 2px;padding-left:8px;min-height:40px;}
+.avatar.chica{width:38px;height:38px;font-size:14px;margin-left:-8px;box-shadow:0 0 0 2px var(--panel-2);}
+.gr-mas{--c:#2a3535;color:var(--ink);}
