@@ -707,3 +707,10 @@ textarea.sfa-nota { height: auto; min-height: 84px; padding: 10px 12px; resize: 
 
 /* Salto a Coach: mismo estilo que «Volver a Bike» en Coach */
 .nav-item.volver-coach { color: var(--cian); }
+
+/* fechas dd/mm/aaaa (fecha-dmy.js) */
+.fecha-dmy { position: relative; display: flex; align-items: center; gap: 6px; }
+.fecha-dmy-txt { flex: 1; min-width: 0; }
+.fecha-dmy-txt.invalido { border-color: var(--rojo, #ff6b6b); }
+.fecha-dmy-cal { flex: none; height: 42px; border: 1px solid var(--borde-2); background: transparent; border-radius: var(--r-md); padding: 0 10px; cursor: pointer; line-height: 1; color: inherit; }
+.fecha-dmy-real { position: absolute; right: 0; bottom: 0; width: 1px; height: 1px; opacity: 0; pointer-events: none; border: 0; padding: 0; }
