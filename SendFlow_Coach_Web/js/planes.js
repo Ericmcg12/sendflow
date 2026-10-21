@@ -227,6 +227,7 @@
         <div style="display:flex;gap:8px;flex-wrap:wrap"><span class="cal-acciones-plan" style="display:contents"></span>${edita ? `<button class="btn chico" data-accion="editar">${ICONOS.editar}Plan y fases</button>${window.Grupos ? `<button class="btn chico" data-accion="grupo" title="Crear una copia de este plan para cada piloto de un grupo">${ICONOS.mas}Copiar a un grupo</button>` : ""}<button class="btn chico peligro" data-accion="borrar" aria-label="Borrar plan" title="Borrar plan">${ICONOS.basura}</button>` : ""}</div>
       </div>
       ${p.descripcion ? `<p class="prosa entra plan-desc">${esc(p.descripcion)}</p>` : ""}
+      <div class="vista-plan entra" role="group" aria-label="Cómo ver el plan"><button type="button" data-vista="semana">Semana</button><button type="button" data-vista="resumen">Resumen del plan</button></div>
       <div class="fases-barra entra" id="fasesBarra"></div>
       <div class="semana-cab entra">
         <button class="btn icono chico" data-sem="-1" aria-label="Semana anterior">‹</button>
@@ -237,14 +238,25 @@
         ${edita ? `<button class="btn chico" data-accion="copiar" title="Repetir las sesiones de esta semana en la siguiente">Copiar a la semana siguiente</button>` : ""}
       </div>
       <div class="semana-grilla entra" id="semGrilla"></div>
+      <div class="resumen-plan" id="resumenPlan" hidden></div>
     </div>`);
     v.appendChild(raiz);
     if (window.CoachCalendario) CoachCalendario.accionesPlan($(".cal-acciones-plan", raiz), p, edita, async () => { p._fechas = await CoachCalendario.fechasDePlan(p, edita); pintarFases(p, $("#fasesBarra", raiz)); pintar(); });
     pintarFases(p, $("#fasesBarra", raiz));
+    // v65: dos vistas del mismo plan: «Semana» (la grilla de siempre) y «Resumen del plan» (todo el plan en una lista)
+    let vista = new URLSearchParams(location.search).get("vista") === "resumen" ? "resumen" : "semana";
+    const recargar = async () => { const r = await rpc("coach_plan_ver", { p_id: id }); Object.assign(p, r.plan); pintarFases(p, $("#fasesBarra", raiz)); pintar(); };
     const pintar = () => {
-      const url = new URL(location.href); url.searchParams.set("semana", semana); history.replaceState(history.state, "", url);
-      pintarSemana(p, semana, raiz, edita, async () => { const r = await rpc("coach_plan_ver", { p_id: id }); Object.assign(p, r.plan); pintarFases(p, $("#fasesBarra", raiz)); pintar(); });
+      const url = new URL(location.href);
+      if (vista === "resumen") { url.searchParams.set("vista", "resumen"); url.searchParams.delete("semana"); } else { url.searchParams.set("semana", semana); url.searchParams.delete("vista"); }
+      history.replaceState(history.state, "", url);
+      $$("[data-vista]", raiz).forEach(b => b.classList.toggle("sel", b.dataset.vista === vista));
+      const esRes = vista === "resumen";
+      $(".semana-cab", raiz).hidden = esRes; $("#semGrilla", raiz).hidden = esRes; $("#resumenPlan", raiz).hidden = !esRes;
+      if (esRes) pintarResumen(p, $("#resumenPlan", raiz), edita, recargar, (lun) => { semana = lun; vista = "semana"; pintar(); });
+      else pintarSemana(p, semana, raiz, edita, recargar);
     };
+    $$("[data-vista]", raiz).forEach(b => b.addEventListener("click", () => { vista = b.dataset.vista; pintar(); }));
     $$("[data-sem]", raiz).forEach(b => b.addEventListener("click", () => {
       semana = b.dataset.sem === "hoy" ? lunes(hoyIso()) : sumar(semana, 7 * +b.dataset.sem); pintar();
     }));
@@ -320,6 +332,91 @@
       if (edita) $(".dia-mas", col).addEventListener("click", async () => { if (await editarSesion(p, null, dia)) recargar(); });
       g.appendChild(col);
     }
+  }
+
+  // ======================================================================= Resumen del plan (v65)
+  // Todo el plan en una sola lista: semana por semana, con la fase, los totales y, en cada sesión, sus ejercicios. Cada sesión se
+  // puede abrir (el entrenador la edita; el piloto la ve y la marca). Estado de la vista (filtro y desplegados) solo en pantalla.
+  const dm = (s) => corta(s).slice(0, 5);
+  const resEj = (e) => { const x = e.series ? (e.reps ? e.series + "×" + e.reps : e.series + " series") : (e.reps || ""); return e.nombre + (x ? " " + x : ""); };
+  const minTxt = (m) => m >= 60 ? `${Math.floor(m / 60)} h${m % 60 ? " " + (m % 60) + " min" : ""}` : `${m} min`;
+  function pintarResumen(p, el, edita, recargar, irSemana) {
+    const hoy = hoyIso();
+    const tareas = (p.tareas || []).slice().sort((a, b) => a.fecha < b.fecha ? -1 : a.fecha > b.fecha ? 1 : (a.orden || 0) - (b.orden || 0));
+    const fases = (p.fases || []).filter(f => f.desde && f.hasta);
+    if (!el._est) el._est = { filtro: new Set(), abiertas: new Set(), todo: false };
+    const est = el._est;
+    const fechas = tareas.map(t => t.fecha);
+    const ini = lunes(p.desde || fechas[0] || hoy);
+    const fin = [p.hasta, fechas[fechas.length - 1]].filter(Boolean).sort().pop() || sumar(ini, 6);
+    const semanas = []; for (let s = ini; s <= fin && semanas.length < 260; s = sumar(s, 7)) semanas.push(s);
+    const contables = tareas.filter(t => t.tipo !== "descanso" && t.tipo !== "carrera");
+    const hechas = contables.filter(t => t.estado === "hecha").length, minutos = contables.reduce((n, t) => n + (Number(t.duracionMin) || 0), 0);
+    const tipos = [...new Set(tareas.map(t => t.tipo))].filter(k => TIPOS[k]);
+    const visible = (t) => !est.filtro.size || est.filtro.has(t.tipo);
+    const abierta = (t) => est.todo || est.abiertas.has(t.id);
+
+    const detalle = (t) => {
+      const ej = t.ejercicios || [];
+      return `<div class="res-det">
+        ${t.descripcion ? `<p class="prosa">${esc(t.descripcion)}</p>` : ""}
+        ${ej.length ? `<table class="tabla-ej"><thead><tr><th>Ejercicio</th><th>Series</th><th>Reps</th><th>Carga / tiempo</th></tr></thead><tbody>${ej.map(e => `<tr><td>${esc(e.nombre)}${e.nota ? `<small>${esc(e.nota)}</small>` : ""}</td><td>${e.series || ""}</td><td>${esc(e.reps || "")}</td><td>${esc([e.carga, e.tiempo].filter(Boolean).join(" · "))}</td></tr>`).join("")}</tbody></table>` : (t.descripcion ? "" : `<p class="ayuda-chica">Esta sesión no tiene ejercicios cargados.</p>`)}
+        ${t.notaPiloto ? `<p class="ses-nota">Nota del piloto: “${esc(t.notaPiloto)}”</p>` : ""}
+        <div class="res-acc"><button type="button" class="btn chico ${edita ? "primario" : ""}" data-abrir="${esc(t.id)}">${edita ? ICONOS.editar + "Editar sesión" : "Abrir y marcar"}</button></div>
+      </div>`;
+    };
+    const fila = (t) => {
+      const ej = t.ejercicios || [], dd = deIso(t.fecha);
+      const vencida = t.fecha < hoy && t.estado === "pendiente" && t.tipo !== "descanso" && t.tipo !== "carrera";
+      const meta = [t.modalidad === "presencial" ? "Presencial" + (t.hora ? " " + t.hora : "") : "", t.duracionMin ? t.duracionMin + " min" : "", t.intensidad ? "int. " + t.intensidad : "", ej.length ? ej.length + (ej.length === 1 ? " ejerc." : " ejerc.") : ""].filter(Boolean).join(" · ");
+      const estado = t.estado === "hecha" ? `<span class="ok">✓${t.esfuerzo ? " " + t.esfuerzo : ""}</span>` : t.estado === "omitida" ? `<span class="no">✗</span>` : (vencida ? `<span class="venc">sin marcar</span>` : "");
+      const abre = abierta(t);
+      return `<article class="res-ses ${t.estado} tipo-${t.tipo}" style="--c:${(TIPOS[t.tipo] || TIPOS.otro).c}" data-id="${esc(t.id)}">
+        <button type="button" class="res-cab" aria-expanded="${abre}" data-tog="${esc(t.id)}">
+          <span class="res-dia">${DIAS[(dd.getDay() + 6) % 7]} ${String(dd.getDate()).padStart(2, "0")}</span>${chipTipo(t.tipo)}
+          <span class="res-tit">${esc(t.titulo)}</span><span class="res-meta">${esc(meta)}</span>${estado}<span class="res-flecha" aria-hidden="true">▾</span>
+        </button>
+        ${!abre && ej.length ? `<div class="res-ej">${ej.slice(0, 4).map(e => esc(resEj(e))).join(" · ")}${ej.length > 4 ? ` · +${ej.length - 4}` : ""}</div>` : ""}
+        ${abre ? detalle(t) : ""}
+      </article>`;
+    };
+
+    const bloques = semanas.map((lun, i) => {
+      const dom = sumar(lun, 6);
+      const ts = tareas.filter(t => t.fecha >= lun && t.fecha <= dom);
+      const ls = ts.filter(visible);
+      const fs = fases.filter(f => f.desde <= dom && f.hasta >= lun);
+      const empiezan = fs.filter(f => f.desde >= lun || i === 0);
+      const cont = ts.filter(t => t.tipo !== "descanso" && t.tipo !== "carrera");
+      const min = cont.reduce((n, t) => n + (Number(t.duracionMin) || 0), 0), hh = cont.filter(t => t.estado === "hecha").length;
+      return `${empiezan.map(f => `<div class="res-fase" style="--c:${(FASES[f.tipo] || FASES.base).c}"><b>${esc(f.nombre)}</b><span>${corta(f.desde)} → ${corta(f.hasta)}</span>${f.objetivo ? `<em>${esc(f.objetivo)}</em>` : ""}</div>`).join("")}
+      <section class="res-sem ${lun <= hoy && hoy <= dom ? "actual" : ""}" data-sem="${lun}">
+        <header><b>Semana ${i + 1}</b><span>${dm(lun)} – ${dm(dom)}</span>${fs.map(f => `<span class="fase-chip" style="--c:${(FASES[f.tipo] || FASES.base).c}">${esc(f.nombre)}</span>`).join("")}
+          <span class="res-tot">${cont.length ? `${cont.length} ${cont.length === 1 ? "sesión" : "sesiones"}${min ? " · " + minTxt(min) : ""}${hh ? ` · hechas ${hh}/${cont.length}` : ""}` : "Sin sesiones"}</span>
+          <span class="res-sem-acc"><button type="button" class="btn chico fantasma" data-ir="${lun}">Ver semana</button>${edita ? `<button type="button" class="btn chico" data-mas="${lun}" title="Agregar una sesión en esta semana">${ICONOS.mas}Sesión</button>` : ""}</span></header>
+        ${ls.length ? ls.map(fila).join("") : (ts.length ? `<p class="ayuda-chica res-vacio">Ninguna sesión de esta semana coincide con el filtro.</p>` : "")}
+      </section>`;
+    }).join("");
+
+    el.innerHTML = `<div class="res-barra">
+      <div class="res-totales"><b>${semanas.length}</b> ${semanas.length === 1 ? "semana" : "semanas"} · <b>${contables.length}</b> ${contables.length === 1 ? "sesión" : "sesiones"}${minutos ? " · " + minTxt(minutos) : ""}${contables.length ? ` · hechas <b>${hechas}</b>/${contables.length}` : ""}</div>
+      <div class="res-ctl">${tipos.length > 1 ? `<div class="filtro-tipos res-filtro" role="group" aria-label="Filtrar por tipo de sesión">${tipos.map(k => `<button type="button" data-f="${k}" class="${est.filtro.has(k) ? "sel" : ""}" style="--c:${TIPOS[k].c}">${TIPOS[k].t}</button>`).join("")}</div>` : ""}
+        <button type="button" class="btn chico fantasma" data-todo>${est.todo ? "Contraer todo" : "Desplegar todo"}</button></div>
+    </div>
+    ${tareas.length ? bloques : `<div class="vacio">${edita ? "Este plan todavía no tiene sesiones. Agregalas desde la vista Semana (+ en cada día) o cargá una semana tipo." : "Tu entrenador todavía no cargó sesiones en este plan."}</div>`}`;
+
+    const vuelve = () => pintarResumen(p, el, edita, recargar, irSemana);
+    $$("[data-f]", el).forEach(b => b.addEventListener("click", () => { const k = b.dataset.f; est.filtro.has(k) ? est.filtro.delete(k) : est.filtro.add(k); vuelve(); }));
+    const bt = $("[data-todo]", el); if (bt) bt.addEventListener("click", () => { est.todo = !est.todo; est.abiertas.clear(); vuelve(); });
+    $$("[data-tog]", el).forEach(b => b.addEventListener("click", () => {
+      const id = b.dataset.tog;
+      if (est.todo) { est.todo = false; tareas.forEach(t => { if (t.id !== id) est.abiertas.add(t.id); }); }   // al contraer una con «desplegar todo» queda el resto desplegado
+      else est.abiertas.has(id) ? est.abiertas.delete(id) : est.abiertas.add(id);
+      vuelve();
+    }));
+    $$("[data-ir]", el).forEach(b => b.addEventListener("click", () => irSemana(b.dataset.ir)));
+    $$("[data-mas]", el).forEach(b => b.addEventListener("click", async () => { if (await editarSesion(p, null, b.dataset.mas)) recargar(); }));
+    $$("[data-abrir]", el).forEach(b => b.addEventListener("click", async () => { const t = tareas.find(x => x.id === b.dataset.abrir); if (t && await verSesion(t, edita, p)) recargar(); }));
   }
 
   // ======================================================================= Sesión: ver / marcar / editar
