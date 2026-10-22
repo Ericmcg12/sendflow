@@ -22,6 +22,7 @@
   function noLegible(m) { const e = new Error(m); e.noLegible = true; return e; }
   // Revisión rápida al elegir el archivo: ¿el navegador lo puede leer?
   async function revisar(file) {
+    await cargar();
     if (!soportado()) return { ok: true, sinCompresor: true };
     try {
       const MBY = window.Mediabunny;
@@ -37,8 +38,25 @@
     return !!(window.Mediabunny && window.VideoEncoder && window.VideoDecoder && window.AudioEncoder);
   }
 
+  // Mediabunny pesa 684 KB y solo sirve para comprimir: no se carga en el arranque (frenaba el Inicio en el celular)
+  // sino unos segundos después de abrir la app, o antes si se abre una pantalla de subida.
+  let cargando = null;
+  function cargar() {
+    if (window.Mediabunny) return Promise.resolve(true);
+    if (!cargando) cargando = new Promise((ok) => {
+      const s = document.createElement("script");
+      s.src = "/vendor/mediabunny-1.58.1.min.js";
+      s.onload = () => ok(true);
+      s.onerror = () => { cargando = null; s.remove(); ok(false); };
+      document.head.appendChild(s);
+    });
+    return cargando;
+  }
+  window.addEventListener("load", () => setTimeout(() => (window.requestIdleCallback || setTimeout)(cargar), 4000));
+
   async function preparar(file, op) {
     op = op || {};
+    await cargar();
     const MBY = window.Mediabunny;
     if (!soportado()) throw new Error("Este navegador no puede comprimir video.");
     const input = new MBY.Input({ formats: MBY.ALL_FORMATS, source: new MBY.BlobSource(file) });
@@ -99,5 +117,5 @@
     return new File([target.buffer], nombre, { type: "video/mp4" });
   }
 
-  window.Compresor = { soportado, preparar, revisar };
+  window.Compresor = { soportado, preparar, revisar, cargar };
 })();

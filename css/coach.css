@@ -1220,10 +1220,13 @@ body.con-entrada{overflow:hidden;}
 /* ---- Inicio: cabecera con accesos + orden fijo (plan, mensajes) */
 .inicio-cab{margin-bottom:16px;align-items:center;}
 .inicio-cab .acciones-inicio{display:flex;gap:8px;flex-wrap:wrap;}
-.inicio-orden{display:grid;gap:14px;margin-bottom:16px;}
+.inicio-orden{display:grid;gap:14px;margin-bottom:14px;}
 .inicio-orden:empty{display:none;}
 .inicio-orden > :empty{display:none;}
 .inicio-orden .inicio-arriba > .tarjeta,.inicio-orden .actividad-pilotos,.inicio-orden .mensajes-inicio,.inicio-orden .inicio-arriba,.inicio-orden .oferta-avisos{margin:0;}
+/* las tarjetas de arriba (clases, atención, actividad) se separan con el mismo espacio que el resto, sin márgenes propios que se sumen */
+.inicio-orden [data-slot=plan]:not(:empty){display:grid;gap:14px;}
+.inicio-orden [data-slot=plan] > *{margin:0;}
 @media (max-width:600px){
   .inicio-cab{align-items:flex-start;gap:12px;}
   .inicio-cab .acciones-inicio{width:100%;}

@@ -124,8 +124,10 @@
   }
   // Entrada escalonada de los elementos .entra dentro de raiz
   function entradaEscalonada(raiz, paso) {
-    const els = $$(".entra", raiz);
+    // cada elemento entra una sola vez: si se vuelve a llamar sobre la misma pantalla, los que ya entraron no reparten otra animación
+    const els = $$(".entra", raiz).filter(el => !el._entro);
     els.forEach((el, i) => {
+      el._entro = true;
       if (sinMovimiento() || !el.animate) { el.style.opacity = 1; el.style.transform = "none"; return; }
       const a = el.animate([{ opacity: 0, transform: "translateY(16px)" }, { opacity: 1, transform: "none" }],
         { duration: 520, delay: i * (paso || 60), easing: "cubic-bezier(.2,.8,.2,1)", fill: "forwards" });

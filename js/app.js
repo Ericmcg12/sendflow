@@ -259,14 +259,20 @@
     if (salida) await salida.finished.catch(() => {});
     v.innerHTML = "";
     window.scrollTo(0, 0);
+    let yaMostrada = false;   // el Inicio se muestra antes de terminar de cargar
     try {
-      if (seccion === "inicio") { await (esCoach() ? inicioCoach(v) : inicioPiloto(v)); ofrecerAvisos(v); montarMensajes(v);
-    if (esCoach() && window.SFEntrenadores) SFEntrenadores.pintarSolicitudes($("[data-slot=solicitudes]", v));   // v51
-    // entrenador: tarjeta con lo que marcaron los pilotos (coach_v16.sql), arriba del saludo
-    if (esCoach() && window.AtencionPilotos) AtencionPilotos.tarjeta().then(c => { const s = $("[data-slot=plan]", v); if (c && s && s.isConnected) { s.insertBefore(c, s.firstChild); entradaEscalonada(s, 0); } }).catch(() => {});   // v55: a quién mirar hoy
-    if (esCoach() && window.ClasesConfirmar) ClasesConfirmar.tarjeta().then(c => { const s = $("[data-slot=plan]", v); if (c && s && s.isConnected) { s.insertBefore(c, s.firstChild); entradaEscalonada(s, 0); } }).catch(() => {});   // v57: confirmar el lugar de las clases
-    if (esCoach() && window.AsistenciaClase) AsistenciaClase.tarjetaCoach().then(c => { const s = $("[data-slot=plan]", v); if (c && s && s.isConnected) { s.insertBefore(c, s.firstChild); entradaEscalonada(s, 0); } }).catch(() => {});   // v58: quién va a la clase
-    if (esCoach() && window.Planes) Planes.actividad().then(c => { const s = $("[data-slot=plan]", v); if (c && s && s.isConnected) { s.appendChild(c); entradaEscalonada(s, 0); } }).catch(() => {}); }
+      if (seccion === "inicio") {
+        // el Inicio se dibuja ya (cabecera y tarjetas) y lo que viene de la nube se pide todo a la vez desde acá
+        const nube = pedirTarjetasInicio();
+        const alMontar = () => {
+          if (salida) salida.cancel();
+          yaMostrada = true;
+          entradaEscalonada(v, 55);
+          if (esCoach() && window.SFEntrenadores) SFEntrenadores.pintarSolicitudes($("[data-slot=solicitudes]", v));   // v51
+        };
+        await (esCoach() ? inicioCoach(v, alMontar) : inicioPiloto(v, alMontar)); ofrecerAvisos(v);
+        colocarTarjetasInicio(v, nube);
+      }
       else if (seccion === "pilotos" && esCoach()) await pantallaPilotos(v);
       else if (seccion === "piloto" && id && esCoach()) await pantallaPiloto(v, id);
       else if (seccion === "recibidos" && esCoach()) await pantallaRecibidos(v);
@@ -289,7 +295,7 @@
       if (USUARIO) v.innerHTML = `<div class="vacio">No se pudo abrir esta pantalla: ${esc(e.message || e)}</div>`;
     }
     if (salida) salida.cancel();
-    UI.animar(v, [{ opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "none" }], { duration: 300, easing: "cubic-bezier(.2,.8,.2,1)" });
+    if (!yaMostrada) UI.animar(v, [{ opacity: 0, transform: "translateY(10px)" }, { opacity: 1, transform: "none" }], { duration: 300, easing: "cubic-bezier(.2,.8,.2,1)" });
     entradaEscalonada(v, 55);
   }
   window.addEventListener("popstate", () => { if (window.CoachPerfil && CoachPerfil.alVolver()) return; navegar(); });
@@ -368,11 +374,34 @@
     else if (punto) punto.setAttribute("opacity", 1);
   }
 
+  // Lo que viene de la nube para el Inicio se pide todo junto, en cuanto se abre la pantalla (antes iba en cadena, uno tras otro).
+  const conLimite = (f) => Promise.race([Promise.resolve().then(f), new Promise(r => setTimeout(() => r(null), 8000))]).catch(() => null);
+  function pedirTarjetasInicio() {
+    const coach = esCoach();
+    return {
+      conv: conLimite(async () => (await API.get("conversaciones")).conversaciones || []),
+      // de arriba abajo: confirmar clases, quién va a la clase, a quién mirar hoy, actividad de los pilotos
+      plan: !coach ? [] : [
+        window.ClasesConfirmar && conLimite(() => ClasesConfirmar.tarjeta()),      // v57
+        window.AsistenciaClase && conLimite(() => AsistenciaClase.tarjetaCoach()), // v58
+        window.AtencionPilotos && conLimite(() => AtencionPilotos.tarjeta()),      // v55
+        window.Planes && conLimite(() => Planes.actividad())
+      ].filter(Boolean)
+    };
+  }
+  // Las tarjetas se colocan juntas, una sola vez: antes entraba cada una apenas llegaba y empujaba todo lo de abajo.
+  async function colocarTarjetasInicio(v, nube) {
+    const [conv, ...cartas] = await Promise.all([nube.conv, ...nube.plan]);
+    const s = $("[data-slot=plan]", v);
+    if (!s || !s.isConnected) return;   // se cambió de pantalla mientras cargaba
+    cartas.forEach(c => { if (c) s.appendChild(c); });
+    montarMensajes(v, conv);
+    entradaEscalonada(s, 70);
+  }
+
   // v33: los mensajes, al frente en el Inicio (entrenador y piloto)
-  async function montarMensajes(v) {
-    if (!$("[data-slot=mensajes]", v)) return;
-    let conv = []; try { conv = (await API.get("conversaciones")).conversaciones || []; } catch (e) { return; }
-    const h = $("[data-slot=mensajes]", v); if (!h || !h.isConnected) return;   // se cambió de pantalla mientras cargaba
+  function montarMensajes(v, conv) {
+    const h = $("[data-slot=mensajes]", v); if (!h || !h.isConnected || !conv) return;
     const sin = conv.reduce((s, c) => s + (c.sinLeer || 0), 0);
     const otro = (c) => c.soyCoach ? (c.pilotoNombre || "Piloto") : (c.coachNombre || "Entrenador");
     const titulo = sin ? `${sin} mensaje${sin > 1 ? "s" : ""} sin leer` : (conv.length ? "Tus conversaciones" : (esCoach() ? "Hablá con tus pilotos" : "Hablá con tu entrenador"));
@@ -387,22 +416,26 @@
   }
 
   // ================================================================ Inicio (entrenador)
-  async function inicioCoach(v) {
-    const { pilotos, analisis, porId } = await cargarCoach();
-    const nEtiq = analisis.reduce((s, a) => s + (a.nEtiquetas || 0), 0);
-    const nSender = analisis.filter(a => a.conSender).length;
+  async function inicioCoach(v, alMontar) {
+    const datos = cargarCoach();
+    datos.catch(() => {});   // si falla, el error sale en el await de abajo
+    // la cabecera y las 4 tarjetas se ven ya; los números suben cuando llegan los datos
     v.appendChild(html(`<div>
       ${cabInicio(`<button class="btn primario" data-accion="nuevo-piloto">${ICONOS.mas}Agregar piloto</button><button class="btn primario" data-accion="nuevo-analisis" title="Para un piloto sin cuenta">${ICONOS.video}Subir video propio</button>`)}
-      <div class="grilla g4" style="margin-top:16px">
-        <div class="tarjeta kpi entra"><span class="etiqueta">Pilotos</span><span class="num cian" data-n="${pilotos.length}">0</span></div>
-        <div class="tarjeta kpi entra"><span class="etiqueta">Análisis</span><span class="num oro" data-n="${analisis.length}">0</span></div>
-        <div class="tarjeta kpi entra"><span class="etiqueta">Etiquetas</span><span class="num azul" data-n="${nEtiq}">0</span></div>
-        <div class="tarjeta kpi entra"><span class="etiqueta">Con datos del Sender</span><span class="num violeta" data-n="${nSender}">0</span></div>
+      <div class="grilla g4">
+        <div class="tarjeta kpi entra"><span class="etiqueta">Pilotos</span><span class="num cian" data-k="pilotos">0</span></div>
+        <div class="tarjeta kpi entra"><span class="etiqueta">Análisis</span><span class="num oro" data-k="analisis">0</span></div>
+        <div class="tarjeta kpi entra"><span class="etiqueta">Etiquetas</span><span class="num azul" data-k="etiquetas">0</span></div>
+        <div class="tarjeta kpi entra"><span class="etiqueta">Con datos del Sender</span><span class="num violeta" data-k="sender">0</span></div>
       </div>
       <div id="inicioRecientes"></div><div id="inicioPilotos"></div><div id="inicioPasos"></div></div>`));
-    animarHero(v);
     $("[data-accion=nuevo-analisis]", v).addEventListener("click", () => nuevoAnalisis());
     $("[data-accion=nuevo-piloto]", v).addEventListener("click", () => editarPiloto());
+    if (alMontar) alMontar();
+    const { pilotos, analisis } = await datos;
+    const kpi = { pilotos: pilotos.length, analisis: analisis.length, etiquetas: analisis.reduce((s, a) => s + (a.nEtiquetas || 0), 0), sender: analisis.filter(a => a.conSender).length };
+    $$("[data-k]", v).forEach(el => { el.dataset.n = kpi[el.dataset.k]; });
+    animarHero(v);
     if (pilotos.length) {
       const cont = $("#inicioPilotos", v);
       cont.appendChild(html(`<div class="titulo-seccion entra">Pilotos</div>`));
@@ -422,13 +455,13 @@
   }
 
   // ================================================================ Inicio (piloto)
-  async function inicioPiloto(v) {
+  async function inicioPiloto(v, alMontar) {
     const [ra, re] = await Promise.all([API.get("analisis"), API.get("entrenadores")]);
     const analisis = ra.analisis, entrenadores = re.entrenadores;
     const bien = analisis.reduce((s, a) => s + (a.nBien || 0), 0), mejorar = analisis.reduce((s, a) => s + (a.nMejorar || 0), 0);
     v.appendChild(html(`<div>
       ${cabInicio(`<a class="btn primario" href="/enviar">${ICONOS.subir}Enviar video o bajada</a><a class="btn" href="/bajadas">Mis bajadas</a>`)}
-      <div class="grilla g4" style="margin-top:16px">
+      <div class="grilla g4">
         <div class="tarjeta kpi entra"><span class="etiqueta">Análisis</span><span class="num oro" data-n="${analisis.length}">0</span></div>
         <div class="tarjeta kpi entra"><span class="etiqueta">Lo que hacés bien</span><span class="num cian" data-n="${bien}">0</span></div>
         <div class="tarjeta kpi entra"><span class="etiqueta">A mejorar</span><span class="num" style="color:var(--rojo)" data-n="${mejorar}">0</span></div>
@@ -436,6 +469,7 @@
       </div>
       <div id="inicioMejorar"></div><div id="inicioRecientes"></div></div>`));
     animarHero(v);
+    if (alMontar) alMontar();
     const top = contarCategorias(analisis);
     if (top.length) $("#inicioMejorar", v).appendChild(html(`<div><div class="titulo-seccion entra">Lo que más se repite a mejorar</div>${barrasCategorias(top)}</div>`));
     const cont = $("#inicioRecientes", v);
@@ -709,7 +743,8 @@
   // ================================================================ Video: recorte y compresión antes de subir
   function panelRecorte(cuerpo) {
     const zona = $(".soltar", cuerpo);
-    const puede = !!(window.Compresor && Compresor.soportado());
+    if (window.Compresor) Compresor.cargar();   // se baja ahora si todavía no llegó (ya no viene en el arranque)
+    const puede = !!(window.Compresor && window.VideoEncoder && window.VideoDecoder && window.AudioEncoder);   // lo que mide Compresor.soportado(), sin esperar la descarga
     const caja = html(`<div class="campo ancho recorte-video oculto">
       <video class="vista-previa" controls playsinline muted preload="metadata"></video>
       ${puede ? `<div class="fila-recorte">
@@ -1030,6 +1065,7 @@
 
   // Devuelve el archivo listo para subir: recortado y comprimido si el navegador puede.
   async function prepararVideo(archivo, recorte, alAvance, alIniciar) {
+    if (window.Compresor) await Compresor.cargar();
     if (!window.Compresor || !Compresor.soportado()) {
       if (recorte) throw new Error("Este navegador no puede recortar el video. Probá desde Chrome.");
       return archivo;
